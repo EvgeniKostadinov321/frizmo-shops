@@ -49,6 +49,16 @@ export const productSchema = z.object({
     )
     .max(100, "Максимум 100 варианта")
     .default([]),
+  /** Количествена промоция „купи N за общо X“ (null = няма). */
+  deal: z
+    .union([
+      z.object({
+        quantity: z.coerce.number().int().min(2, "Минимум 2 броя").max(50),
+        totalPrice: priceString,
+      }),
+      z.null(),
+    ])
+    .default(null),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

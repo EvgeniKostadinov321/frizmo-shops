@@ -1,5 +1,12 @@
 import { and, asc, count, desc, eq, ilike, type SQL } from "drizzle-orm";
-import { db, productAttributes, productOptions, products, productVariants } from "@/db";
+import {
+  db,
+  productAttributes,
+  productOptions,
+  products,
+  productVariants,
+  promotions,
+} from "@/db";
 
 export const PRODUCTS_PAGE_SIZE = 20;
 
@@ -43,7 +50,7 @@ export async function getProductWithRelations(productId: string) {
   const product = await db.query.products.findFirst({ where: eq(products.id, productId) });
   if (!product) return null;
 
-  const [attributes, options, variants] = await Promise.all([
+  const [attributes, options, variants, promotion] = await Promise.all([
     db.query.productAttributes.findMany({
       where: eq(productAttributes.productId, productId),
       orderBy: [asc(productAttributes.sortOrder)],
@@ -56,7 +63,8 @@ export async function getProductWithRelations(productId: string) {
       where: eq(productVariants.productId, productId),
       orderBy: [asc(productVariants.createdAt)],
     }),
+    db.query.promotions.findFirst({ where: eq(promotions.productId, productId) }),
   ]);
 
-  return { ...product, attributes, options, variants };
+  return { ...product, attributes, options, variants, promotion: promotion ?? null };
 }

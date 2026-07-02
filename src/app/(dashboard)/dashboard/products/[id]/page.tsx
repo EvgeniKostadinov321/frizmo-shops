@@ -48,6 +48,12 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
             sku: v.sku ?? "",
             imagePaths: v.imagePaths,
           })),
+          deal: product.promotion
+            ? {
+                quantity: String(product.promotion.quantity),
+                totalPrice: centsToInput(product.promotion.totalPriceCents),
+              }
+            : null,
         }}
       />
     </div>

@@ -36,6 +36,7 @@ export interface ProductFormInitial {
   attributes: AttributeRow[];
   options: OptionAxis[];
   variants: VariantDraft[];
+  deal: { quantity: string; totalPrice: string } | null;
 }
 
 interface ProductFormProps {
@@ -59,6 +60,7 @@ const emptyInitial: ProductFormInitial = {
   attributes: [],
   options: [],
   variants: [],
+  deal: null,
 };
 
 export function ProductForm({
@@ -80,6 +82,7 @@ export function ProductForm({
   const [attributes, setAttributes] = useState<AttributeRow[]>(initial.attributes);
   const [axes, setAxes] = useState<OptionAxis[]>(initial.options);
   const [variants, setVariants] = useState<VariantDraft[]>(initial.variants);
+  const [deal, setDeal] = useState(initial.deal);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -123,6 +126,7 @@ export function ProductForm({
           sku,
           imagePaths,
         })),
+        deal: deal ? { quantity: deal.quantity, totalPrice: deal.totalPrice } : null,
       });
 
       if (!result.ok) {
@@ -215,6 +219,34 @@ export function ProductForm({
 
       {!simple && (
         <>
+          <Card className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-ink-900">Промоция „купи повече“</h2>
+            <Checkbox
+              label="Количествена промоция"
+              hint="Например: купи 2 броя за обща цена 30 €. При достигнат брой замества промо цената."
+              checked={deal !== null}
+              onChange={(e) => setDeal(e.target.checked ? { quantity: "2", totalPrice: "" } : null)}
+            />
+            {deal && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Купи (брой)"
+                  type="number"
+                  min={2}
+                  max={50}
+                  value={deal.quantity}
+                  onChange={(e) => setDeal({ ...deal, quantity: e.target.value })}
+                  error={fieldErrors.deal}
+                />
+                <PriceInput
+                  label="За обща цена"
+                  value={deal.totalPrice}
+                  onChange={(e) => setDeal({ ...deal, totalPrice: e.target.value })}
+                />
+              </div>
+            )}
+          </Card>
+
           <Card className="flex flex-col gap-4">
             <h2 className="text-lg font-bold text-ink-900">Характеристики</h2>
             <AttributesEditor attributes={attributes} onChange={setAttributes} />

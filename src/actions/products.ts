@@ -10,6 +10,7 @@ import {
   productOptions,
   products,
   productVariants,
+  promotions,
 } from "@/db";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
@@ -39,6 +40,13 @@ function crossValidate(input: ProductInput, shopId: string): string | null {
   const prefix = `shops/${shopId}/`;
   if (input.images.some((p) => !p.startsWith(prefix))) {
     return "Невалиден път на снимка.";
+  }
+
+  if (input.deal) {
+    const dealTotal = toCents(input.deal.totalPrice)!;
+    if (dealTotal >= input.deal.quantity * priceCents) {
+      return "Промоционалната обща цена трябва да е по-ниска от редовната за същия брой.";
+    }
   }
 
   const optionNames = new Set(input.options.map((o) => o.name));
@@ -78,7 +86,17 @@ async function insertRelations(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   productId: string,
   input: ProductInput,
+  shopId: string,
 ) {
+  await tx.delete(promotions).where(eq(promotions.productId, productId));
+  if (input.deal) {
+    await tx.insert(promotions).values({
+      shopId,
+      productId,
+      quantity: input.deal.quantity,
+      totalPriceCents: toCents(input.deal.totalPrice)!,
+    });
+  }
   if (input.attributes.length > 0) {
     await tx.insert(productAttributes).values(
       input.attributes.map((a, i) => ({
@@ -146,7 +164,7 @@ export async function saveProduct(
         .insert(products)
         .values({ ...productValues(input, shop.id), slug })
         .returning({ id: products.id });
-      await insertRelations(tx, created!.id, input);
+      await insertRelations(tx, created!.id, input, shop.id);
       return created!.id;
     });
 
@@ -167,7 +185,7 @@ export async function saveProduct(
     await tx.delete(productAttributes).where(eq(productAttributes.productId, product.id));
     await tx.delete(productOptions).where(eq(productOptions.productId, product.id));
     await tx.delete(productVariants).where(eq(productVariants.productId, product.id));
-    await insertRelations(tx, product.id, input);
+    await insertRelations(tx, product.id, input, shop.id);
   });
 
   revalidatePath("/dashboard/products");
