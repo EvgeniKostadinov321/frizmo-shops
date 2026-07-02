@@ -7,6 +7,7 @@ import {
   productOptions,
   products,
   productVariants,
+  promotions,
   shops,
 } from "@/db";
 import { getSiteSettingsRow, parseSiteSettings } from "@/db/queries/site-settings";
@@ -75,7 +76,7 @@ export async function getActiveProduct(shopId: string, productSlug: string) {
   });
   if (!product) return null;
 
-  const [attributes, options, variants] = await Promise.all([
+  const [attributes, options, variants, promotion] = await Promise.all([
     db.query.productAttributes.findMany({
       where: eq(productAttributes.productId, product.id),
       orderBy: [asc(productAttributes.sortOrder)],
@@ -88,9 +89,12 @@ export async function getActiveProduct(shopId: string, productSlug: string) {
       where: eq(productVariants.productId, product.id),
       orderBy: [asc(productVariants.createdAt)],
     }),
+    db.query.promotions.findFirst({
+      where: and(eq(promotions.productId, product.id), eq(promotions.active, true)),
+    }),
   ]);
 
-  return { ...product, attributes, options, variants };
+  return { ...product, attributes, options, variants, promotion: promotion ?? null };
 }
 
 export async function getRelatedProducts(shopId: string, productId: string, categoryId: string | null) {

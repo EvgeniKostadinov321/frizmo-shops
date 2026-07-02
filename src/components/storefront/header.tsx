@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Shop } from "@/db";
 import { publicImageUrl } from "@/lib/storage";
 import type { SiteSettings } from "@/schemas/site-settings";
+import { CartButton } from "./cart-button";
 
 interface StorefrontHeaderProps {
   shop: Shop;
@@ -51,7 +52,7 @@ export function StorefrontHeader({ shop, settings }: StorefrontHeaderProps) {
           </span>
         </Link>
 
-        <nav aria-label="Навигация на магазина" className="flex gap-1 overflow-x-auto">
+        <nav aria-label="Навигация на магазина" className="flex items-center gap-1 overflow-x-auto">
           {nav.map((item) => (
             <Link
               key={item.href}
@@ -61,6 +62,7 @@ export function StorefrontHeader({ shop, settings }: StorefrontHeaderProps) {
               {item.label}
             </Link>
           ))}
+          <CartButton shopId={shop.id} base={base} />
         </nav>
       </div>
     </header>

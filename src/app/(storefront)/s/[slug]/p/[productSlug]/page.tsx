@@ -105,6 +105,8 @@ export default async function ProductPage({ params }: PageProps) {
       </h1>
 
       <VariantPicker
+        shopId={shop.id}
+        productId={product.id}
         productName={product.name}
         basePriceCents={product.priceCents}
         promoPriceCents={product.promoPriceCents}
@@ -112,6 +114,14 @@ export default async function ProductPage({ params }: PageProps) {
         images={product.images}
         options={product.options}
         variants={product.variants}
+        deal={
+          product.promotion
+            ? {
+                quantity: product.promotion.quantity,
+                totalPriceCents: product.promotion.totalPriceCents,
+              }
+            : null
+        }
       />
 
       {product.description && (

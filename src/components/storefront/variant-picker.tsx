@@ -2,12 +2,16 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import type { ProductOption, ProductVariant } from "@/db";
+import { addToCart } from "@/lib/cart-storage";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 import { variantKey } from "@/lib/variants";
 
 interface VariantPickerProps {
+  shopId: string;
+  productId: string;
   productName: string;
   basePriceCents: number;
   promoPriceCents: number | null;
@@ -15,6 +19,8 @@ interface VariantPickerProps {
   images: string[];
   options: ProductOption[];
   variants: ProductVariant[];
+  /** Промоция „купи N за X" — показва се като бадж. */
+  deal: { quantity: number; totalPriceCents: number } | null;
 }
 
 /**
@@ -22,6 +28,8 @@ interface VariantPickerProps {
  * вариантните снимки първи. В План 4 тук идва и "Добави в количката".
  */
 export function VariantPicker({
+  shopId,
+  productId,
   productName,
   basePriceCents,
   promoPriceCents,
@@ -29,9 +37,11 @@ export function VariantPicker({
   images,
   options,
   variants,
+  deal,
 }: VariantPickerProps) {
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [activeImage, setActiveImage] = useState(0);
+  const [qty, setQty] = useState(1);
 
   const selectedVariant = useMemo(() => {
     if (options.length === 0 || Object.keys(selection).length !== options.length) return null;
@@ -143,6 +153,53 @@ export function VariantPicker({
         ) : stock !== null && stock <= 5 ? (
           <p className="text-sm text-(--sf-accent)">Остават само {stock} бр.</p>
         ) : null}
+
+        {deal && (
+          <p className="rounded-(--sf-radius) bg-(--sf-surface) px-3 py-2 text-sm font-medium text-(--sf-accent)">
+            🏷 Купи {deal.quantity} бр за общо {formatPrice(deal.totalPriceCents)}
+          </p>
+        )}
+
+        {!outOfStock && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center rounded-(--sf-radius) border border-(--sf-border)">
+              <button
+                type="button"
+                aria-label="Намали количеството"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
+              >
+                −
+              </button>
+              <span aria-live="polite" className="w-8 text-center font-medium text-(--sf-text)">
+                {qty}
+              </span>
+              <button
+                type="button"
+                aria-label="Увеличи количеството"
+                onClick={() => setQty((q) => Math.min(stock ?? 999, q + 1))}
+                className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
+              >
+                +
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={options.length > 0 && !selectedVariant}
+              onClick={() => {
+                addToCart(shopId, {
+                  productId,
+                  variantKey: selectedVariant ? variantKey(selectedVariant.options) : null,
+                  qty,
+                });
+                toast.success("Добавено в количката.");
+              }}
+              className="h-12 flex-1 rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Добави в количката
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
