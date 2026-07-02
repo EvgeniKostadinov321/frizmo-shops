@@ -1,6 +1,6 @@
 # CLAUDE.md — Frizmo Shops
 
-SaaS платформа за онлайн магазини (BG пазар, EUR). Едно Next.js 15 приложение: админ панел за търговци + публични магазини `/s/{slug}` + каталог + landing/блог.
+SaaS платформа за онлайн магазини (BG пазар, EUR). Едно Next.js 16 приложение: админ панел за търговци + публични магазини `/s/{slug}` + каталог + landing/блог.
 
 **Източник на истината:** `docs/superpowers/specs/2026-07-02-frizmo-shops-mvp-design.md`
 **Ред на работа:** `docs/superpowers/plans/2026-07-02-roadmap.md` (6 плана, изпълняват се последователно, всеки до пълна готовност — без TODO/coming soon)
@@ -9,10 +9,11 @@ SaaS платформа за онлайн магазини (BG пазар, EUR).
 
 @CLAUDE-frontend.md
 @CLAUDE-backend.md
+@AGENTS.md
 
 ## Стек
 
-Next.js 15 (App Router) + Vercel · Supabase (Postgres/Auth/Storage) · Drizzle ORM (`drizzle-kit push`, без migration файлове) · Zod · Tailwind CSS 4 · Stripe · Resend · Vitest + Playwright · pnpm
+Next.js 16 (App Router) + Vercel · Supabase (Postgres/Auth/Storage) · Drizzle ORM (`drizzle-kit push`, без migration файлове) · Zod · Tailwind CSS 4 · Stripe · Resend · Vitest + Playwright · pnpm
 
 ## Команди
 

@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Работещ фундамент на Frizmo Shops: Next.js 15 проект с design tokens, UI примитиви, Drizzle + Supabase (profiles/shops), utility слой с тестове и пълен auth поток (регистрация → dashboard), пазен от `pnpm check` гейт.
+**Goal:** Работещ фундамент на Frizmo Shops: Next.js 16 проект с design tokens, UI примитиви, Drizzle + Supabase (profiles/shops), utility слой с тестове и пълен auth поток (регистрация → dashboard), пазен от `pnpm check` гейт.
 
-**Architecture:** Едно Next.js 15 App Router приложение (`src/`), Supabase за Auth/Postgres, Drizzle ORM (`drizzle-kit push` deploy модел), Tailwind 4 с токени в `@theme`. Auth сесията се носи в cookies чрез `@supabase/ssr`; `/dashboard` е защитен от middleware.
+**Architecture:** Едно Next.js 16 App Router приложение (`src/`), Supabase за Auth/Postgres, Drizzle ORM (`drizzle-kit push` deploy модел), Tailwind 4 с токени в `@theme`. Auth сесията се носи в cookies чрез `@supabase/ssr`; `/dashboard` е защитен от middleware.
 
-**Tech Stack:** Next.js 15 (App Router), TypeScript strict, Tailwind CSS 4, Drizzle ORM + postgres-js, Supabase (Auth/Postgres), Zod, Vitest + Testing Library, Playwright, pnpm.
+**Tech Stack:** Next.js 16 (App Router), TypeScript strict, Tailwind CSS 4, Drizzle ORM + postgres-js, Supabase (Auth/Postgres), Zod, Vitest + Testing Library, Playwright, pnpm.
 
 ---
 
@@ -77,7 +77,7 @@ SaaS платформа за онлайн магазини (BG). Специфи�
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add -A; git commit -m "chore: scaffold Next.js 15 project with TypeScript strict and Tailwind 4"
+git add -A; git commit -m "chore: scaffold Next.js 16 project with TypeScript strict and Tailwind 4"
 ```
 
 ---
