@@ -1,5 +1,6 @@
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { db, profiles } from "@/db";
+import { db, profiles, shops } from "@/db";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 /** Връща auth потребителя или пренасочва към login. За Server Components/Actions. */
@@ -15,4 +16,18 @@ export async function requireUser() {
 /** Идемпотентно гарантира ред в profiles (предпазна мрежа при прекъснат signup). */
 export async function ensureProfile(userId: string) {
   await db.insert(profiles).values({ id: userId }).onConflictDoNothing();
+}
+
+/** Магазинът на текущия потребител или null (за UI разклонения). */
+export async function getOwnShop() {
+  const user = await requireUser();
+  const shop = await db.query.shops.findFirst({ where: eq(shops.ownerId, user.id) });
+  return { user, shop: shop ?? null };
+}
+
+/** За мутации/страници, изискващи магазин: няма магазин → onboarding. */
+export async function requireShop() {
+  const { user, shop } = await getOwnShop();
+  if (!shop) redirect("/dashboard/onboarding");
+  return { user, shop };
 }
