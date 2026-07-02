@@ -31,7 +31,7 @@
 pnpm dlx create-next-app@latest . --typescript --app --tailwind --eslint --src-dir --import-alias "@/*" --use-pnpm
 ```
 
-При въпрос за Turbopack: **Yes**. Ако откаже заради непразна директория: премести временно `docs/` навън, scaffold-ни, върни `docs/`.
+При въпрос за Turbopack: **Yes**. Ако откаже заради непразна директория: премести временно `docs/`, `CLAUDE.md`, `CLAUDE-frontend.md`, `CLAUDE-backend.md` (и `.claude/` ако съществува) навън, scaffold-ни, върни ги.
 
 - [ ] **Step 2: Провери, че dev сървърът тръгва**
 
