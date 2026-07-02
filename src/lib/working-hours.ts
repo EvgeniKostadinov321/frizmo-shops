@@ -39,3 +39,27 @@ export function parseWorkingHours(value: unknown): WorkingDay[] {
   const parsed = workingHoursSchema.safeParse(value);
   return parsed.success ? parsed.data.days : defaultWorkingDays();
 }
+
+const DAY_SHORT = ["Пон", "Вт", "Ср", "Четв", "Пет", "Съб", "Нед"] as const;
+
+/**
+ * Групира последователни дни с еднакъв график за публично показване:
+ * ["Пон – Пет: 09:00 – 18:00", "Съб – Нед: почивен ден"]
+ */
+export function formatWorkingHours(days: WorkingDay[]): string[] {
+  if (days.length !== 7) return [];
+  const key = (d: WorkingDay) => (d.closed ? "closed" : `${d.open}-${d.close}`);
+
+  const lines: string[] = [];
+  let start = 0;
+  for (let i = 1; i <= days.length; i++) {
+    if (i < days.length && key(days[i]!) === key(days[start]!)) continue;
+    const end = i - 1;
+    const label = start === end ? DAY_SHORT[start] : `${DAY_SHORT[start]} – ${DAY_SHORT[end]}`;
+    const day = days[start]!;
+    const value = day.closed ? "почивен ден" : `${day.open} – ${day.close}`;
+    lines.push(`${label}: ${value}`);
+    start = i;
+  }
+  return lines;
+}
