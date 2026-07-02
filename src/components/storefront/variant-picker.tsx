@@ -1,10 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import type { ProductOption, ProductVariant } from "@/db";
-import { addToCart } from "@/lib/cart-storage";
+import {
+  addToCart,
+  getCartSnapshot,
+  getServerCartSnapshot,
+  onCartChange,
+} from "@/lib/cart-storage";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 import { variantKey } from "@/lib/variants";
@@ -53,6 +58,20 @@ export function VariantPicker({
   const stock = selectedVariant ? selectedVariant.stock : baseStock;
   const outOfStock = stock !== null && stock <= 0;
   const showPromo = promoPriceCents !== null && selectedVariant?.priceCents == null;
+
+  /* Оставащата наличност е жива: наличност − каквото вече е в количката. */
+  const cartLines = useSyncExternalStore(
+    (cb) => onCartChange(shopId, cb),
+    () => getCartSnapshot(shopId),
+    getServerCartSnapshot,
+  );
+  const currentVariantKey = selectedVariant ? variantKey(selectedVariant.options) : null;
+  const inCart =
+    cartLines.find((l) => l.productId === productId && l.variantKey === currentVariantKey)
+      ?.qty ?? 0;
+  const remaining = stock === null ? null : Math.max(0, stock - inCart);
+  const allInCart = !outOfStock && remaining !== null && remaining <= 0;
+  const effectiveQty = remaining === null ? qty : Math.min(qty, Math.max(1, remaining));
 
   const orderedImages = useMemo(() => {
     const variantImages = selectedVariant?.imagePaths ?? [];
@@ -150,8 +169,14 @@ export function VariantPicker({
 
         {outOfStock ? (
           <p className="font-medium text-(--sf-muted)">Изчерпано</p>
-        ) : stock !== null && stock <= 5 ? (
-          <p className="text-sm text-(--sf-accent)">Остават само {stock} бр.</p>
+        ) : allInCart ? (
+          <p className="text-sm font-medium text-(--sf-accent)">
+            Цялата наличност е в количката ти.
+          </p>
+        ) : remaining !== null && remaining <= 5 ? (
+          <p className="text-sm text-(--sf-accent)" aria-live="polite">
+            {inCart > 0 ? `Можеш да добавиш още ${remaining} бр.` : `Остават само ${remaining} бр.`}
+          </p>
         ) : null}
 
         {deal && (
@@ -160,25 +185,26 @@ export function VariantPicker({
           </p>
         )}
 
-        {!outOfStock && (
+        {!outOfStock && !allInCart && (
           <div className="flex items-center gap-3">
             <div className="flex items-center rounded-(--sf-radius) border border-(--sf-border)">
               <button
                 type="button"
                 aria-label="Намали количеството"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                onClick={() => setQty(Math.max(1, effectiveQty - 1))}
                 className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
               >
                 −
               </button>
               <span aria-live="polite" className="w-8 text-center font-medium text-(--sf-text)">
-                {qty}
+                {effectiveQty}
               </span>
               <button
                 type="button"
                 aria-label="Увеличи количеството"
-                onClick={() => setQty((q) => Math.min(stock ?? 999, q + 1))}
-                className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
+                disabled={remaining !== null && effectiveQty >= remaining}
+                onClick={() => setQty(Math.min(remaining ?? 999, effectiveQty + 1))}
+                className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 +
               </button>
@@ -189,9 +215,10 @@ export function VariantPicker({
               onClick={() => {
                 addToCart(shopId, {
                   productId,
-                  variantKey: selectedVariant ? variantKey(selectedVariant.options) : null,
-                  qty,
+                  variantKey: currentVariantKey,
+                  qty: effectiveQty,
                 });
+                setQty(1);
                 toast.success("Добавено в количката.");
               }}
               className="h-12 flex-1 rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"

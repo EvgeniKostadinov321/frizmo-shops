@@ -20,7 +20,8 @@ export function CartButton({ shopId, base }: { shopId: string; base: string }) {
     >
       🛒
       {count > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex min-w-5 items-center justify-center rounded-full bg-(--sf-primary) px-1 text-xs font-bold text-white">
+        /* Вътре в 44px кутията — иначе nav overflow-x-auto показва scrollbar */
+        <span className="absolute right-0 top-0.5 flex min-w-4.5 items-center justify-center rounded-full bg-(--sf-primary) px-1 text-[10px] font-bold leading-4 text-white">
           {count > 99 ? "99+" : count}
         </span>
       )}
