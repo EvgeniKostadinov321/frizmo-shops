@@ -13,7 +13,9 @@ test.describe("Auth поток", () => {
     await page.getByRole("button", { name: "Регистрирай се" }).click();
 
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("heading", { name: "Добре дошъл!" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Създай магазина си за 2 минути" }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Изход" }).click();
     await expect(page).toHaveURL(/\/auth\/login/);
