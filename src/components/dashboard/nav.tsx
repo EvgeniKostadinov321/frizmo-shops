@@ -7,6 +7,7 @@ const items = [
   { href: "/dashboard", label: "Табло", exact: true },
   { href: "/dashboard/store", label: "Магазин" },
   { href: "/dashboard/products", label: "Продукти" },
+  { href: "/dashboard/orders", label: "Поръчки" },
   { href: "/dashboard/categories", label: "Категории" },
   { href: "/dashboard/website", label: "Уебсайт" },
   { href: "/dashboard/fulfillment", label: "Плащане и доставка" },
