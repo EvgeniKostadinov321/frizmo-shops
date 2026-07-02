@@ -9,7 +9,8 @@ import {
   productVariants,
   shops,
 } from "@/db";
-import { getSiteSettings } from "@/db/queries/site-settings";
+import { getSiteSettingsRow, parseSiteSettings } from "@/db/queries/site-settings";
+import { defaultSiteSettings } from "@/lib/sections";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export const STOREFRONT_PAGE_SIZE = 12;
@@ -32,8 +33,13 @@ export const getPublicShop = cache(async (slug: string) => {
 
   if (shop.status !== "published" && !viewerIsOwner) return null;
 
-  const settings = await getSiteSettings(shop.id, shop.name);
-  return { shop, settings, viewerIsOwner };
+  /* Собственикът вижда draft-а си (незапазените промени от редактора) на живо. */
+  const row = await getSiteSettingsRow(shop.id);
+  const useDraft = viewerIsOwner && row?.draft != null;
+  const raw = useDraft ? row?.draft : row?.settings;
+  const settings = raw != null ? parseSiteSettings(raw, shop.name) : defaultSiteSettings(shop.name);
+
+  return { shop, settings, viewerIsOwner, viewingDraft: useDraft };
 });
 
 export async function getActiveProducts(

@@ -7,16 +7,22 @@ import { requireShop } from "@/lib/auth";
 import { ALLOWED_IMAGE_EXT, SHOP_MEDIA_BUCKET } from "@/lib/storage";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
-const requestSchema = z.object({ ext: z.enum(ALLOWED_IMAGE_EXT) });
+const requestSchema = z.object({
+  ext: z.enum(ALLOWED_IMAGE_EXT),
+  kind: z.enum(["product", "branding", "site"]).default("product"),
+});
 
-export async function requestProductImageUpload(input: {
+/** Подписан upload URL след ownership проверка. kind определя папката. */
+export async function requestImageUpload(input: {
   ext: string;
+  kind?: string;
 }): Promise<ActionResult<{ path: string; token: string }>> {
   const parsed = requestSchema.safeParse(input);
   if (!parsed.success) return fail("Неподдържан формат на файла.");
 
   const { shop } = await requireShop();
-  const path = `shops/${shop.id}/products/${randomUUID()}.${parsed.data.ext}`;
+  const folder = { product: "products", branding: "branding", site: "site" }[parsed.data.kind];
+  const path = `shops/${shop.id}/${folder}/${randomUUID()}.${parsed.data.ext}`;
 
   const admin = createSupabaseAdmin();
   const { data, error } = await admin.storage
@@ -25,6 +31,13 @@ export async function requestProductImageUpload(input: {
   if (error || !data) return fail("Качването е недостъпно в момента. Опитай пак.");
 
   return ok({ path: data.path, token: data.token });
+}
+
+/** Съвместимост със съществуващите форми (продуктови снимки). */
+export async function requestProductImageUpload(input: {
+  ext: string;
+}): Promise<ActionResult<{ path: string; token: string }>> {
+  return requestImageUpload({ ...input, kind: "product" });
 }
 
 export async function deleteProductImage(path: string): Promise<ActionResult> {

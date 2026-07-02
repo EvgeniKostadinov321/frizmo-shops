@@ -8,6 +8,7 @@ const items = [
   { href: "/dashboard/store", label: "Магазин" },
   { href: "/dashboard/products", label: "Продукти" },
   { href: "/dashboard/categories", label: "Категории" },
+  { href: "/dashboard/website", label: "Уебсайт" },
 ];
 
 export function DashboardNav() {

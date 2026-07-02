@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { requestProductImageUpload } from "@/actions/uploads";
+import { requestImageUpload } from "@/actions/uploads";
 import { Spinner } from "@/components/ui";
 import {
   ALLOWED_IMAGE_EXT,
@@ -19,12 +19,15 @@ export interface ImageUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
   max?: number;
+  /** Папка в Storage: product (default), branding (лого), site (секции). */
+  kind?: "product" | "branding" | "site";
 }
 
 export function ImageUploader({
   images,
   onChange,
   max = MAX_PRODUCT_IMAGES,
+  kind = "product",
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(0);
@@ -40,7 +43,7 @@ export function ImageUploader({
       return null;
     }
 
-    const request = await requestProductImageUpload({ ext });
+    const request = await requestImageUpload({ ext, kind });
     if (!request.ok) {
       toast.error(request.error);
       return null;
