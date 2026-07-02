@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { CookieConsent } from "@/components/ui/cookie-consent";
 import { Toaster } from "@/components/ui/toaster";
 import { BRAND_THEME_COLOR } from "@/lib/brand";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <Toaster />
+        <CookieConsent />
       </body>
     </html>
   );
