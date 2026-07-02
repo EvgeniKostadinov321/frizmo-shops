@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -172,9 +173,162 @@ export const siteSettings = pgTable(
   (t) => [uniqueIndex("site_settings_shop_idx").on(t.shopId)],
 ).enableRLS();
 
+export const shippingTypeEnum = pgEnum("shipping_type", ["courier", "pickup", "local"]);
+export const paymentTypeEnum = pgEnum("payment_type", ["cod", "bank_transfer", "on_site"]);
+export const orderStatusEnum = pgEnum("order_status", [
+  "new",
+  "confirmed",
+  "shipped",
+  "completed",
+  "cancelled",
+]);
+
+export const shippingMethods = pgTable(
+  "shipping_methods",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    type: shippingTypeEnum("type").notNull(),
+    name: text("name").notNull(),
+    priceCents: integer("price_cents").notNull().default(0),
+    /** Безплатна доставка при subtotal ≥ тази стойност (null = никога). */
+    freeOverCents: integer("free_over_cents"),
+    active: boolean("active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("shipping_methods_shop_idx").on(t.shopId)],
+).enableRLS();
+
+export const paymentMethods = pgTable(
+  "payment_methods",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    type: paymentTypeEnum("type").notNull(),
+    name: text("name").notNull(),
+    /** Свободни детайли: IBAN за превод, бележки и т.н. */
+    details: text("details").notNull().default(""),
+    active: boolean("active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("payment_methods_shop_idx").on(t.shopId)],
+).enableRLS();
+
+/** Количествена промоция „купи N за общо X" — най-много една per продукт. */
+export const promotions = pgTable(
+  "promotions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    totalPriceCents: integer("total_price_cents").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("promotions_product_idx").on(t.productId),
+    index("promotions_shop_idx").on(t.shopId),
+  ],
+).enableRLS();
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    orderNumber: integer("order_number").notNull(),
+    customerName: text("customer_name").notNull(),
+    customerPhone: text("customer_phone").notNull(),
+    customerEmail: text("customer_email").notNull().default(""),
+    address: text("address").notNull().default(""),
+    city: text("city").notNull().default(""),
+    note: text("note").notNull().default(""),
+    /* Snapshot на методите към момента на поръчката */
+    shippingName: text("shipping_name").notNull(),
+    shippingPriceCents: integer("shipping_price_cents").notNull(),
+    paymentName: text("payment_name").notNull(),
+    paymentType: paymentTypeEnum("payment_type").notNull(),
+    subtotalCents: integer("subtotal_cents").notNull(),
+    totalCents: integer("total_cents").notNull(),
+    status: orderStatusEnum("status").notNull().default("new"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("orders_shop_number_idx").on(t.shopId, t.orderNumber),
+    index("orders_shop_status_idx").on(t.shopId, t.status),
+    index("orders_shop_created_idx").on(t.shopId, t.createdAt),
+  ],
+).enableRLS();
+
+/** Snapshot редове — оцеляват изтриване/промяна на продукта. */
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").references(() => products.id, { onDelete: "set null" }),
+    productName: text("product_name").notNull(),
+    variantLabel: text("variant_label").notNull().default(""),
+    variantKey: text("variant_key").notNull().default(""),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    quantity: integer("quantity").notNull(),
+    lineTotalCents: integer("line_total_cents").notNull(),
+    /** Напр. "2 бр за 30,00 €" — как е получена сумата. */
+    appliedDeal: text("applied_deal").notNull().default(""),
+  },
+  (t) => [index("order_items_order_idx").on(t.orderId)],
+).enableRLS();
+
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("push_subscriptions_user_idx").on(t.userId)],
+).enableRLS();
+
+/** Фиксиран прозорец rate limiting (без Redis). */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+}).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
+export type ShippingMethod = typeof shippingMethods.$inferSelect;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type Promotion = typeof promotions.$inferSelect;
+export type Order = typeof orders.$inferSelect;
+export type OrderItem = typeof orderItems.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
