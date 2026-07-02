@@ -1,15 +1,75 @@
-import { Card } from "@/components/ui";
+import Link from "next/link";
+import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { countCategories } from "@/db/queries/categories";
+import { countProducts } from "@/db/queries/products";
+import { getOwnShop } from "@/lib/auth";
 
 export const metadata = { title: "Табло — Frizmo Shops" };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { shop } = await getOwnShop();
+
+  if (!shop) {
+    return (
+      <EmptyState
+        icon="🏪"
+        title="Създай магазина си за 2 минути"
+        description="Име, категория и първи продукт — това е всичко, за да започнеш."
+        action={
+          <Link href="/dashboard/onboarding">
+            <Button size="lg">Създай магазин</Button>
+          </Link>
+        }
+      />
+    );
+  }
+
+  const [productCount, categoryCount] = await Promise.all([
+    countProducts(shop.id),
+    countCategories(shop.id),
+  ]);
+
   return (
-    <Card>
-      <h1 className="text-2xl font-bold text-ink-900">Добре дошъл!</h1>
-      <p className="mt-2 text-ink-700">
-        Тук ще създадеш своя онлайн магазин. Следващата стъпка от изграждането на
-        платформата: създаване на магазин (План 2).
-      </p>
-    </Card>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-ink-900">Табло</h1>
+        <Link href="/dashboard/products/new">
+          <Button>Нов продукт</Button>
+        </Link>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <p className="text-sm text-ink-500">Статус на магазина</p>
+          <div className="mt-2">
+            {shop.status === "draft" ? (
+              <Badge tone="neutral">Чернова — очаква публикуване</Badge>
+            ) : shop.status === "published" ? (
+              <Badge tone="success">Публикуван</Badge>
+            ) : (
+              <Badge tone="danger">Временно затворен</Badge>
+            )}
+          </div>
+          <p className="mt-3 text-xs text-ink-500">
+            Публикуването на магазина идва със следващата стъпка от изграждането — таб
+            „Уебсайт“.
+          </p>
+        </Card>
+
+        <Link href="/dashboard/products">
+          <Card className="h-full transition-colors hover:border-brand-500">
+            <p className="text-sm text-ink-500">Продукти</p>
+            <p className="mt-2 text-3xl font-bold text-ink-900">{productCount}</p>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/categories">
+          <Card className="h-full transition-colors hover:border-brand-500">
+            <p className="text-sm text-ink-500">Категории</p>
+            <p className="mt-2 text-3xl font-bold text-ink-900">{categoryCount}</p>
+          </Card>
+        </Link>
+      </div>
+    </div>
   );
 }

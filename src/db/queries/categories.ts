@@ -9,6 +9,14 @@ export interface CategoryNode extends CategoryWithCount {
   children: CategoryWithCount[];
 }
 
+export async function countCategories(shopId: string): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(categories)
+    .where(eq(categories.shopId, shopId));
+  return row?.value ?? 0;
+}
+
 export async function getCategoriesTree(shopId: string): Promise<CategoryNode[]> {
   const rows = await db
     .select({

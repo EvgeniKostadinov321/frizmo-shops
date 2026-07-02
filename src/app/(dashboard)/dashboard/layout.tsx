@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ensureProfile, requireUser } from "@/lib/auth";
+import { ensureProfile, getOwnShop } from "@/lib/auth";
+import { DashboardNav } from "@/components/dashboard/nav";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { Toaster } from "@/components/dashboard/toaster";
 
@@ -8,7 +9,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireUser();
+  const { user, shop } = await getOwnShop();
   await ensureProfile(user.id);
 
   return (
@@ -17,9 +18,23 @@ export default async function DashboardLayout({
         <Link href="/dashboard" className="text-lg font-bold text-brand-600">
           Frizmo Shops
         </Link>
-        <SignOutButton />
+        <div className="flex items-center gap-3">
+          {shop && <span className="hidden text-sm text-ink-500 sm:block">{shop.name}</span>}
+          <SignOutButton />
+        </div>
       </header>
-      <main className="mx-auto max-w-5xl p-4 md:p-6">{children}</main>
+
+      {shop ? (
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
+          <aside className="md:w-48 md:shrink-0">
+            <DashboardNav />
+          </aside>
+          <main className="min-w-0 flex-1">{children}</main>
+        </div>
+      ) : (
+        <main className="mx-auto max-w-5xl p-4 md:p-6">{children}</main>
+      )}
+
       <Toaster />
     </div>
   );

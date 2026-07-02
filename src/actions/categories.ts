@@ -37,10 +37,11 @@ export async function createCategory(input: {
     if (parent.parentId) return fail("Подкатегория не може да има свои подкатегории.");
   }
 
-  const [{ maxOrder }] = await db
+  const [orderRow] = await db
     .select({ maxOrder: max(categories.sortOrder) })
     .from(categories)
     .where(siblingFilter(shop.id, parentId));
+  const maxOrder = orderRow?.maxOrder ?? null;
 
   const [created] = await db
     .insert(categories)
