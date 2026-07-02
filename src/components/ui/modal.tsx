@@ -6,7 +6,9 @@ import { createPortal } from "react-dom";
 /** Държи най-новия callback, без да кара ефектите да се re-изпълняват. */
 function useLatest<T>(value: T) {
   const ref = useRef(value);
-  ref.current = value;
+  useEffect(() => {
+    ref.current = value;
+  });
   return ref;
 }
 
