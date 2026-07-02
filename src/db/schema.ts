@@ -155,8 +155,26 @@ export const productVariants = pgTable(
   (t) => [index("product_variants_product_idx").on(t.productId)],
 ).enableRLS();
 
+export const siteSettings = pgTable(
+  "site_settings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    /** Целият SiteSettings обект (Zod-валидиран при запис). */
+    settings: jsonb("settings").notNull().default({}),
+    /** Незапазени промени за live preview в таб „Уебсайт". */
+    draft: jsonb("draft"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("site_settings_shop_idx").on(t.shopId)],
+).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
+export type SiteSettingsRow = typeof siteSettings.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
