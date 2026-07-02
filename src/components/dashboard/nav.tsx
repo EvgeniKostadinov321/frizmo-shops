@@ -9,6 +9,7 @@ const items = [
   { href: "/dashboard/products", label: "Продукти" },
   { href: "/dashboard/categories", label: "Категории" },
   { href: "/dashboard/website", label: "Уебсайт" },
+  { href: "/dashboard/fulfillment", label: "Плащане и доставка" },
 ];
 
 export function DashboardNav() {
