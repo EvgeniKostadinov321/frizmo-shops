@@ -1,0 +1,15 @@
+import { z } from "zod";
+
+export const registerSchema = z.object({
+  fullName: z.string().trim().min(2, "Въведи име").max(100),
+  email: z.email("Невалиден имейл"),
+  password: z.string().min(8, "Паролата трябва да е поне 8 знака").max(72),
+});
+
+export const loginSchema = z.object({
+  email: z.email("Невалиден имейл"),
+  password: z.string().min(1, "Въведи парола"),
+});
+
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
