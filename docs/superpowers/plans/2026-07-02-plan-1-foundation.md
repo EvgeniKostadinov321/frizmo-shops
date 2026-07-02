@@ -546,6 +546,8 @@ describe("Input", () => {
 - [ ] **Step 5: Пусни — FAIL. Създай `src/components/ui/input.tsx`**
 
 ```tsx
+"use client"; // useId е hook — компонентът трябва да е client
+
 import { useId, type InputHTMLAttributes } from "react";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -1371,6 +1373,37 @@ git add -A; git commit -m "chore: complete Plan 1 (foundation)"
 
 ---
 
+### Task 12: Deploy на Vercel (production pipeline от ден 1)
+
+**Files:** няма нови файлове — конфигурация в GitHub/Vercel.
+
+- [ ] **Step 1: Създай GitHub repo и push-ни**
+
+```powershell
+gh repo create frizmo-shop --private --source . --push
+```
+
+(Ако `gh` не е логнат: `gh auth login`.)
+
+- [ ] **Step 2: Импортирай проекта във Vercel**
+
+Vercel Dashboard → Add New → Project → избери `frizmo-shop` от GitHub. Framework: Next.js (автоматично). Преди първия deploy добави env променливите от `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL` (transaction pooler :6543). `DATABASE_URL_MIGRATIONS` НЕ се добавя — миграциите се пускат само локално.
+
+- [ ] **Step 3: Провери production deploy-а**
+
+Отвори Vercel URL-а на проекта → началната страница се зарежда; `/auth/register` → регистрирай тестов акаунт → `/dashboard` работи.
+Expected: пълният auth поток работи на production URL.
+
+- [ ] **Step 4: Настрой branch модела**
+
+```powershell
+git checkout -b dev; git push -u origin dev
+```
+
+Vercel: `main` → Production, всичко останало (вкл. `dev`) → Preview. Оттук нататък: работа по `dev`, merge към `main` = production deploy (след `pnpm check`).
+
+---
+
 ## Definition of Done (План 1)
 
 - [ ] `pnpm check` минава (lint + unit + build)
@@ -1378,4 +1411,5 @@ git add -A; git commit -m "chore: complete Plan 1 (foundation)"
 - [ ] Регистрация → dashboard → изход работи ръчно
 - [ ] Таблиците `profiles`/`shops` съществуват в Supabase
 - [ ] Никакви хардкоднати цветове/размери извън `tokens.css`
-- [ ] Всички стъпки комитнати
+- [ ] Проектът е deploy-нат на Vercel; auth потокът работи на production URL
+- [ ] Всички стъпки комитнати и push-нати
