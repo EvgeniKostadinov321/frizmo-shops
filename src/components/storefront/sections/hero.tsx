@@ -30,7 +30,6 @@ export function HeroSection({ data, ctx }: HeroProps) {
         <div className="flex flex-col items-start gap-4">
           <h1
             className="text-4xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             {data.title || ctx.shop.name}
           </h1>
@@ -59,7 +58,6 @@ export function HeroSection({ data, ctx }: HeroProps) {
         <div className="mx-auto max-w-6xl px-4 pt-12 text-center">
           <h1
             className="text-4xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             {data.title || ctx.shop.name}
           </h1>
@@ -111,7 +109,6 @@ export function HeroSection({ data, ctx }: HeroProps) {
       >
         <h1
           className="max-w-3xl text-4xl sm:text-5xl"
-          style={{ fontWeight: "var(--sf-heading-weight)" as never }}
         >
           {data.title || ctx.shop.name}
         </h1>

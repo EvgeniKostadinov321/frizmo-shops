@@ -19,6 +19,7 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
 
   return (
     <div
+      data-storefront
       style={themeStyle(settings)}
       className="flex min-h-screen flex-col bg-(--sf-bg) text-(--sf-text)"
     >

@@ -1,29 +1,29 @@
 /* Единственото място за дизайн стойности. Компонентите използват само токени. */
 @theme {
-  /* Бранд (placeholder палитра — сменя се само тук) */
-  --color-brand-50: #eef7f2;
-  --color-brand-100: #d6ecdf;
-  --color-brand-500: #1f9d61;
-  --color-brand-600: #178150;
-  --color-brand-700: #116540;
+  /* Бранд — плътно, уверено зелено (визуален pass 2026-07-03) */
+  --color-brand-50: #edf7f1;
+  --color-brand-100: #d2ecdd;
+  --color-brand-500: #17925c;
+  --color-brand-600: #0e7c4a;
+  --color-brand-700: #0a6339;
 
-  /* Текст */
-  --color-ink-900: #14201a;
-  --color-ink-700: #3c4a43;
-  --color-ink-500: #6b7a72;
+  /* Текст — леко затоплени неутрални */
+  --color-ink-900: #141a16;
+  --color-ink-700: #3b463f;
+  --color-ink-500: #68746c;
 
   /* Повърхности */
   --color-surface-0: #ffffff;
-  --color-surface-50: #f6f8f7;
-  --color-surface-100: #eef1ef;
-  --color-surface-200: #e2e7e4;
-  --color-surface-300: #cbd3ce;
+  --color-surface-50: #f5f7f6;
+  --color-surface-100: #ebeeec;
+  --color-surface-200: #dde2df;
+  --color-surface-300: #c3ccc6;
 
   /* Семантични */
-  --color-danger-600: #d23b3b;
-  --color-danger-700: #b02f2f;
-  --color-success-600: #1f9d61;
-  --color-warning-600: #c98a1b;
+  --color-danger-600: #cf3e3e;
+  --color-danger-700: #ae3131;
+  --color-success-600: #17925c;
+  --color-warning-600: #b97e14;
 
   /* Радиуси */
   --radius-control: 0.5rem; /* бутони, инпути */
@@ -35,28 +35,28 @@
 
 /*
  * DARK MODE (виж docs/decisions/2026-07-03-dark-mode.md).
- * Активира се с data-theme="dark" на <html>; toggle-ът идва с визуалния pass.
+ * Активира се с data-theme="dark" на <html> (toggle в dashboard header-а).
  * Компонентите НЕ се променят — само тези стойности. Никакви dark: варианти!
  */
 [data-theme="dark"] {
-  --color-brand-50: #12261c;
-  --color-brand-100: #17362a;
-  --color-brand-500: #2eb877;
-  --color-brand-600: #34c983;
-  --color-brand-700: #5ad79c;
+  --color-brand-50: #11241a;
+  --color-brand-100: #163425;
+  --color-brand-500: #2cb578;
+  --color-brand-600: #33c684;
+  --color-brand-700: #5cd49d;
 
-  --color-ink-900: #eef3f0;
-  --color-ink-700: #c2cdc7;
-  --color-ink-500: #8d9a93;
+  --color-ink-900: #edf2ee;
+  --color-ink-700: #c0cbc4;
+  --color-ink-500: #8b988f;
 
-  --color-surface-0: #171c19;
-  --color-surface-50: #101412;
-  --color-surface-100: #1e2420;
-  --color-surface-200: #2a322d;
-  --color-surface-300: #3a453f;
+  --color-surface-0: #161b18;
+  --color-surface-50: #0f1311;
+  --color-surface-100: #1d2320;
+  --color-surface-200: #29312c;
+  --color-surface-300: #39443e;
 
   --color-danger-600: #e05b5b;
   --color-danger-700: #e87a7a;
-  --color-success-600: #34c983;
-  --color-warning-600: #e0a53f;
+  --color-success-600: #33c684;
+  --color-warning-600: #dfa440;
 }

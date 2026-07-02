@@ -37,7 +37,6 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
         </span>
         <h1
           className="text-3xl text-(--sf-text)"
-          style={{ fontWeight: "var(--sf-heading-weight)" as never }}
         >
           Поръчката е приета!
         </h1>

@@ -19,7 +19,6 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
         <div>
           <h2
             className="mb-2 text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             {shop.name}
           </h2>

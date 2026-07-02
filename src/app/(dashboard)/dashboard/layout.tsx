@@ -3,6 +3,7 @@ import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { PushBanner } from "@/components/dashboard/push-banner";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -18,8 +19,9 @@ export default async function DashboardLayout({
         <Link href="/dashboard" className="text-lg font-bold text-brand-600">
           Frizmo Shops
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {shop && <span className="hidden text-sm text-ink-500 sm:block">{shop.name}</span>}
+          <ThemeToggle />
           <SignOutButton />
         </div>
       </header>

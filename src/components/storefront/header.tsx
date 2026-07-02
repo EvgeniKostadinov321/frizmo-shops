@@ -46,7 +46,6 @@ export function StorefrontHeader({ shop, settings }: StorefrontHeaderProps) {
           )}
           <span
             className="text-xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             {shop.name}
           </span>

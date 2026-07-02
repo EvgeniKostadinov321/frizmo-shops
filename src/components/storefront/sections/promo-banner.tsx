@@ -25,7 +25,6 @@ export function PromoBannerSection({ data }: { data: SectionOfType<"promo-banner
           {data.title && (
             <h2
               className="text-2xl sm:text-3xl"
-              style={{ fontWeight: "var(--sf-heading-weight)" as never }}
             >
               {data.title}
             </h2>

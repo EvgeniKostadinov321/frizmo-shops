@@ -27,7 +27,6 @@ export default async function TermsPage({ params }: PageProps) {
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <h1
         className="mb-8 text-3xl text-(--sf-text)"
-        style={{ fontWeight: "var(--sf-heading-weight)" as never }}
       >
         Условия за пазаруване
       </h1>
@@ -37,7 +36,6 @@ export default async function TermsPage({ params }: PageProps) {
           <section key={section.title}>
             <h2
               className="mb-2 text-xl text-(--sf-text)"
-              style={{ fontWeight: "var(--sf-heading-weight)" as never }}
             >
               {section.title}
             </h2>

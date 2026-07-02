@@ -28,7 +28,6 @@ export function ImageTextSection({ data }: { data: SectionOfType<"image-text">["
         {data.title && (
           <h2
             className="text-2xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             {data.title}
           </h2>

@@ -6,6 +6,22 @@ body {
   color: var(--color-ink-900);
 }
 
+/*
+ * Storefront типография: темите задават шрифтове/тежести чрез --sf-*
+ * (THEME_PRESETS) — компонентите не носят font стилове сами.
+ */
+[data-storefront] {
+  font-family: var(--sf-font-body);
+}
+[data-storefront] h1,
+[data-storefront] h2,
+[data-storefront] h3,
+[data-storefront] legend {
+  font-family: var(--sf-font-heading);
+  font-weight: var(--sf-heading-weight);
+  letter-spacing: -0.01em;
+}
+
 /* Tailwind 4 маха pointer курсора от бутоните по подразбиране — връщаме го глобално. */
 @layer base {
   button:not(:disabled),

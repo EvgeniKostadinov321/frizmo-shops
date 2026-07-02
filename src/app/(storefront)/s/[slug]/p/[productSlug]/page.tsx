@@ -99,7 +99,6 @@ export default async function ProductPage({ params }: PageProps) {
 
       <h1
         className="mb-6 text-3xl text-(--sf-text)"
-        style={{ fontWeight: "var(--sf-heading-weight)" as never }}
       >
         {product.name}
       </h1>
@@ -128,7 +127,6 @@ export default async function ProductPage({ params }: PageProps) {
         <div className="mt-10 flex max-w-prose flex-col gap-3 text-(--sf-muted)">
           <h2
             className="text-xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             Описание
           </h2>
@@ -140,7 +138,6 @@ export default async function ProductPage({ params }: PageProps) {
         <div className="mt-8 max-w-prose">
           <h2
             className="mb-3 text-xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             Характеристики
           </h2>
@@ -159,7 +156,6 @@ export default async function ProductPage({ params }: PageProps) {
         <div className="mt-12">
           <h2
             className="mb-4 text-xl text-(--sf-text)"
-            style={{ fontWeight: "var(--sf-heading-weight)" as never }}
           >
             Още от магазина
           </h2>
