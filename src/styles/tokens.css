@@ -1,0 +1,34 @@
+/* Единственото място за дизайн стойности. Компонентите използват само токени. */
+@theme {
+  /* Бранд (placeholder палитра — сменя се само тук) */
+  --color-brand-50: #eef7f2;
+  --color-brand-100: #d6ecdf;
+  --color-brand-500: #1f9d61;
+  --color-brand-600: #178150;
+  --color-brand-700: #116540;
+
+  /* Текст */
+  --color-ink-900: #14201a;
+  --color-ink-700: #3c4a43;
+  --color-ink-500: #6b7a72;
+
+  /* Повърхности */
+  --color-surface-0: #ffffff;
+  --color-surface-50: #f6f8f7;
+  --color-surface-100: #eef1ef;
+  --color-surface-200: #e2e7e4;
+  --color-surface-300: #cbd3ce;
+
+  /* Семантични */
+  --color-danger-600: #d23b3b;
+  --color-danger-700: #b02f2f;
+  --color-success-600: #1f9d61;
+  --color-warning-600: #c98a1b;
+
+  /* Радиуси */
+  --radius-control: 0.5rem; /* бутони, инпути */
+  --radius-card: 0.75rem;
+
+  /* Типография */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
