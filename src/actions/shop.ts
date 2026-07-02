@@ -101,5 +101,6 @@ export async function updateShop(
 
   revalidatePath("/dashboard/store");
   revalidatePath("/dashboard");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return { ok: true };
 }

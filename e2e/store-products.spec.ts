@@ -109,7 +109,9 @@ test.describe("Магазин и продукти", () => {
     ).toBeVisible();
 
     await intruder.goto(productUrl);
-    await expect(intruder.getByRole("heading", { name: "404" })).toBeVisible();
+    await expect(
+      intruder.getByRole("heading", { name: "Страницата не е намерена" }),
+    ).toBeVisible();
     await context.close();
   });
 });

@@ -54,6 +54,7 @@ export async function createCategory(input: {
     .returning({ id: categories.id });
 
   revalidatePath("/dashboard/categories");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok({ id: created!.id });
 }
 
@@ -76,6 +77,7 @@ export async function updateCategory(input: {
     .where(eq(categories.id, category.id));
 
   revalidatePath("/dashboard/categories");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok(null);
 }
 
@@ -96,6 +98,7 @@ export async function deleteCategory(input: { id: string }): Promise<ActionResul
   });
 
   revalidatePath("/dashboard/categories");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok(null);
 }
 
@@ -135,5 +138,6 @@ export async function moveCategory(input: {
   });
 
   revalidatePath("/dashboard/categories");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok(null);
 }

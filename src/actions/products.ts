@@ -152,6 +152,7 @@ export async function saveProduct(
 
     revalidatePath("/dashboard/products");
     revalidatePath("/dashboard");
+    revalidatePath(`/s/${shop.slug}`, "layout");
     return ok({ id });
   }
 
@@ -170,6 +171,7 @@ export async function saveProduct(
   });
 
   revalidatePath("/dashboard/products");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok({ id: product.id });
 }
 
@@ -190,6 +192,7 @@ export async function deleteProduct(input: { id: string }): Promise<ActionResult
 
   revalidatePath("/dashboard/products");
   revalidatePath("/dashboard");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok(null);
 }
 
@@ -207,5 +210,6 @@ export async function toggleProductStatus(input: { id: string }): Promise<Action
     .where(eq(products.id, product.id));
 
   revalidatePath("/dashboard/products");
+  revalidatePath(`/s/${shop.slug}`, "layout");
   return ok(null);
 }
