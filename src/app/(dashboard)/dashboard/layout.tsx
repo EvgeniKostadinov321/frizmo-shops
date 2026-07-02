@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
+import { PushBanner } from "@/components/dashboard/push-banner";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 
 export default async function DashboardLayout({
@@ -28,7 +29,10 @@ export default async function DashboardLayout({
           <aside className="md:w-48 md:shrink-0">
             <DashboardNav />
           </aside>
-          <main className="min-w-0 flex-1">{children}</main>
+          <main className="min-w-0 flex-1">
+            <PushBanner />
+            {children}
+          </main>
         </div>
       ) : (
         <main className="mx-auto max-w-5xl p-4 md:p-6">{children}</main>
