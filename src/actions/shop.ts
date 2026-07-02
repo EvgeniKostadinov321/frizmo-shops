@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { db, shops } from "@/db";
 import { getOwnShop, requireShop } from "@/lib/auth";
+import { parseBgPhone } from "@/lib/phone";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
 import { generateUniqueShopSlug } from "@/lib/shop-slug";
 import { shopSchema, type ShopInput } from "@/schemas/shop";
@@ -26,6 +27,14 @@ function toFieldErrors(error: ZodError): Record<string, string> {
 }
 
 function parseShopForm(formData: FormData) {
+  /* Работното време пътува като JSON в скрито поле (структуриран редактор) */
+  let workingHours: unknown = null;
+  try {
+    workingHours = JSON.parse(String(formData.get("workingHours") ?? "null"));
+  } catch {
+    workingHours = null;
+  }
+
   return shopSchema.safeParse({
     name: formData.get("name"),
     businessCategory: formData.get("businessCategory"),
@@ -34,22 +43,25 @@ function parseShopForm(formData: FormData) {
     address: formData.get("address") ?? "",
     phone: formData.get("phone") ?? "",
     email: formData.get("email") ?? "",
-    workingHoursText: formData.get("workingHoursText") ?? "",
+    workingHours,
     facebook: formData.get("facebook") ?? "",
     instagram: formData.get("instagram") ?? "",
   });
 }
 
 function sanitizedValues(input: ShopInput) {
+  /* Телефонът се съхранява нормализиран (E.164) — валидиран е от схемата */
+  const phone = input.phone ? parseBgPhone(input.phone) : null;
+
   return {
     name: sanitizeText(input.name, 80),
     businessCategory: input.businessCategory,
     description: sanitizeMultiline(input.description, 2000),
     city: sanitizeText(input.city, 60),
     address: sanitizeText(input.address, 160),
-    phone: sanitizeText(input.phone, 30),
+    phone: phone?.ok ? phone.e164 : "",
     email: sanitizeText(input.email, 120),
-    workingHours: { text: sanitizeText(input.workingHoursText, 300) },
+    workingHours: input.workingHours,
     socialLinks: {
       facebook: sanitizeText(input.facebook, 200),
       instagram: sanitizeText(input.instagram, 200),

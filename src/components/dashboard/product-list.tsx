@@ -13,6 +13,7 @@ import {
   ConfirmDialog,
   EmptyState,
   Input,
+  LinkButton,
   Select,
   Table,
   TBody,
@@ -110,11 +111,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           icon="📦"
           title={total === 0 && !searchParams.toString() ? "Още нямаш продукти" : "Няма резултати"}
           description="Добави продукт и той ще се появи тук."
-          action={
-            <Link href="/dashboard/products/new">
-              <Button>Добави продукт</Button>
-            </Link>
-          }
+          action={<LinkButton href="/dashboard/products/new">Добави продукт</LinkButton>}
         />
       ) : (
         <>

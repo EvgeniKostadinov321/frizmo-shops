@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Badge, Card, EmptyState, LinkButton } from "@/components/ui";
 import { countCategories } from "@/db/queries/categories";
 import { countProducts } from "@/db/queries/products";
 import { getOwnShop } from "@/lib/auth";
@@ -16,9 +16,9 @@ export default async function DashboardPage() {
         title="Създай магазина си за 2 минути"
         description="Име, категория и първи продукт — това е всичко, за да започнеш."
         action={
-          <Link href="/dashboard/onboarding">
-            <Button size="lg">Създай магазин</Button>
-          </Link>
+          <LinkButton size="lg" href="/dashboard/onboarding">
+            Създай магазин
+          </LinkButton>
         }
       />
     );
@@ -33,9 +33,7 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink-900">Табло</h1>
-        <Link href="/dashboard/products/new">
-          <Button>Нов продукт</Button>
-        </Link>
+        <LinkButton href="/dashboard/products/new">Нов продукт</LinkButton>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

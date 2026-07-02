@@ -27,12 +27,15 @@ export function Input({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={inputId}
-        className={hideLabel ? "sr-only" : "text-sm font-medium text-ink-900"}
-      >
-        {label}
-      </label>
+      <span className={hideLabel ? "sr-only" : "text-sm font-medium text-ink-900"}>
+        <label htmlFor={inputId}>{label}</label>
+        {props.required && (
+          <span aria-hidden className="text-danger-600">
+            {" "}
+            *
+          </span>
+        )}
+      </span>
       <div className="relative">
         <input
           id={inputId}

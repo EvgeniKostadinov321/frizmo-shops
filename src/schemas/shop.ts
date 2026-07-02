@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { parseBgPhone } from "@/lib/phone";
+import { workingHoursSchema } from "@/lib/working-hours";
 
 export const BUSINESS_CATEGORIES = [
   "Дрехи и мода",
@@ -18,9 +20,17 @@ export const shopSchema = z.object({
   description: z.string().trim().max(2000).default(""),
   city: z.string().trim().max(60).default(""),
   address: z.string().trim().max(160).default(""),
-  phone: z.string().trim().max(30).default(""),
+  phone: z
+    .string()
+    .trim()
+    .max(30)
+    .default("")
+    .refine(
+      (s) => s === "" || parseBgPhone(s).ok,
+      "Невалиден телефонен номер (пример: 0888 123 456)",
+    ),
   email: z.union([z.email("Невалиден имейл"), z.literal("")]).default(""),
-  workingHoursText: z.string().trim().max(300).default(""),
+  workingHours: workingHoursSchema,
   facebook: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
   instagram: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
 });

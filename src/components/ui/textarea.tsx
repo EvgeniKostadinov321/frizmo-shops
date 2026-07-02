@@ -23,9 +23,15 @@ export function Textarea({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-sm font-medium text-ink-900">
-        {label}
-      </label>
+      <span className="text-sm font-medium text-ink-900">
+        <label htmlFor={inputId}>{label}</label>
+        {props.required && (
+          <span aria-hidden className="text-danger-600">
+            {" "}
+            *
+          </span>
+        )}
+      </span>
       <textarea
         id={inputId}
         rows={rows}

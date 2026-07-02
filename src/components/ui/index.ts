@@ -8,6 +8,7 @@ export { Checkbox } from "./checkbox";
 export { ConfirmDialog } from "./confirm-dialog";
 export { EmptyState } from "./empty-state";
 export { Input } from "./input";
+export { LinkButton } from "./link-button";
 export { Modal } from "./modal";
 export { PriceInput } from "./price-input";
 export { Select } from "./select";

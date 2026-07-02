@@ -1,9 +1,12 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { ShopFormState } from "@/actions/shop";
+import { AddressAutocomplete } from "./address-autocomplete";
+import { WorkingHoursEditor } from "./working-hours-editor";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
+import { defaultWorkingDays, type WorkingDay } from "@/lib/working-hours";
 import { BUSINESS_CATEGORIES } from "@/schemas/shop";
 
 export interface ShopFormInitial {
@@ -14,7 +17,7 @@ export interface ShopFormInitial {
   address?: string;
   phone?: string;
   email?: string;
-  workingHoursText?: string;
+  workingDays?: WorkingDay[];
   facebook?: string;
   instagram?: string;
 }
@@ -29,6 +32,9 @@ const categoryOptions = BUSINESS_CATEGORIES.map((c) => ({ value: c, label: c }))
 
 export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [address, setAddress] = useState(initial.address ?? "");
+  const [city, setCity] = useState(initial.city ?? "");
+  const [days, setDays] = useState<WorkingDay[]>(initial.workingDays ?? defaultWorkingDays());
   const isCreate = mode === "create";
 
   useEffect(() => {
@@ -38,23 +44,29 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
 
   const detailFields = (
     <div className="flex flex-col gap-4">
+      <AddressAutocomplete
+        value={address}
+        onChange={setAddress}
+        onSelect={(result) => {
+          setAddress(result.fullAddress);
+          if (result.city) setCity(result.city);
+        }}
+        error={state.fieldErrors?.address}
+      />
       <Input
         label="Град"
         name="city"
-        defaultValue={initial.city}
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
+        hint="Попълва се автоматично при избор на адрес."
         error={state.fieldErrors?.city}
-      />
-      <Input
-        label="Адрес"
-        name="address"
-        defaultValue={initial.address}
-        error={state.fieldErrors?.address}
       />
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
           label="Телефон"
           name="phone"
           type="tel"
+          placeholder="0888 123 456"
           defaultValue={initial.phone}
           error={state.fieldErrors?.phone}
         />
@@ -66,14 +78,7 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
           error={state.fieldErrors?.email}
         />
       </div>
-      <Textarea
-        label="Работно време"
-        name="workingHoursText"
-        rows={2}
-        placeholder={"Пон–Пет: 9:00–18:00\nСъбота: 9:00–14:00"}
-        defaultValue={initial.workingHoursText}
-        error={state.fieldErrors?.workingHoursText}
-      />
+      <WorkingHoursEditor value={days} onChange={setDays} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
           label="Facebook"
@@ -96,9 +101,11 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
   return (
     <Card>
       <form action={formAction} className="flex flex-col gap-4" noValidate>
+        <input type="hidden" name="workingHours" value={JSON.stringify({ days })} />
         <Input
           label="Име на магазина"
           name="name"
+          required
           defaultValue={initial.name}
           error={state.fieldErrors?.name}
           hint={isCreate ? "От името се създава публичният адрес на магазина." : undefined}
@@ -106,6 +113,7 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
         <Select
           label="Категория на бизнеса"
           name="businessCategory"
+          required
           options={categoryOptions}
           placeholder="Избери категория"
           defaultValue={initial.businessCategory ?? ""}
@@ -122,7 +130,7 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
         {isCreate ? (
           <details className="rounded-control border border-surface-200 p-4">
             <summary className="cursor-pointer text-sm font-medium text-ink-700">
-              Още детайли (град, контакти, работно време) — по избор
+              Още детайли (адрес, контакти, работно време) — по избор
             </summary>
             <div className="pt-4">{detailFields}</div>
           </details>

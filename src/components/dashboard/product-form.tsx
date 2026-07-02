@@ -151,6 +151,7 @@ export function ProductForm({
         <h2 className="text-lg font-bold text-ink-900">Основни</h2>
         <Input
           label="Име на продукта"
+          required
           value={name}
           onChange={(e) => setName(e.target.value)}
           error={fieldErrors.name}
@@ -181,6 +182,7 @@ export function ProductForm({
         <div className="grid gap-4 sm:grid-cols-3">
           <PriceInput
             label="Цена"
+            required
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             error={fieldErrors.price}

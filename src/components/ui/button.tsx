@@ -1,8 +1,11 @@
 import { type ButtonHTMLAttributes } from "react";
 import { Spinner } from "./spinner";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
-type Size = "sm" | "md" | "lg";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
+
+type Variant = ButtonVariant;
+type Size = ButtonSize;
 
 const base =
   "inline-flex items-center justify-center gap-2 rounded-control font-medium transition-colors " +
@@ -22,6 +25,11 @@ const sizes: Record<Size, string> = {
   md: "h-11 px-4 text-sm",
   lg: "h-12 px-6 text-base",
 };
+
+/** Класовете на бутон — споделени между Button и LinkButton. */
+export function buttonClasses(variant: Variant = "primary", size: Size = "md"): string {
+  return `${base} ${variants[variant]} ${sizes[size]}`;
+}
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;

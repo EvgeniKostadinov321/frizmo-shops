@@ -2,6 +2,7 @@ import { updateShop } from "@/actions/shop";
 import { ShopForm } from "@/components/dashboard/shop-form";
 import { Badge, Card } from "@/components/ui";
 import { requireShop } from "@/lib/auth";
+import { parseWorkingHours } from "@/lib/working-hours";
 
 export const metadata = { title: "Магазин — Frizmo Shops" };
 
@@ -14,7 +15,6 @@ const statusLabels: Record<string, { label: string; tone: "neutral" | "success" 
 
 export default async function StorePage() {
   const { shop } = await requireShop();
-  const workingHours = (shop.workingHours as { text?: string } | null) ?? {};
   const socialLinks = (shop.socialLinks as { facebook?: string; instagram?: string } | null) ?? {};
   const status = statusLabels[shop.status] ?? statusLabels.draft!;
 
@@ -41,7 +41,7 @@ export default async function StorePage() {
           address: shop.address ?? "",
           phone: shop.phone ?? "",
           email: shop.email ?? "",
-          workingHoursText: workingHours.text ?? "",
+          workingDays: parseWorkingHours(shop.workingHours),
           facebook: socialLinks.facebook ?? "",
           instagram: socialLinks.instagram ?? "",
         }}
