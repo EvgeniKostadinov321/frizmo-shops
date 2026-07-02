@@ -42,7 +42,14 @@ export function VariantsTable({
         <TH>Вариант</TH>
         <TH>Цена</TH>
         <TH>Наличност</TH>
-        <TH>SKU</TH>
+        <TH>
+          <abbr
+            title="Складов код — твой вътрешен номер на артикула (напр. TEN-M-SIN). По избор."
+            className="cursor-help no-underline"
+          >
+            Код (SKU)
+          </abbr>
+        </TH>
         {productImages.length > 0 && <TH>Снимки</TH>}
       </THead>
       <TBody>
@@ -71,9 +78,9 @@ export function VariantsTable({
             </TCell>
             <TCell className="min-w-28">
               <Input
-                label={`SKU за ${label(variant.options)}`}
+                label={`Складов код за ${label(variant.options)}`}
                 hideLabel
-                placeholder="по избор"
+                placeholder="напр. TEN-M"
                 value={variant.sku}
                 onChange={(e) => update(i, { sku: e.target.value })}
               />
