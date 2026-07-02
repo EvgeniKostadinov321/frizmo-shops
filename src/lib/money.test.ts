@@ -15,6 +15,15 @@ describe("toCents", () => {
   it("няма float грешки", () => expect(toCents("0,29")).toBe(29));
 });
 
+describe("centsToInput", () => {
+  it("конвертира центове към формулярен string", async () => {
+    const { centsToInput } = await import("./money");
+    expect(centsToInput(1250)).toBe("12,50");
+    expect(centsToInput(900)).toBe("9,00");
+    expect(centsToInput(null)).toBe("");
+  });
+});
+
 describe("formatPrice", () => {
   it("форматира в EUR по бг локал", () => expect(norm(formatPrice(1250))).toBe("12,50 €"));
   it("форматира нула", () => expect(norm(formatPrice(0))).toBe("0,00 €"));

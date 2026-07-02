@@ -7,6 +7,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   hint?: string;
   suffix?: string;
+  /** Скрива label-а визуално (остава за screen readers) — за плътни таблици. */
+  hideLabel?: boolean;
 }
 
 export function Input({
@@ -14,6 +16,7 @@ export function Input({
   error,
   hint,
   suffix,
+  hideLabel = false,
   className = "",
   id,
   ...props
@@ -24,7 +27,10 @@ export function Input({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-sm font-medium text-ink-900">
+      <label
+        htmlFor={inputId}
+        className={hideLabel ? "sr-only" : "text-sm font-medium text-ink-900"}
+      >
         {label}
       </label>
       <div className="relative">

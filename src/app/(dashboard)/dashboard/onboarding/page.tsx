@@ -52,8 +52,8 @@ export default async function OnboardingPage() {
       <Progress step={2} />
       <h1 className="mb-1 text-2xl font-bold text-ink-900">Добави първия си продукт</h1>
       <p className="mb-6 text-ink-700">
-        Магазинът „{shop.name}" е създаден! Добави първия продукт от бутона по-долу — или
-        го направи по-късно от таб „Продукти".
+        Магазинът „{shop.name}“ е създаден! Добави първия продукт от бутона по-долу — или
+        го направи по-късно от таб „Продукти“.
       </p>
       <div className="flex items-center gap-4">
         <Link

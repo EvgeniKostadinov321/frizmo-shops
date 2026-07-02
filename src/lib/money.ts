@@ -16,3 +16,9 @@ const eurFormatter = new Intl.NumberFormat("bg-BG", {
 export function formatPrice(cents: number): string {
   return eurFormatter.format(cents / 100);
 }
+
+/** Центове → стойност за формуляр ("1250" → "12,50"). Обратното на toCents. */
+export function centsToInput(cents: number | null): string {
+  if (cents === null) return "";
+  return (cents / 100).toFixed(2).replace(".", ",");
+}

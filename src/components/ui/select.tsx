@@ -13,6 +13,8 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
   error?: string;
   hint?: string;
+  /** Скрива label-а визуално (остава за screen readers). */
+  hideLabel?: boolean;
 }
 
 export function Select({
@@ -21,6 +23,7 @@ export function Select({
   placeholder,
   error,
   hint,
+  hideLabel = false,
   className = "",
   id,
   ...props
@@ -31,7 +34,10 @@ export function Select({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-sm font-medium text-ink-900">
+      <label
+        htmlFor={inputId}
+        className={hideLabel ? "sr-only" : "text-sm font-medium text-ink-900"}
+      >
         {label}
       </label>
       <div className="relative">
