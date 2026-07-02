@@ -11,7 +11,7 @@ import {
   unpublishShop,
 } from "@/actions/site-settings";
 import { ImageUploader } from "@/components/dashboard/image-uploader";
-import { Badge, Button, Card, Input, Modal, Textarea } from "@/components/ui";
+import { Badge, Button, Card, Drawer, Input, Textarea } from "@/components/ui";
 import { newSection, SECTION_DEFS } from "@/lib/sections";
 import type { SectionType, SiteSettings } from "@/schemas/site-settings";
 import { SectionForm } from "./section-form";
@@ -178,6 +178,9 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
 
           <Card className="flex flex-col gap-3">
             <h2 className="font-bold text-ink-900">Страница „За нас“</h2>
+            <p className="text-sm text-ink-500">
+              Показва се на страница „За нас“ — превключи preview-то на нея, за да я видиш.
+            </p>
             <Textarea
               label="Представяне на бизнеса"
               rows={5}
@@ -211,7 +214,7 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
         categoryOptions={categoryOptions}
       />
 
-      <Modal open={pickerOpen} onClose={() => setPickerOpen(false)} title="Добави секция">
+      <Drawer open={pickerOpen} onClose={() => setPickerOpen(false)} title="Добави секция">
         <div className="grid grid-cols-2 gap-2">
           {(Object.keys(SECTION_DEFS) as SectionType[]).map((type) => (
             <button
@@ -225,7 +228,7 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
             </button>
           ))}
         </div>
-      </Modal>
+      </Drawer>
     </div>
   );
 }

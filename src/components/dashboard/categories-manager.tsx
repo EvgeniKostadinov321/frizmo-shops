@@ -13,9 +13,9 @@ import type { CategoryNode, CategoryWithCount } from "@/db/queries/categories";
 import {
   Button,
   ConfirmDialog,
+  Drawer,
   EmptyState,
   Input,
-  Modal,
   Select,
 } from "@/components/ui";
 
@@ -157,7 +157,7 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
         </div>
       )}
 
-      <Modal
+      <Drawer
         open={editor.mode !== "closed"}
         onClose={() => setEditor({ mode: "closed" })}
         title={editor.mode === "edit" ? "Редактирай категория" : "Нова категория"}
@@ -190,7 +190,7 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
             />
           )}
         </div>
-      </Modal>
+      </Drawer>
 
       <ConfirmDialog
         open={toDelete !== null}

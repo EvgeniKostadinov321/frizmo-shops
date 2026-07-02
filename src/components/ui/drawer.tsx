@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useLatest } from "@/lib/use-latest";
 
-export interface ModalProps {
+export interface DrawerProps {
   open: boolean;
   onClose: () => void;
   title: string;
@@ -12,16 +12,16 @@ export interface ModalProps {
   footer?: ReactNode;
 }
 
-export function Modal({ open, onClose, title, children, footer }: ModalProps) {
+/**
+ * Страничен панел (десктоп: отдясно; мобилно: цял екран).
+ * Затваря се само с ✕ или Escape — кликът извън НЕ затваря (умишлено:
+ * дългите форми се губеха при случаен клик, feedback от 2026-07-03).
+ */
+export function Drawer({ open, onClose, title, children, footer }: DrawerProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useLatest(onClose);
 
-  /*
-   * Зависи САМО от `open`: inline onClose е нова функция при всеки re-render
-   * и ако беше dependency, фокусът щеше да се краде от полетата при всеки
-   * натиснат клавиш (реален бъг от тестването на 2026-07-02).
-   */
   useEffect(() => {
     if (!open) return;
     panelRef.current?.focus();
@@ -34,18 +34,18 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 
   if (!open) return null;
 
-  /* Кликът върху фона НЕ затваря (случайните кликове губеха попълнени форми). */
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div aria-hidden className="absolute inset-0 animate-fade-in bg-ink-900/40" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="max-h-[85vh] w-full animate-fade-in overflow-y-auto rounded-t-card bg-surface-0 p-6 outline-none sm:max-w-lg sm:rounded-card"
+        className="relative flex h-full w-full animate-slide-in-right flex-col bg-surface-0 shadow-xl outline-none sm:max-w-lg"
       >
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 border-b border-surface-200 px-6 py-4">
           <h2 id={titleId} className="text-lg font-bold text-ink-900">
             {title}
           </h2>
@@ -58,8 +58,12 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             ✕
           </button>
         </div>
-        <div>{children}</div>
-        {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        {footer && (
+          <div className="flex justify-end gap-3 border-t border-surface-200 px-6 py-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

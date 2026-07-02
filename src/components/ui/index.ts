@@ -6,6 +6,7 @@ export { Skeleton, SkeletonText } from "./skeleton";
 export { Toaster } from "./toaster";
 export { Checkbox } from "./checkbox";
 export { ConfirmDialog } from "./confirm-dialog";
+export { Drawer } from "./drawer";
 export { EmptyState } from "./empty-state";
 export { Input } from "./input";
 export { LinkButton } from "./link-button";

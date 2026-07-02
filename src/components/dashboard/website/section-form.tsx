@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, Input, Modal, Select, Textarea } from "@/components/ui";
+import { Button, Checkbox, Drawer, Input, Select, Textarea } from "@/components/ui";
 import { ImageUploader } from "@/components/dashboard/image-uploader";
 import { SECTION_DEFS } from "@/lib/sections";
 import { TRUST_BADGE_ICONS, type Section } from "@/schemas/site-settings";
@@ -342,15 +342,13 @@ export function SectionForm({
   }
 
   return (
-    <Modal
+    <Drawer
       open
       onClose={onClose}
       title={SECTION_DEFS[section.type].label}
-      footer={
-        <Button onClick={() => onSave(section)}>Готово</Button>
-      }
+      footer={<Button onClick={() => onSave(section)}>Готово</Button>}
     >
       <div className="flex flex-col gap-4">{fields()}</div>
-    </Modal>
+    </Drawer>
   );
 }
