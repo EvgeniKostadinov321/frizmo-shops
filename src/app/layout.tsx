@@ -11,6 +11,7 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space
 const lora = Lora({ subsets: ["latin", "cyrillic"], variable: "--font-lora" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://frizmo-shops.vercel.app"),
   title: "Frizmo Shops",
   description: "Твоят онлайн магазин. Готов днес. Без програмист.",
   applicationName: "Frizmo Shops",

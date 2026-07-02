@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function register(page: Page, email: string) {
+  /* Cookie банерът покрива бутони — маркираме го като видян */
+  await page.addInitScript(() => window.localStorage.setItem("frizmo-cookie-notice", "1"));
   await page.goto("/auth/register");
   await page.getByLabel("Име и фамилия").fill("Е2Е Търговец");
   await page.getByLabel("Имейл").fill(email);
@@ -53,6 +55,7 @@ test("пълен поръчков цикъл: deal промоция → checkout
   /* ГОСТ: добавя 2 бр → deal цена 30,00 → checkout */
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
+  await guest.addInitScript(() => window.localStorage.setItem("frizmo-cookie-notice", "1"));
   await guest.goto(publicUrl!);
   await guest.getByRole("link", { name: /Козе сирене/ }).first().click();
   await expect(guest.getByText(/Купи 2 бр за общо/)).toBeVisible();

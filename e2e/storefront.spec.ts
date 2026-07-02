@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function register(page: Page, email: string) {
+  /* Cookie банерът покрива бутони — маркираме го като видян */
+  await page.addInitScript(() => window.localStorage.setItem("frizmo-cookie-notice", "1"));
   await page.goto("/auth/register");
   await page.getByLabel("Име и фамилия").fill("Е2Е Търговец");
   await page.getByLabel("Имейл").fill(email);
@@ -72,6 +74,7 @@ test("персонализация → публикуване → публиче
   /* Анонимен посетител: начало → продукт → variant picker → търсене */
   const anon = await browser.newContext();
   const shopPage = await anon.newPage();
+  await shopPage.addInitScript(() => window.localStorage.setItem("frizmo-cookie-notice", "1"));
   await shopPage.goto(publicUrl!);
   await expect(
     shopPage.getByRole("heading", { name: "Добре дошли във витрината" }),

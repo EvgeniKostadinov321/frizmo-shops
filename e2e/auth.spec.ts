@@ -6,7 +6,9 @@ test.describe("Auth поток", () => {
     // При изключено "Confirm email" не се изпраща нищо към адреса.
     const email = `frizmo.e2e+${Date.now()}@gmail.com`;
 
-    await page.goto("/auth/register");
+    /* Cookie банерът покрива бутони — маркираме го като видян */
+  await page.addInitScript(() => window.localStorage.setItem("frizmo-cookie-notice", "1"));
+  await page.goto("/auth/register");
     await page.getByLabel("Име и фамилия").fill("Е2Е Тест");
     await page.getByLabel("Имейл").fill(email);
     await page.getByLabel("Парола").fill("parola123!");
