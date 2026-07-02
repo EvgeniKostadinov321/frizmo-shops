@@ -1,23 +1,30 @@
-"use client"; // useId е hook — компонентът трябва да е client
+"use client";
 
-import { useId, type InputHTMLAttributes } from "react";
+import { useId, type SelectHTMLAttributes } from "react";
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface SelectOption {
+  value: string;
   label: string;
-  error?: string;
-  hint?: string;
-  suffix?: string;
 }
 
-export function Input({
+export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+  label: string;
+  options: SelectOption[];
+  placeholder?: string;
+  error?: string;
+  hint?: string;
+}
+
+export function Select({
   label,
+  options,
+  placeholder,
   error,
   hint,
-  suffix,
   className = "",
   id,
   ...props
-}: InputProps) {
+}: SelectProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const describedBy = error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined;
@@ -28,29 +35,33 @@ export function Input({
         {label}
       </label>
       <div className="relative">
-        <input
+        <select
           id={inputId}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={describedBy}
           className={
-            "h-11 w-full rounded-control border bg-surface-0 px-3 text-ink-900 transition-colors " +
-            "placeholder:text-ink-500 focus:outline-2 focus:outline-offset-1 " +
-            (suffix ? "pr-9 " : "") +
+            "h-11 w-full appearance-none rounded-control border bg-surface-0 pl-3 pr-10 text-ink-900 transition-colors " +
+            "focus:outline-2 focus:outline-offset-1 " +
             (error
               ? "border-danger-600 focus:outline-danger-600 "
               : "border-surface-300 focus:outline-brand-600 ") +
             className
           }
           {...props}
-        />
-        {suffix && (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-500"
-          >
-            {suffix}
-          </span>
-        )}
+        >
+          {placeholder !== undefined && <option value="">{placeholder}</option>}
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500"
+        >
+          ▾
+        </span>
       </div>
       {hint && !error && (
         <p id={`${inputId}-hint`} className="text-sm text-ink-500">{hint}</p>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ensureProfile, requireUser } from "@/lib/auth";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { Toaster } from "@/components/dashboard/toaster";
 
 export default async function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default async function DashboardLayout({
         <SignOutButton />
       </header>
       <main className="mx-auto max-w-5xl p-4 md:p-6">{children}</main>
+      <Toaster />
     </div>
   );
 }

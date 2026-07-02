@@ -1,5 +1,13 @@
 export { Badge } from "./badge";
 export { Button } from "./button";
 export { Card } from "./card";
+export { Checkbox } from "./checkbox";
+export { ConfirmDialog } from "./confirm-dialog";
+export { EmptyState } from "./empty-state";
 export { Input } from "./input";
+export { Modal } from "./modal";
+export { PriceInput } from "./price-input";
+export { Select } from "./select";
 export { Spinner } from "./spinner";
+export { Table, TBody, TCell, TH, THead, TRow } from "./table";
+export { Textarea } from "./textarea";
