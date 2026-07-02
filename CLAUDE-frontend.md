@@ -2,7 +2,7 @@
 
 ## Стилизация — две нива, нула хардкоднати стойности
 
-1. **Платформена тема** (landing, каталог, dashboard): всички стойности живеят в `src/styles/tokens.css` (Tailwind 4 `@theme`) — цветове (`brand-*`, `ink-*`, `surface-*`, `danger/success/warning-*`), радиуси (`radius-control`, `radius-card`), шрифт (`--font-inter`). Компонентите използват само токен-утилити (`bg-brand-600`, `rounded-card`). Нов цвят/размер = нов токен, никога inline hex/px.
+1. **Платформена тема** (landing, каталог, dashboard): всички стойности живеят в `src/styles/tokens.css` (Tailwind 4 `@theme`) — цветове (`brand-*`, `ink-*`, `surface-*`, `danger/success/warning-*`), радиуси (`radius-control`, `radius-card`), шрифт (`--font-inter`). Компонентите използват само токен-утилити (`bg-brand-600`, `rounded-card`). Нов цвят/размер = нов токен, никога inline hex/px. **Dark mode = предефинирани токени под `[data-theme="dark"]` в tokens.css — НИКОГА `dark:` варианти в компоненти** (ADR: docs/decisions/2026-07-03-dark-mode.md); нов цветови токен винаги получава и dark стойност.
 2. **Тема на магазина** (storefront `/s/{slug}`): персонализацията от `site_settings` се излива като CSS variables на `<html>` на магазина. Storefront компонентите четат **само** тези променливи — един компонент рендерира всички теми (`classic`, `modern`, `warm`).
 
 ## Компонентна библиотека — `src/components/ui/`

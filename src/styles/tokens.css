@@ -32,3 +32,31 @@
   /* Типография */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
+
+/*
+ * DARK MODE (виж docs/decisions/2026-07-03-dark-mode.md).
+ * Активира се с data-theme="dark" на <html>; toggle-ът идва с визуалния pass.
+ * Компонентите НЕ се променят — само тези стойности. Никакви dark: варианти!
+ */
+[data-theme="dark"] {
+  --color-brand-50: #12261c;
+  --color-brand-100: #17362a;
+  --color-brand-500: #2eb877;
+  --color-brand-600: #34c983;
+  --color-brand-700: #5ad79c;
+
+  --color-ink-900: #eef3f0;
+  --color-ink-700: #c2cdc7;
+  --color-ink-500: #8d9a93;
+
+  --color-surface-0: #171c19;
+  --color-surface-50: #101412;
+  --color-surface-100: #1e2420;
+  --color-surface-200: #2a322d;
+  --color-surface-300: #3a453f;
+
+  --color-danger-600: #e05b5b;
+  --color-danger-700: #e87a7a;
+  --color-success-600: #34c983;
+  --color-warning-600: #e0a53f;
+}
