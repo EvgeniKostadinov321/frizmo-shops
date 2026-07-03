@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { savePushSubscription } from "@/actions/push";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, Icon } from "@/components/ui";
 
 type PushState = "unsupported" | "ios-needs-install" | "prompt" | "granted" | "denied";
 
@@ -90,7 +90,10 @@ export function PushBanner() {
   return (
     <Card className="mb-4 flex flex-col gap-3 border-brand-500 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="font-medium text-ink-900">🔔 Известия за нови поръчки</p>
+        <p className="flex items-center gap-1.5 font-medium text-ink-900">
+          <Icon name="bell" size={16} className="text-brand-600" />
+          Известия за нови поръчки
+        </p>
         <p className="text-sm text-ink-700">
           {state === "ios-needs-install"
             ? "На iPhone: добави приложението на началния екран (Сподели → Добави към Начален екран), после активирай известията оттук."

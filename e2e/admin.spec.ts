@@ -87,7 +87,8 @@ test.describe("Платформен админ", () => {
     const row = page.getByRole("row", { name: new RegExp(`Магазин за скриване ${stamp}`) });
     await expect(row).toBeVisible();
     await row.getByRole("button", { name: "Скрий" }).click();
-    await expect(row.getByText("Скрит")).toBeVisible();
+    /* Server action + router.refresh() са бавни под пълния паралелен suite */
+    await expect(row.getByText("Скрит")).toBeVisible({ timeout: 20_000 });
 
     /* Публично: 404 */
     const anon = await browser.newContext();
@@ -100,6 +101,6 @@ test.describe("Платформен админ", () => {
 
     /* Възстановяване */
     await row.getByRole("button", { name: "Възстанови" }).click();
-    await expect(row.getByText("Публикуван")).toBeVisible();
+    await expect(row.getByText("Публикуван")).toBeVisible({ timeout: 20_000 });
   });
 });

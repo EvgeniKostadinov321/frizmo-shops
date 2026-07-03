@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Logo } from "@/components/ui";
 import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { PushBanner } from "@/components/dashboard/push-banner";
@@ -16,9 +16,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen">
       <header className="flex h-16 items-center justify-between border-b border-surface-200 bg-surface-0 px-4 md:px-6">
-        <Link href="/dashboard" className="text-lg font-bold text-brand-600">
-          Frizmo Shops
-        </Link>
+        <Logo href="/dashboard" size={28} />
         <div className="flex items-center gap-2">
           {shop && <span className="hidden text-sm text-ink-500 sm:block">{shop.name}</span>}
           <ThemeToggle />

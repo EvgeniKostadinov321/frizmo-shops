@@ -1,0 +1,92 @@
+/*
+ * Вътрешен SVG icon set (Lucide-стил: 24px viewBox, stroke 2, round caps).
+ * Заменя емоджитата в платформения UI — острота на всеки екран,
+ * оцветява се с currentColor и работи в light/dark без промяна.
+ */
+const ICON_PATHS = {
+  /* Чат балон — поръчки из съобщенията */
+  "message-circle": ["M7.9 20A9 9 0 1 0 4 16.1L2 22Z"],
+  /* Снимка/изображение */
+  image: [
+    "M18 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3Z",
+    "M9 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z",
+    "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21",
+  ],
+  /* Търсене */
+  search: ["M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z", "m21 21-4.35-4.35"],
+  /* Палитра — дизайн/теми */
+  palette: [
+    "M12 22a10 10 0 1 1 10-10c0 2.5-1.5 4-4 4h-2.6a2 2 0 0 0-1.6 3.2l.4.53A1.4 1.4 0 0 1 13.1 22Z",
+    "M7.5 11.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
+    "M11.5 7.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
+    "M16.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
+  ],
+  /* Камбанка — известия */
+  bell: [
+    "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9",
+    "M10.3 21a1.94 1.94 0 0 0 3.4 0",
+  ],
+  /* Ръст — статистика/видимост */
+  "trending-up": ["M22 7 13.5 15.5 8.5 10.5 2 17", "M16 7h6v6"],
+  /* Отметка */
+  check: ["M20 6 9 17l-5-5"],
+  /* Стрелка надолу (FAQ, селекти) */
+  "chevron-down": ["m6 9 6 6 6-6"],
+  /* Витрина — брандът на Frizmo Shops */
+  store: [
+    "m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7",
+    "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8",
+    "M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4",
+    "M2 7h20",
+    "M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7",
+  ],
+  /* Ракета — бърз старт */
+  rocket: [
+    "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z",
+    "m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z",
+    "M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0",
+    "M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5",
+  ],
+} as const;
+
+export type IconName = keyof typeof ICON_PATHS;
+
+type IconProps = {
+  name: IconName;
+  /** Размер в px (ширина = височина). По подразбиране 24. */
+  size?: number;
+  className?: string;
+};
+
+export function Icon({ name, size = 24, className }: IconProps) {
+  return (
+    <svg
+      aria-hidden
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {ICON_PATHS[name].map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}
+
+/** Мини знаме на България (SVG — рендерира се еднакво на всички OS, за разлика от 🇧🇬). */
+export function FlagBg({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 14" className={className}>
+      <rect width="20" height="14" rx="2" fill="#ffffff" />
+      <path d="M0 4.67h20v4.66H0Z" fill="#00966e" />
+      <path d="M0 9.33h20V12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2Z" fill="#d62612" />
+      <rect width="20" height="14" rx="2" fill="none" stroke="rgba(0,0,0,.15)" strokeWidth="1" />
+    </svg>
+  );
+}

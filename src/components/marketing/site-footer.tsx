@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { FlagBg, Logo } from "@/components/ui";
 
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-surface-200 bg-surface-0">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3">
         <div>
-          <p className="font-bold text-ink-900">Frizmo Shops</p>
-          <p className="mt-2 text-sm text-ink-500">
+          <Logo size={28} />
+          <p className="mt-3 text-sm text-ink-500">
             Платформата, с която всеки български бизнес създава свой онлайн магазин — бързо,
             лесно и без програмист.
           </p>
@@ -28,8 +29,9 @@ export function SiteFooter() {
           </ul>
         </nav>
       </div>
-      <div className="border-t border-surface-100 py-4 text-center text-xs text-ink-500">
-        © {new Date().getFullYear()} Frizmo Shops · Създадено в България 🇧🇬
+      <div className="flex items-center justify-center gap-1.5 border-t border-surface-100 py-4 text-xs text-ink-500">
+        © {new Date().getFullYear()} Frizmo Shops · Създадено в България
+        <FlagBg className="h-3 w-auto" />
       </div>
     </footer>
   );

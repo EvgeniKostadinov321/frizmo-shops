@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import { inArray } from "drizzle-orm";
 import Link from "next/link";
 import { BrowserMockup } from "@/components/marketing/browser-mockup";
+import {
+  OrderNotificationMockup,
+  ThemeEditorMockup,
+  VisibilityMockup,
+} from "@/components/marketing/feature-mockups";
 import { ShopCard } from "@/components/marketing/shop-card";
-import { Badge, LinkButton } from "@/components/ui";
+import { Badge, FlagBg, Icon, type IconName, LinkButton } from "@/components/ui";
 import { db, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
@@ -14,19 +19,19 @@ export const metadata: Metadata = {
     "Създай собствен онлайн магазин за минути: продукти, поръчки, персонализиран дизайн и видимост в каталога. 14 дни безплатно.",
 };
 
-const PAINS = [
+const PAINS: { icon: IconName; title: string; text: string }[] = [
   {
-    icon: "💬",
+    icon: "message-circle",
     title: "Поръчки из съобщенията",
     text: "Facebook, Viber, Instagram... поръчките се губят между чатовете, а ти пишеш едно и също по 20 пъти на ден.",
   },
   {
-    icon: "📸",
+    icon: "image",
     title: "Продуктите нямат дом",
     text: "Снимките потъват във feed-а за един ден. Няма цени, няма наличности, няма място, което да е ТВОЕ.",
   },
   {
-    icon: "🔍",
+    icon: "search",
     title: "Никой не те намира",
     text: "Без собствен сайт те няма в Google. Клиентите намират конкурентите, които са онлайн.",
   },
@@ -38,21 +43,24 @@ const STEPS = [
   { number: "3", title: "Публикувай", text: "Избери дизайн, натисни „Публикувай“ и сподели линка. Клиентите поръчват веднага." },
 ];
 
-const FEATURES = [
+const FEATURES: { icon: IconName; title: string; text: string; mockup: React.ReactNode }[] = [
   {
-    icon: "🎨",
+    icon: "palette",
     title: "Магазин, който изглежда като теб",
     text: "Теми, твоите цветове, твоето лого, подреждаеми секции — „за нас“, отзиви, галерия, промо банери. Личи си, че е твое, без ред код.",
+    mockup: <ThemeEditorMockup />,
   },
   {
-    icon: "🔔",
+    icon: "bell",
     title: "Поръчките идват при теб",
     text: "Нова поръчка? Известие на телефона и имейл за секунди. Потвърждаваш, изпращаш, завършваш — наличностите се следят сами.",
+    mockup: <OrderNotificationMockup />,
   },
   {
-    icon: "📈",
+    icon: "trending-up",
     title: "Видимост от първия ден",
     text: "Магазинът ти е в каталога на Frizmo Shops и се индексира от Google. Клиентите те намират — не обратното.",
+    mockup: <VisibilityMockup />,
   },
 ];
 
@@ -89,7 +97,10 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
         <div className="flex flex-col items-start gap-5">
-          <Badge tone="brand">🇧🇬 Създадено за българския пазар</Badge>
+          <Badge tone="brand">
+            <FlagBg className="mr-1.5 inline-block h-3 w-auto" />
+            Създадено за българския пазар
+          </Badge>
           <h1 className="text-4xl font-bold leading-tight text-ink-900 sm:text-5xl">
             Твоят онлайн магазин.
             <br />
@@ -123,9 +134,9 @@ export default async function LandingPage() {
           <p className="mt-2 text-center text-ink-500">Знаем как изглежда денят ти.</p>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {PAINS.map((pain) => (
-              <div key={pain.title} className="flex flex-col gap-2">
-                <span aria-hidden className="text-3xl">
-                  {pain.icon}
+              <div key={pain.title} className="flex flex-col gap-3">
+                <span className="flex size-11 items-center justify-center rounded-control bg-brand-100 text-brand-700">
+                  <Icon name={pain.icon} size={22} />
                 </span>
                 <h3 className="font-bold text-ink-900">{pain.title}</h3>
                 <p className="text-sm text-ink-700">{pain.text}</p>
@@ -176,25 +187,15 @@ export default async function LandingPage() {
       {/* Функции */}
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-16">
         {FEATURES.map((feature, i) => (
-          <div
-            key={feature.title}
-            className={`grid items-center gap-8 md:grid-cols-2 ${i % 2 ? "" : ""}`}
-          >
+          <div key={feature.title} className="grid items-center gap-8 md:grid-cols-2">
             <div className={`flex flex-col gap-3 ${i % 2 ? "md:order-2" : ""}`}>
-              <span aria-hidden className="text-4xl">
-                {feature.icon}
+              <span className="flex size-11 items-center justify-center rounded-control bg-brand-100 text-brand-700">
+                <Icon name={feature.icon} size={22} />
               </span>
               <h3 className="text-2xl font-bold text-ink-900">{feature.title}</h3>
               <p className="text-ink-700">{feature.text}</p>
             </div>
-            <div
-              className={`flex h-48 items-center justify-center rounded-card border border-surface-200 bg-gradient-to-br from-surface-50 to-brand-50 text-6xl ${
-                i % 2 ? "md:order-1" : ""
-              }`}
-              aria-hidden
-            >
-              {feature.icon}
-            </div>
+            <div className={i % 2 ? "md:order-1" : ""}>{feature.mockup}</div>
           </div>
         ))}
       </section>
@@ -224,9 +225,7 @@ export default async function LandingPage() {
                 <ul className="flex flex-col gap-2 text-sm text-ink-700">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-2">
-                      <span aria-hidden className="text-success-600">
-                        ✓
-                      </span>
+                      <Icon name="check" size={16} className="shrink-0 text-success-600" />
                       {f}
                     </li>
                   ))}
@@ -255,9 +254,11 @@ export default async function LandingPage() {
             >
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 font-medium text-ink-900">
                 {item.q}
-                <span aria-hidden className="text-ink-500 transition-transform group-open:rotate-180">
-                  ▾
-                </span>
+                <Icon
+                  name="chevron-down"
+                  size={18}
+                  className="shrink-0 text-ink-500 transition-transform group-open:rotate-180"
+                />
               </summary>
               <p className="pt-2 text-sm text-ink-700">{item.a}</p>
             </details>
@@ -265,18 +266,18 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Финален CTA */}
-      <section className="bg-brand-600">
-        <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-5 px-4 py-16 text-center">
-          <h2 className="text-3xl font-bold text-white">
+      {/* Финален CTA — brand-surface: дълбоко зелено и в двата режима, без неон */}
+      <section className="bg-linear-to-br from-brand-surface to-brand-surface-deep">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-5 px-4 py-20 text-center">
+          <h2 className="text-3xl font-bold text-brand-surface-ink">
             Първата ти поръчка е по-близо, отколкото мислиш.
           </h2>
-          <p className="max-w-xl text-white/90">
+          <p className="max-w-xl text-brand-surface-muted">
             Регистрирай се за 2 минути. Ако не ти хареса — просто спираш. {TRIAL_NOTE}
           </p>
           <Link
             href="/auth/register"
-            className="inline-flex h-12 items-center rounded-control bg-white px-6 text-base font-bold text-brand-700 transition-opacity hover:opacity-90"
+            className="inline-flex h-12 items-center rounded-control bg-brand-surface-ink px-6 text-base font-bold text-brand-surface shadow-lg transition-opacity hover:opacity-90"
           >
             Създай магазина си сега
           </Link>

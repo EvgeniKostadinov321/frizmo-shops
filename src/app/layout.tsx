@@ -31,6 +31,8 @@ export default function RootLayout({
     <html
       lang="bg"
       className={`${inter.variable} ${spaceGrotesk.variable} ${lora.variable} h-full antialiased`}
+      /* data-theme се слага от anti-FOUC скрипта преди хидратацията */
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
         {/* Anti-FOUC: прилага dark темата преди първото рисуване (ADR dark-mode) */}

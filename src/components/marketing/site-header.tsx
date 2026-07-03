@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LinkButton } from "@/components/ui";
+import { LinkButton, Logo } from "@/components/ui";
 
 const nav = [
   { href: "/shops", label: "Магазини" },
@@ -12,15 +12,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-surface-200 bg-surface-0/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span
-            aria-hidden
-            className="flex size-8 items-center justify-center rounded-control bg-brand-600 text-sm font-bold text-white"
-          >
-            FS
-          </span>
-          <span className="text-lg font-bold text-ink-900">Frizmo Shops</span>
-        </Link>
+        <Logo className="shrink-0" />
 
         <nav aria-label="Основна навигация" className="flex items-center gap-1 overflow-x-auto">
           {nav.map((item) => (
