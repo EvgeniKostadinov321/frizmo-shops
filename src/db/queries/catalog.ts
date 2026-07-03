@@ -9,6 +9,7 @@ import {
   isNotNull,
   not,
   or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { db, products, shops, type Product, type Shop } from "@/db";
@@ -96,16 +97,38 @@ export interface CatalogProduct extends Product {
   shopSlug: string;
 }
 
+export const PRODUCT_SORTS = ["newest", "price-asc", "price-desc", "name"] as const;
+export type ProductSort = (typeof PRODUCT_SORTS)[number];
+
 export interface CatalogProductFilters {
   search?: string;
   category?: string;
   promoOnly?: boolean;
   page?: number;
+  sort?: ProductSort;
 }
+
+/** Цена за подредба: промо цената, ако има, иначе редовната. */
+const PRODUCT_EFFECTIVE_PRICE = sql<number>`coalesce(${products.promoPriceCents}, ${products.priceCents})`;
+
+const PRODUCT_ORDER: Record<ProductSort, SQL[]> = {
+  newest: [desc(products.createdAt)],
+  "price-asc": [asc(PRODUCT_EFFECTIVE_PRICE)],
+  "price-desc": [desc(PRODUCT_EFFECTIVE_PRICE)],
+  name: [asc(products.name)],
+};
 
 export async function searchCatalogProducts(filters: CatalogProductFilters = {}) {
   const page = Math.max(1, filters.page ?? 1);
-  const conditions: SQL[] = [eq(shops.status, "published"), eq(products.status, "active")];
+  const sort: ProductSort =
+    filters.sort && PRODUCT_SORTS.includes(filters.sort) ? filters.sort : "newest";
+  const conditions: SQL[] = [
+    eq(shops.status, "published"),
+    eq(products.status, "active"),
+    /* Скрий продуктите на тестови магазини от публичния каталог */
+    not(ilike(shops.slug, "test-%")),
+    not(ilike(shops.slug, "тест-%")),
+  ];
   if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));
   if (filters.category) conditions.push(eq(shops.businessCategory, filters.category));
   if (filters.promoOnly) conditions.push(isNotNull(products.promoPriceCents));
@@ -117,7 +140,7 @@ export async function searchCatalogProducts(filters: CatalogProductFilters = {})
       .from(products)
       .innerJoin(shops, eq(products.shopId, shops.id))
       .where(where)
-      .orderBy(desc(products.createdAt))
+      .orderBy(...PRODUCT_ORDER[sort])
       .limit(CATALOG_PAGE_SIZE)
       .offset((page - 1) * CATALOG_PAGE_SIZE),
     db
@@ -133,7 +156,7 @@ export async function searchCatalogProducts(filters: CatalogProductFilters = {})
     shopSlug: r.shopSlug,
   }));
 
-  return { items, total: total?.value ?? 0, page, pageSize: CATALOG_PAGE_SIZE };
+  return { items, total: total?.value ?? 0, page, pageSize: CATALOG_PAGE_SIZE, sort };
 }
 
 /** Градовете на публикуваните магазини — за филтъра. */

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Icon } from "@/components/ui";
 import type { CatalogProduct } from "@/db/queries/catalog";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
@@ -21,8 +22,8 @@ export function CatalogProductCard({ product }: { product: CatalogProduct }) {
             className="object-cover transition-transform group-hover:scale-105"
           />
         ) : (
-          <span className="flex size-full items-center justify-center text-4xl" aria-hidden>
-            📦
+          <span className="flex size-full items-center justify-center text-surface-300">
+            <Icon name="image" size={40} />
           </span>
         )}
         {product.promoPriceCents !== null && (
