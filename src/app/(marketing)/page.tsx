@@ -9,6 +9,7 @@ import {
 } from "@/components/marketing/feature-mockups";
 import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
+import { PainCard, type PainVisual } from "@/components/marketing/pain-card";
 import { Reveal } from "@/components/marketing/reveal";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { RevealList } from "@/components/marketing/reveal-list";
@@ -27,21 +28,24 @@ export const metadata: Metadata = {
     "Истински онлайн магазин със собствен адрес за минути: продукти, поръчки, наличности и видимост в Google. Без комисиона от продажбите. 30 дни безплатно.",
 };
 
-const PAINS: { icon: IconName; title: string; text: string }[] = [
+const PAINS: { icon: IconName; title: string; text: string; visual: PainVisual }[] = [
   {
     icon: "message-circle",
     title: "Поръчки из съобщенията",
     text: "Facebook, Viber, Instagram... поръчките се губят между чатовете, а ти пишеш едно и също по 20 пъти на ден.",
+    visual: "chats",
   },
   {
     icon: "image",
     title: "Продуктите нямат дом",
     text: "Снимките потъват във feed-а за един ден. Няма цени, няма наличности, няма място, което да е ТВОЕ.",
+    visual: "feed",
   },
   {
     icon: "search",
     title: "Никой не те намира",
     text: "Без собствен сайт те няма в Google. Клиентите намират конкурентите, които са онлайн.",
+    visual: "search",
   },
 ];
 
@@ -227,21 +231,28 @@ export default async function LandingPage() {
       </section>
 
 
-      {/* Болката — по-дълбока хартия */}
+      {/* Болката — по-дълбока хартия, истински карти с мини визуализации */}
       <section className="bg-surface-100/60">
         <div className="mx-auto w-full max-w-7xl px-4 py-24">
-          <Kicker>Познато ли ти е</Kicker>
-          <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
-            Продаваш през Facebook и Viber?
-          </h2>
-          <p className="mt-3 text-lg text-ink-500">Знаем как изглежда денят ти.</p>
-          <RevealList className="mt-14 grid gap-x-10 gap-y-12 md:grid-cols-3">
+          <div className="max-w-2xl">
+            <Kicker>Познато ли ти е</Kicker>
+            <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-balance text-ink-900 sm:text-5xl">
+              Продаваш през Facebook и Viber?
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-ink-700">
+              Всеки ден едни и същи въпроси в чата, изгубени поръчки и продукти, които
+              никой не намира. Има по-добър начин.
+            </p>
+          </div>
+          <RevealList className="mt-14 grid gap-6 md:grid-cols-3" stagger={0.08}>
             {PAINS.map((pain) => (
-              <div key={pain.title} className="flex flex-col gap-4 border-t border-surface-200 pt-6">
-                  <SpringIconBadge name={pain.icon} />
-                  <h3 className="text-lg font-bold text-ink-900">{pain.title}</h3>
-                  <p className="text-[15px] leading-relaxed text-ink-700">{pain.text}</p>
-              </div>
+              <PainCard
+                key={pain.title}
+                icon={pain.icon}
+                title={pain.title}
+                text={pain.text}
+                visual={pain.visual}
+              />
             ))}
           </RevealList>
         </div>
