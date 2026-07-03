@@ -50,9 +50,11 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 px-3 pt-3">
       <div
         className={`mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full px-4 transition-all duration-300 ${
-          scrolled || menuOpen
-            ? "border border-surface-200 bg-surface-0/90 shadow-card backdrop-blur"
-            : "border border-transparent"
+          menuOpen
+            ? "border border-surface-200 bg-surface-0 shadow-card"
+            : scrolled
+              ? "border border-surface-200 bg-surface-0/90 shadow-card backdrop-blur"
+              : "border border-transparent"
         }`}
       >
         <Logo className="shrink-0" />
@@ -93,15 +95,16 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {/* Mobile пълноекранен overlay */}
+      {/* Mobile пълноекранен overlay — плътен фон до ръба (без прозиране на сайта отзад).
+          Стои под pill-а (z-30 < header z-40), затова започва под него с pt. */}
       {menuOpen && (
         <div
           id="mobile-nav"
-          className="fixed inset-0 top-19 z-40 animate-fade-in bg-surface-50/95 backdrop-blur md:hidden"
+          className="fixed inset-0 z-30 animate-fade-in bg-surface-50 px-3 pt-20 md:hidden"
         >
           <nav
             aria-label="Мобилна навигация"
-            className="mx-auto flex max-w-7xl flex-col gap-1 px-6 pt-6"
+            className="mx-auto flex max-w-7xl flex-col gap-1 px-3 pt-4"
           >
             {nav.map((item) => (
               <Link
