@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Frizmo Shops",
     short_name: "Frizmo Shops",
     description: "Твоят онлайн магазин. Готов днес. Без програмист.",
-    start_url: "/dashboard",
+    start_url: "/",
     display: "standalone",
     orientation: "portrait",
     lang: "bg",

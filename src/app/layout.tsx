@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Lora, Onest, Sofia_Sans, Sofia_Sans_Condensed, Space_Grotesk } from "next/font/google";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { CookieConsent } from "@/components/ui/cookie-consent";
 import { Toaster } from "@/components/ui/toaster";
 import { BRAND_THEME_COLOR } from "@/lib/brand";
@@ -58,6 +59,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <CookieConsent />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
