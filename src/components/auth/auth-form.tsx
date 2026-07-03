@@ -29,27 +29,53 @@ export function AuthForm({ mode, action }: AuthFormProps) {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Ляво: формата */}
-      <main className="relative flex flex-col items-center justify-center px-6 py-10 sm:px-10">
+      {/* Ляво: формата. PWA — падингите уважават safe areas (notch/home indicator). */}
+      <main
+        className="relative flex flex-col items-center justify-center px-6 py-8 sm:px-10"
+        style={{
+          paddingTop: "max(2rem, env(safe-area-inset-top))",
+          paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
+        }}
+      >
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[image:var(--gradient-hero-glow)]"
         />
-        <div className="relative flex w-full max-w-md flex-col gap-6">
-          <Logo href="/" />
+        <div className="relative flex w-full max-w-md flex-col gap-7">
+          {/* Лого — центрирано на мобилно, ляво на desktop */}
+          <div className="flex justify-center lg:justify-start">
+            <Logo href="/" />
+          </div>
 
-          {/* Маскот — видим само на мобилно (панелът вдясно го поема на desktop) */}
-          <Image
-            src={beeSrc}
-            alt=""
-            aria-hidden
-            width={200}
-            height={200}
-            priority
-            className="-mb-2 h-24 w-24 select-none lg:hidden"
-          />
+          {/* Мобилен hero блок: едра центрирана пчела + заглавие (панелът поема
+              това на desktop). Центрирането разтоварва „натрупания" вид. */}
+          <div className="flex flex-col items-center gap-4 text-center lg:hidden">
+            <Image
+              src={beeSrc}
+              alt=""
+              aria-hidden
+              width={320}
+              height={320}
+              priority
+              className="h-40 w-40 select-none drop-shadow-[0_12px_28px_rgba(28,36,32,0.18)] transition-transform duration-300"
+            />
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
+                {isRegister ? "Нов магазин" : "Добре дошъл"}
+              </p>
+              <h1 className="text-balance font-display text-4xl font-extrabold tracking-tight text-ink-900">
+                {isRegister ? "Създай профил" : "Влез в профила си"}
+              </h1>
+              <p className="max-w-xs text-pretty text-ink-500">
+                {isRegister
+                  ? "Няколко полета и си готов да продаваш. Без карта, без договори."
+                  : "Радваме се да те видим отново."}
+              </p>
+            </div>
+          </div>
 
-          <div className="flex flex-col gap-2">
+          {/* Desktop заглавен блок (ляво-подравнен; пчелата е в панела вдясно) */}
+          <div className="hidden flex-col gap-2 lg:flex">
             <p className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
               <span className="shrink-0">
                 {isRegister ? "Нов магазин" : "Добре дошъл"}

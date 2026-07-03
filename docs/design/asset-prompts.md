@@ -70,6 +70,15 @@ calm, premium and charming — NOT childish, NOT neon, NOT cartoon-loud."
 **Финес:** remove background за прозрачен PNG в UI; upscale при нужда; финалните
 файлове се оптимизират (WebP/PNG) преди качване в `public/`.
 
+**Видео поза (dashboard welcome медальон):** Kling 2.5 image→video, master пчелата
+като start keyframe, промпт за плавно махане + леко hovering, тялото стабилно.
+Суровото видео (~9MB) се обработва с ffmpeg: изрязва се чист участък (`-ss 0.3
+-to 4.54`), сваля се до 480px/25fps, export WebM (VP9) + MP4 (H.264 faststart) —
+~90–150KB. Ползва се нативен `loop` (участъкът е достатъчно близък в началото/края).
+Отхвърлени подходи: frame-by-frame от кадри (трепти, кадрите не са подравнени);
+crossfade loop (размазва прехода). Видео моделите нямат alpha → нужен е кръгъл
+маскиращ контейнер (`bee-medallion.tsx`), който крие крем фона.
+
 ## Ambient видео (R6.5, отложено)
 
 Ако/когато се произведе: 6–8s loop, без звук, AV1/H.265, ≤1.5MB, `poster`

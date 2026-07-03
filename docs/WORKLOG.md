@@ -20,6 +20,9 @@
    pnpm install
    pnpm dev        # http://localhost:3000
    ```
+   **По желание — само ако ще пипаш маскот видеата:** `brew install ffmpeg` (не идва с
+   `pnpm install`; нужен за обработка на пчела видеата — виж `docs/design/mascot-progress.md`).
+   Готовите видео асети (`public/bee-wave.webm/.mp4`) са в git — ffmpeg трябва само за нови.
 4. **НЕ пускай** `pnpm db:push` / seed скриптовете — Supabase базата е **облачна и обща**; от новата машина се свързваш към същата база. Setup-скриптовете (`setup-storage.mjs`, `setup-search.mjs`, `seed-demo-shops.mjs`) са еднократни и вече са изпълнени.
 5. **Gate преди всеки commit:** `pnpm check` (lint + unit + build).
 
@@ -77,6 +80,15 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-04** — **Dashboard welcome + видео пчела + onboarding редизайн** (продължение
+  на маскота). Празното табло → „момент на посрещане" (пчела + 3-стъпкова карта + CTA).
+  Пчелата е видео loop в кръгъл медальон (Kling image→video, обработено с ffmpeg до
+  ~90–150KB WebM/MP4). Onboarding редизайниран (маскот-водач + editorial progress).
+  Всичко в light+dark, e2e селектори пазени. **Изисква ffmpeg** (инсталиран локално през
+  brew — нужен и за бъдещи маскот видеа). Детайли: `docs/design/mascot-progress.md`.
+  ⚠️ Ново решение: маскот видео пайплайн (Kling → ffmpeg изрязване → нативен loop);
+  frame-by-frame и crossfade подходите отхвърлени. **НЕ commit-нато още.**
 
 - **2026-07-04** — **Брандов маскот + auth редизайн.** Създаден маскот: clay пчела
   (идея „работлив като пчела" + занаятчийско ателие), теракота палитра, за системна

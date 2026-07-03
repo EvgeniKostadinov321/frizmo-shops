@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Badge, Card, EmptyState, LinkButton } from "@/components/ui";
+import { Badge, Card, LinkButton } from "@/components/ui";
+import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { countCategories } from "@/db/queries/categories";
 import { countNewOrders, getMonthRevenue } from "@/db/queries/orders";
 import { countProducts } from "@/db/queries/products";
@@ -12,18 +13,7 @@ export default async function DashboardPage() {
   const { shop } = await getOwnShop();
 
   if (!shop) {
-    return (
-      <EmptyState
-        icon="🏪"
-        title="Създай магазина си за 2 минути"
-        description="Име, категория и първи продукт — това е всичко, за да започнеш."
-        action={
-          <LinkButton size="lg" href="/dashboard/onboarding">
-            Създай магазин
-          </LinkButton>
-        }
-      />
-    );
+    return <DashboardWelcome />;
   }
 
   const [productCount, categoryCount, newOrders, monthRevenue] = await Promise.all([
