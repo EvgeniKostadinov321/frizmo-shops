@@ -8,6 +8,7 @@ import {
 } from "@/components/marketing/feature-mockups";
 import { PhoneMockup } from "@/components/marketing/phone-mockup";
 import { Reveal } from "@/components/marketing/reveal";
+import { NicheMarquee } from "@/components/marketing/niche-marquee";
 import { RevealList } from "@/components/marketing/reveal-list";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { FlagBg, Icon, type IconName } from "@/components/ui";
@@ -195,6 +196,9 @@ export default async function LandingPage() {
           </Reveal>
         </div>
       </section>
+
+      {/* Ниши marquee — социално доказателство (спец §14) */}
+      <NicheMarquee />
 
       {/* Болката — по-дълбока хартия */}
       <section className="bg-surface-100/60">
