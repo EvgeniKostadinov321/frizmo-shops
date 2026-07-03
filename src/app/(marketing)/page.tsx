@@ -10,6 +10,7 @@ import {
 import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { PainCard, type PainVisual } from "@/components/marketing/pain-card";
+import { StepRow, type StepVisual } from "@/components/marketing/step-row";
 import { Reveal } from "@/components/marketing/reveal";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { RevealList } from "@/components/marketing/reveal-list";
@@ -49,26 +50,30 @@ const PAINS: { icon: IconName; title: string; text: string; visual: PainVisual }
   },
 ];
 
-const STEPS = [
+const STEPS: { number: string; title: string; text: string; visual: StepVisual }[] = [
   {
     number: "01",
     title: "Регистрирай се",
     text: "Име на магазина, категория — и си вътре. Без карта, без договори.",
+    visual: "register",
   },
   {
     number: "02",
     title: "Добави продукти",
     text: "Снимки, цени, варианти (размер, цвят, разфасовка) — колкото ти трябват.",
+    visual: "products",
   },
   {
     number: "03",
     title: "Избери визия",
     text: "Теми, твоите цветове, подреждаеми секции. Целият сайт се преоцветява с един клик.",
+    visual: "theme",
   },
   {
     number: "04",
     title: "Публикувай",
     text: "Един клик — и магазинът е на живо. Сподели линка, клиентите поръчват веднага.",
+    visual: "publish",
   },
 ];
 
@@ -258,30 +263,28 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Как работи — editorial номериран списък */}
-      <section className="mx-auto grid w-full max-w-7xl gap-14 px-4 py-24 md:grid-cols-[0.9fr_1.1fr]">
-        <div>
+      {/* Как работи — стъпки с мини-визуализации и свързваща линия за прогрес */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-24">
+        <div className="max-w-2xl">
           <Kicker>Как работи</Kicker>
-          <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
+          <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-balance text-ink-900 sm:text-5xl">
             От нула до първата поръчка.
           </h2>
-          <p className="mt-4 max-w-sm text-lg leading-relaxed text-ink-500">
-            Без код, без дизайнер, без чакане. Четири стъпки — и магазинът ти е на
-            живо на твоя адрес във frizmoshops.bg.
+          <p className="mt-4 text-lg leading-relaxed text-ink-700">
+            Без код, без дизайнер, без чакане. Четири стъпки — и магазинът ти е на живо на
+            твоя адрес във frizmoshops.bg.
           </p>
         </div>
-        <div className="flex flex-col">
+        <div className="mt-14 flex flex-col gap-0 sm:max-w-4xl">
           {STEPS.map((step, i) => (
             <Reveal key={step.number} delay={i * 0.07}>
-              <div className="grid grid-cols-[3.5rem_1fr] gap-5 border-t border-surface-200 py-7 last:pb-0">
-                <span className="font-display text-3xl font-extrabold text-brand-600/70">
-                  {step.number}
-                </span>
-                <div>
-                  <h3 className="text-lg font-bold text-ink-900">{step.title}</h3>
-                  <p className="mt-1.5 leading-relaxed text-ink-700">{step.text}</p>
-                </div>
-              </div>
+              <StepRow
+                number={step.number}
+                title={step.title}
+                text={step.text}
+                visual={step.visual}
+                isLast={i === STEPS.length - 1}
+              />
             </Reveal>
           ))}
         </div>
