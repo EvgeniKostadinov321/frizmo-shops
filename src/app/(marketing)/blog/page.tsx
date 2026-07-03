@@ -40,21 +40,21 @@ export default function BlogPage() {
           >
             <div className="grid gap-0 lg:grid-cols-[1.1fr_1fr]">
               {/* Визуален панел — брандова повърхност вместо празна снимка */}
-              <div className="relative flex min-h-52 flex-col justify-between overflow-hidden bg-brand-surface p-8 lg:min-h-full">
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-surface-ink/12 px-3 py-1 text-xs font-bold text-brand-surface-ink">
+              <div className="relative flex min-h-36 flex-col justify-between overflow-hidden bg-brand-surface p-6 sm:min-h-52 sm:p-8 lg:min-h-full">
+                <span className="relative inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-surface-ink/12 px-3 py-1 text-xs font-bold text-brand-surface-ink">
                   {featured.category}
                 </span>
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -right-8 -bottom-8 text-brand-surface-ink/10"
+                  className="pointer-events-none absolute -right-6 -bottom-6 text-brand-surface-ink/10"
                 >
-                  <Icon name="store" size={160} />
+                  <Icon name="store" size={140} />
                 </span>
-                <p className="relative text-sm font-medium text-brand-surface-muted">
+                <p className="relative mt-4 text-sm font-medium text-brand-surface-muted">
                   Най-нова статия
                 </p>
               </div>
-              <div className="flex flex-col justify-center p-8">
+              <div className="flex flex-col justify-center p-6 sm:p-8">
                 <div className="flex items-center gap-2 text-xs text-ink-500">
                   <time dateTime={featured.date}>{formatPostDate(featured.date)}</time>
                   <span aria-hidden>·</span>
