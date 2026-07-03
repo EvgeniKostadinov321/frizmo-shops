@@ -10,7 +10,7 @@ import {
 import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { PainCard, type PainVisual } from "@/components/marketing/pain-card";
-import { StepRow, type StepVisual } from "@/components/marketing/step-row";
+import { StepCard, type StepVisual } from "@/components/marketing/step-card";
 import { Reveal } from "@/components/marketing/reveal";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { RevealList } from "@/components/marketing/reveal-list";
@@ -275,19 +275,17 @@ export default async function LandingPage() {
             твоя адрес във frizmoshops.bg.
           </p>
         </div>
-        <div className="mt-14 flex flex-col gap-0 sm:max-w-4xl">
-          {STEPS.map((step, i) => (
-            <Reveal key={step.number} delay={i * 0.07}>
-              <StepRow
-                number={step.number}
-                title={step.title}
-                text={step.text}
-                visual={step.visual}
-                isLast={i === STEPS.length - 1}
-              />
-            </Reveal>
+        <RevealList className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
+          {STEPS.map((step) => (
+            <StepCard
+              key={step.number}
+              number={step.number}
+              title={step.title}
+              text={step.text}
+              visual={step.visual}
+            />
           ))}
-        </div>
+        </RevealList>
       </section>
 
       {/* Витрина: живи демо магазини */}
