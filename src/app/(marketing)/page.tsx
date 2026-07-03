@@ -139,7 +139,7 @@ export default async function LandingPage() {
             applicationCategory: "BusinessApplication",
             operatingSystem: "Web",
             description: "Платформа за създаване на онлайн магазини за българския пазар.",
-            offers: { "@type": "Offer", price: "10", priceCurrency: "EUR" },
+            offers: { "@type": "Offer", price: "20", priceCurrency: "EUR" },
           }),
         }}
       />

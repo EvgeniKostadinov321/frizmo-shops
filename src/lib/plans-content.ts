@@ -6,7 +6,7 @@ export const PRICING_PLANS = [
   {
     id: "starter",
     name: "Starter",
-    priceMonthly: "10",
+    priceMonthly: "20",
     description: "За да започнеш да продаваш онлайн — днес.",
     highlighted: false,
     features: [
@@ -21,7 +21,7 @@ export const PRICING_PLANS = [
   {
     id: "pro",
     name: "Pro",
-    priceMonthly: "20",
+    priceMonthly: "35",
     description: "За растящи магазини, които искат повече.",
     highlighted: true,
     features: [
