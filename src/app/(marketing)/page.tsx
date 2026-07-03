@@ -205,7 +205,7 @@ export default async function LandingPage() {
           <p className="mt-3 text-lg text-ink-500">Знаем как изглежда денят ти.</p>
           <div className="mt-14 grid gap-x-10 gap-y-12 md:grid-cols-3">
             {PAINS.map((pain, i) => (
-              <Reveal key={pain.title} delay={i * 90}>
+              <Reveal key={pain.title} delay={i * 0.09}>
                 <div className="flex flex-col gap-4 border-t border-surface-200 pt-6">
                   <span className="flex size-11 items-center justify-center rounded-full bg-surface-0 text-brand-600 shadow-card">
                     <Icon name={pain.icon} size={21} />
@@ -233,7 +233,7 @@ export default async function LandingPage() {
         </div>
         <div className="flex flex-col">
           {STEPS.map((step, i) => (
-            <Reveal key={step.number} delay={i * 70}>
+            <Reveal key={step.number} delay={i * 0.07}>
               <div className="grid grid-cols-[3.5rem_1fr] gap-5 border-t border-surface-200 py-7 last:pb-0">
                 <span className="font-display text-3xl font-extrabold text-brand-600/70">
                   {step.number}
@@ -261,7 +261,7 @@ export default async function LandingPage() {
             </p>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {demoShops.map((shop, i) => (
-                <Reveal key={shop.id} delay={i * 90}>
+                <Reveal key={shop.id} delay={i * 0.09}>
                   <ShopCard shop={shop} />
                 </Reveal>
               ))}
@@ -307,7 +307,7 @@ export default async function LandingPage() {
             {PRICING_PLANS.map((plan, i) => {
               const dark = plan.highlighted;
               return (
-                <Reveal key={plan.id} delay={i * 90}>
+                <Reveal key={plan.id} delay={i * 0.09}>
                   <div
                     className={`flex h-full flex-col gap-6 rounded-card p-8 ${
                       dark
