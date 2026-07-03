@@ -49,7 +49,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3">
       <div
-        className={`mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full px-4 transition-all duration-300 ${
+        className={`relative z-40 mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full px-4 transition-all duration-300 ${
           menuOpen
             ? "border border-surface-200 bg-surface-0 shadow-card"
             : scrolled
