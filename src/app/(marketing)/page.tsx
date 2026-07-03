@@ -9,6 +9,7 @@ import {
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { Reveal } from "@/components/marketing/reveal";
 import { NicheMarquee } from "@/components/marketing/niche-marquee";
+import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { RevealList } from "@/components/marketing/reveal-list";
 import { SpringIconBadge } from "@/components/marketing/spring-icon-badge";
 import { ShopCard } from "@/components/marketing/shop-card";
@@ -317,8 +318,8 @@ export default async function LandingPage() {
             {PRICING_PLANS.map((plan) => {
               const dark = plan.highlighted;
               return (
+                <PricingCardSpotlight key={plan.id}>
                   <div
-                    key={plan.id}
                     className={`flex h-full flex-col gap-6 rounded-card p-8 ${
                       dark
                         ? "bg-linear-to-br from-brand-surface to-brand-surface-deep text-brand-surface-ink [box-shadow:var(--shadow-brand-tint),var(--shadow-float)]"
@@ -373,6 +374,7 @@ export default async function LandingPage() {
                       Започни безплатно
                     </Link>
                   </div>
+                </PricingCardSpotlight>
               );
             })}
           </RevealList>
