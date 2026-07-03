@@ -1,95 +1,103 @@
 /*
  * Единственото място за дизайн стойности. Компонентите използват само токени.
- * Дизайн език „Пазарен ден" (2026-07-03): топла ленена хартия, зелено-черно
- * мастило, дълбоко зелено като единствен акцент, ember градиент само в hero H1.
+ * Дизайн език „Тих премиум с жив продукт" (2026-07-03): топла хартиена основа,
+ * дълбоко нефритено зелено като единствен акцент, кехлибар само за промо сигнали.
+ * Спец: docs/docs-03-07-2026/2026-07-03-visual-redesign-spec.md
  */
 @theme {
-  /* Бранд — дълбоко „горско" зелено (единственият акцент на платформата) */
-  --color-brand-50: #edf3ec;
-  --color-brand-100: #d8e8da;
-  --color-brand-500: #128352;
-  --color-brand-600: #0c6b41;
-  --color-brand-700: #085232;
+  /* Бранд — дълбоко нефритено зелено (единственият акцент на платформата) */
+  --color-brand-50: #e3efec;
+  --color-brand-100: #c7dfd7;
+  --color-brand-500: #14665a;
+  --color-brand-600: #0f5348;
+  --color-brand-700: #0a3b33;
 
   /*
    * Големи плътни brand повърхности (финален CTA, банери).
-   * ПРАВИЛО: ярък brand цвят никога върху голяма площ.
+   * ПРАВИЛО: плосък brand цвят никога върху голяма площ — R2 добавя градиент+noise.
    */
-  --color-brand-surface: #0a4d30;
-  --color-brand-surface-deep: #073823;
-  --color-brand-surface-ink: #f6f3ec;
+  --color-brand-surface: #14665a;
+  --color-brand-surface-deep: #0e4a40;
+  --color-brand-surface-ink: #faf8f5;
   --color-brand-surface-muted: #b7d4c2;
 
-  /* Ember — топлината на пазара. САМО за брандовия момент в hero H1. */
-  --color-ember-500: #d97a29;
-  --color-ember-600: #c2452d;
+  /* Ember/кехлибар — САМО за промоции, badges, акцентната дума в hero H1. */
+  --color-ember-500: #c97b2d;
+  --color-ember-600: #a8631f;
+  --color-accent-soft: #f7ecdd;
 
-  /* Мастило — зелено-черно, затоплено */
-  --color-ink-900: #10150f;
-  --color-ink-700: #414a3f;
-  --color-ink-500: #6f776a;
+  /* Мастило — топло тъмно, НЕ черно */
+  --color-ink-900: #1c2420;
+  --color-ink-700: #4a544e;
+  --color-ink-500: #7a847d;
 
-  /* Хартия — топъл лен (surface-50 = страницата, surface-0 = карти/навигация) */
-  --color-surface-0: #fdfcf8;
-  --color-surface-50: #f7f3ea;
-  --color-surface-100: #efe9dc;
-  --color-surface-200: #e5ddcc;
-  --color-surface-300: #cec4ae;
+  /* Хартия — топло off-white (surface-50 = страницата, surface-0 = карти) */
+  --color-surface-0: #ffffff;
+  --color-surface-50: #faf8f5;
+  --color-surface-100: #f2efea;
+  --color-surface-200: #e5e0d8;
+  --color-surface-300: #cfc9be;
 
   /* Семантични */
-  --color-danger-600: #c2452d;
-  --color-danger-700: #a33823;
-  --color-success-600: #128352;
+  --color-danger-600: #b4442c;
+  --color-danger-700: #8f3722;
+  --color-success-600: #2e7d4f;
   --color-warning-600: #b97e14;
 
-  /* Радиуси */
-  --radius-control: 0.625rem; /* бутони, инпути */
-  --radius-card: 1rem;
+  /* Focus ring */
+  --color-focus: #14665a;
 
-  /* Типография: Sofia Sans (BG-designed) — body; Condensed — display заглавия */
+  /* Радиуси — консистентност е 50% от „скъпия" вид */
+  --radius-control: 0.75rem; /* 12px: бутони, инпути */
+  --radius-card: 1rem; /* 16px: карти, модали */
+
+  /* Типография: Sofia Sans — body; Onest — display заглавия (R1: смяна на Condensed) */
   --font-sans: var(--font-sofia), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-sofia-cond), var(--font-sofia), ui-sans-serif, sans-serif;
+  --font-display: var(--font-onest), var(--font-sofia), ui-sans-serif, sans-serif;
 
-  /* Сенки — нископрозрачни, многослойни; без glow */
-  --shadow-card: 0 1px 2px rgba(16, 21, 15, 0.04), 0 10px 30px rgba(16, 21, 15, 0.07);
-  --shadow-float:
-    0 24px 60px -20px rgba(16, 21, 15, 0.2), 0 10px 22px -8px rgba(16, 21, 15, 0.08);
+  /* Сенки — шепот, не drop shadow; носителят на дълбочина е границата + фоновата разлика */
+  --shadow-card: 0 1px 2px rgba(28, 36, 32, 0.05), 0 4px 12px rgba(28, 36, 32, 0.05);
+  --shadow-float: 0 4px 8px rgba(28, 36, 32, 0.06), 0 16px 32px rgba(28, 36, 32, 0.1);
 }
 
 /*
- * DARK MODE — „тъмна гора" (виж docs/decisions/2026-07-03-dark-mode.md).
- * Активира се с data-theme="dark" на <html>. Компонентите НЕ се променят —
- * само тези стойности. Никакви dark: варианти! Без неон върху тъмно.
+ * DARK MODE — топло тъмнозелено-сиво, „вечерно ателие" (виж
+ * docs/decisions/2026-07-03-dark-mode.md). Активира се с data-theme="dark"
+ * на <html>. Компонентите НЕ се променят — само тези стойности.
+ * Никакви dark: варианти! Без неон върху тъмно.
  */
 [data-theme="dark"] {
-  --color-brand-50: #12211a;
-  --color-brand-100: #1a3226;
-  --color-brand-500: #2b8f65;
-  --color-brand-600: #349e72;
-  --color-brand-700: #57b78d;
+  --color-brand-50: #1c332e;
+  --color-brand-100: #234139;
+  --color-brand-500: #3fa08f;
+  --color-brand-600: #54b5a4;
+  --color-brand-700: #7bc9bb;
 
-  --color-brand-surface: #0d2b1c;
-  --color-brand-surface-deep: #092015;
-  --color-brand-surface-ink: #eaf2ea;
+  --color-brand-surface: #14665a;
+  --color-brand-surface-deep: #0e4a40;
+  --color-brand-surface-ink: #eae8e1;
   --color-brand-surface-muted: #97b8a4;
 
-  --color-ember-500: #e08a3c;
-  --color-ember-600: #d05a40;
+  --color-ember-500: #de9a4e;
+  --color-ember-600: #c9853d;
+  --color-accent-soft: #33271a;
 
-  --color-ink-900: #edf1ea;
-  --color-ink-700: #bbc4b6;
-  --color-ink-500: #858e80;
+  --color-ink-900: #eae8e1;
+  --color-ink-700: #a8b0a9;
+  --color-ink-500: #6e7871;
 
-  --color-surface-0: #151b16;
-  --color-surface-50: #0c110d;
-  --color-surface-100: #1c231d;
-  --color-surface-200: #2a332b;
-  --color-surface-300: #3c473d;
+  --color-surface-0: #1d2420;
+  --color-surface-50: #151a17;
+  --color-surface-100: #10140f;
+  --color-surface-200: #2a322d;
+  --color-surface-300: #3a443e;
 
-  --color-danger-600: #dd6c56;
-  --color-danger-700: #e5876f;
-  --color-success-600: #349e72;
+  --color-danger-600: #d97a5c;
+  --color-danger-700: #e5937a;
+  --color-success-600: #4fae78;
   --color-warning-600: #d6a044;
+
+  --color-focus: #3fa08f;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-float: 0 24px 60px -20px rgba(0, 0, 0, 0.55), 0 10px 22px -8px rgba(0, 0, 0, 0.35);
