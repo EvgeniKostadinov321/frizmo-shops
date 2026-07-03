@@ -259,7 +259,7 @@ export default async function LandingPage() {
             <p className="mt-3 text-lg text-ink-500">
               Три демо магазина, направени с Frizmo Shops — кликни и разгледай.
             </p>
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
               {demoShops.map((shop, i) => (
                 <Reveal key={shop.id} delay={i * 90}>
                   <ShopCard shop={shop} />
