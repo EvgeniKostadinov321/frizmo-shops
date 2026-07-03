@@ -48,12 +48,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        {/* Anti-FOUC: dark САМО при изричен избор — светлата тема е лицето на бранда,
-            OS предпочитанието не я override-ва (решение от 2026-07-03) */}
+        {/* Anti-FOUC: dark темата е САМО за dashboard/admin (търговски панел).
+            Публичните страници (landing, каталог, магазини) са винаги светли —
+            лицето на бранда не зависи от лична настройка (решение 2026-07-03). */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{if(localStorage.getItem('frizmo-theme')==='dark'){document.documentElement.dataset.theme='dark'}}catch(e){}})()",
+              "(function(){try{var p=location.pathname;if((p.indexOf('/dashboard')===0||p.indexOf('/admin')===0)&&localStorage.getItem('frizmo-theme')==='dark'){document.documentElement.dataset.theme='dark'}}catch(e){}})()",
           }}
         />
         {children}
