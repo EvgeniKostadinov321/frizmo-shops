@@ -15,7 +15,7 @@ import { Accordion, FlagBg, Icon } from "@/components/ui";
 import { db, products, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { publicImageUrl } from "@/lib/storage";
-import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
+import { PRICING_PLANS, PRICING_TRUST, TRIAL_NOTE } from "@/lib/plans-content";
 
 export const metadata: Metadata = {
   title: "Frizmo Shops — Продавай повече. Без хаос, без комисиони.",
@@ -333,17 +333,30 @@ export default async function LandingPage() {
                         </span>
                       )}
                     </div>
-                    <p className={`font-display text-6xl font-extrabold ${dark ? "" : "text-ink-900"}`}>
-                      {plan.priceMonthly} €
-                      <span
-                        className={`ml-1 font-sans text-base font-normal ${dark ? "text-brand-surface-muted" : "text-ink-500"}`}
+                    <div>
+                      <p className={`font-display text-6xl font-extrabold ${dark ? "" : "text-ink-900"}`}>
+                        {plan.priceMonthly} €
+                        <span
+                          className={`ml-1 font-sans text-base font-normal ${dark ? "text-brand-surface-muted" : "text-ink-500"}`}
+                        >
+                          / месец
+                        </span>
+                      </p>
+                      <p
+                        className={`mt-2 flex items-center gap-1.5 text-xs font-medium ${dark ? "text-brand-surface-muted" : "text-brand-600"}`}
                       >
-                        / месец
-                      </span>
-                    </p>
+                        <Icon name="check" size={13} className="shrink-0" />
+                        30 дни безплатно · без карта
+                      </p>
+                    </div>
                     <ul
                       className={`flex flex-col gap-2.5 text-sm ${dark ? "text-brand-surface-ink/90" : "text-ink-700"}`}
                     >
+                      {"featuresLead" in plan && (
+                        <li className={`pb-1 font-semibold ${dark ? "text-brand-surface-ink" : "text-ink-900"}`}>
+                          {plan.featuresLead}
+                        </li>
+                      )}
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-center gap-2.5">
                           <Icon
@@ -370,17 +383,53 @@ export default async function LandingPage() {
               );
             })}
           </RevealList>
+          <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-ink-500">
+            {PRICING_TRUST.map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <Icon name="check" size={15} className="shrink-0 text-brand-600" />
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="mx-auto w-full max-w-4xl px-4 py-24">
-        <Kicker>Въпроси</Kicker>
-        <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900">
-          Често задавани въпроси
-        </h2>
-        <div className="mt-10">
-          <Accordion items={FAQ} />
+      {/* FAQ — split: заглавие + контакт карта вляво, акордеон вдясно */}
+      <section className="mx-auto w-full max-w-7xl px-4 py-24">
+        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <Kicker>Въпроси</Kicker>
+            <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-balance text-ink-900 sm:text-5xl">
+              Често задавани въпроси
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-ink-700">
+              Отговорите на най-честите въпроси. Не намираш това, което търсиш?
+            </p>
+            <div className="mt-6 flex flex-col gap-3 rounded-card border border-surface-200 bg-surface-0 p-5 shadow-card">
+              <p className="font-bold text-ink-900">Питай ни директно</p>
+              <a
+                href="tel:+359877167007"
+                className="flex items-center gap-3 text-sm font-medium text-ink-700 transition-colors hover:text-brand-600"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <Icon name="phone" size={16} />
+                </span>
+                +359 87 716 7007
+              </a>
+              <a
+                href="mailto:supportfrizmo@gmail.com"
+                className="flex items-center gap-3 text-sm font-medium text-ink-700 transition-colors hover:text-brand-600"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <Icon name="mail" size={16} />
+                </span>
+                supportfrizmo@gmail.com
+              </a>
+            </div>
+          </div>
+          <div>
+            <Accordion items={FAQ} />
+          </div>
         </div>
       </section>
 

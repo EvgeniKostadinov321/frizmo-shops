@@ -24,6 +24,8 @@ export const PRICING_PLANS = [
     priceMonthly: "35",
     description: "За растящи магазини, които искат повече.",
     highlighted: true,
+    /** Показва се над списъка на Pro — сигнализира надграждане над Starter. */
+    featuresLead: "Всичко от Starter, плюс:",
     features: [
       "Неограничени продукти",
       "Подкатегории",
@@ -36,3 +38,11 @@ export const PRICING_PLANS = [
 ] as const;
 
 export const TRIAL_NOTE = "30 дни безплатен пробен период с пълен Pro достъп. Без карта.";
+
+/** Сухи доказателства под ценовите карти — trust strip. */
+export const PRICING_TRUST = [
+  "30 дни безплатно",
+  "Без карта за пробния период",
+  "Без комисиона от продажби",
+  "Откажи по всяко време",
+] as const;
