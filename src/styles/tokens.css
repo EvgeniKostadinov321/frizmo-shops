@@ -26,10 +26,10 @@
   --color-ember-600: #a8631f;
   --color-accent-soft: #f7ecdd;
 
-  /* Мастило — топло тъмно, НЕ черно */
+  /* Мастило — топло тъмно, НЕ черно. ink-500 минава AA (4.5:1) и върху surface-100. */
   --color-ink-900: #1c2420;
   --color-ink-700: #4a544e;
-  --color-ink-500: #7a847d;
+  --color-ink-500: #616a64;
 
   /* Хартия — топло off-white (surface-50 = страницата, surface-0 = карти) */
   --color-surface-0: #ffffff;
@@ -98,7 +98,7 @@
 
   --color-ink-900: #eae8e1;
   --color-ink-700: #a8b0a9;
-  --color-ink-500: #6e7871;
+  --color-ink-500: #8a948c;
 
   --color-surface-0: #1d2420;
   --color-surface-50: #151a17;

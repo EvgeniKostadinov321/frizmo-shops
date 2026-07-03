@@ -14,7 +14,7 @@ export function NicheMarquee() {
         {[...NICHES, ...NICHES].map((niche, i) => (
           <span
             key={`${niche}-${i}`}
-            className="shrink-0 text-sm font-bold uppercase tracking-[0.2em] text-ink-500"
+            className="shrink-0 text-sm font-bold uppercase tracking-[0.2em] text-ink-700"
           >
             {niche}
           </span>
