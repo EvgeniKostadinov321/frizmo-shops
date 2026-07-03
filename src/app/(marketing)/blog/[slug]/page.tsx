@@ -62,7 +62,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       <div className="mt-10 rounded-card border border-brand-500 bg-brand-50 p-6 text-center">
         <p className="font-bold text-ink-900">Готов да продаваш онлайн?</p>
         <p className="mt-1 text-sm text-ink-700">
-          Създай магазина си за минути — 14 дни безплатно, без карта.
+          Създай магазина си за минути — 30 дни безплатно, без карта.
         </p>
         <Link
           href="/auth/register"

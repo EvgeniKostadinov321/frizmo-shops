@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Icon } from "./icon";
 
 type LogoProps = {
   /** Накъде води кликът; null = без линк (декоративно). */
@@ -11,22 +10,44 @@ type LogoProps = {
 };
 
 /**
- * Логото на Frizmo Shops: „store" знак в закръглен brand квадрат + wordmark.
- * Единственото място, откъдето UI-ят взима лого — без повторени „FS" квадрати.
+ * Знакът на Frizmo Shops: пазарска чанта с ember точка (поръчка) върху
+ * тъмен закръглен квадрат. Рисуван на ръка — единственото лого в UI-я.
  */
+function LogoMark({ size }: { size: number }) {
+  return (
+    <span
+      aria-hidden
+      className="flex shrink-0 items-center justify-center rounded-control bg-ink-900 text-surface-50"
+      style={{ width: size, height: size }}
+    >
+      <svg
+        width={Math.round(size * 0.62)}
+        height={Math.round(size * 0.62)}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {/* Тяло на чантата */}
+        <path d="M5.5 9.5 h13 l-1 9.2 a1.8 1.8 0 0 1 -1.8 1.6 H8.3 a1.8 1.8 0 0 1 -1.8 -1.6 Z" />
+        {/* Дръжка */}
+        <path d="M9 9.5 V7.2 a3 3 0 0 1 6 0 V9.5" />
+        {/* Ember точка — „нова поръчка" */}
+        <circle cx="12" cy="14.8" r="1.6" fill="var(--color-ember-500)" stroke="none" />
+      </svg>
+    </span>
+  );
+}
+
 export function Logo({ href = "/", size = 32, withWordmark = true, className }: LogoProps) {
   const content = (
     <>
-      <span
-        aria-hidden
-        className="flex shrink-0 items-center justify-center rounded-control bg-brand-600 text-white"
-        style={{ width: size, height: size }}
-      >
-        <Icon name="store" size={Math.round(size * 0.58)} />
-      </span>
+      <LogoMark size={size} />
       {withWordmark && (
-        <span className="whitespace-nowrap text-lg font-bold tracking-tight text-ink-900">
-          Frizmo <span className="text-brand-600">Shops</span>
+        <span className="whitespace-nowrap font-display text-lg font-extrabold tracking-tight text-ink-900">
+          Frizmo <span className="text-ember-500">Shops</span>
         </span>
       )}
     </>

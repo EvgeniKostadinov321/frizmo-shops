@@ -29,7 +29,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3">
       <div
-        className={`mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 rounded-full px-4 transition-all duration-300 ${
+        className={`mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full px-4 transition-all duration-300 ${
           scrolled
             ? "border border-surface-200 bg-surface-0/90 shadow-card backdrop-blur"
             : "border border-transparent"

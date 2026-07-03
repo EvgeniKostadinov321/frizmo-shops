@@ -4,7 +4,7 @@ import { FlagBg, Logo } from "@/components/ui";
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-surface-200 bg-surface-0">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-3">
         <div>
           <Logo size={28} />
           <p className="mt-3 text-sm text-ink-500">

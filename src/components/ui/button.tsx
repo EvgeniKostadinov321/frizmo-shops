@@ -10,10 +10,11 @@ type Size = ButtonSize;
 const base =
   "inline-flex items-center justify-center gap-2 rounded-control font-medium transition-colors " +
   "disabled:pointer-events-none disabled:opacity-50 " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600";
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-700";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700",
+  /* Primary CTA = тъмно мастило, не бранд зелено (решение 2026-07-03) */
+  primary: "bg-ink-900 text-surface-50 hover:bg-ink-700",
   secondary: "border border-surface-300 bg-surface-0 text-ink-900 hover:bg-surface-100",
   ghost: "text-ink-700 hover:bg-surface-100",
   danger: "bg-danger-600 text-white hover:bg-danger-700",

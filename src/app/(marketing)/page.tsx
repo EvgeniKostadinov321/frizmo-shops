@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { and, asc, eq, inArray } from "drizzle-orm";
+import Image from "next/image";
 import Link from "next/link";
 import {
   OrderNotificationMockup,
@@ -17,12 +18,13 @@ import { Accordion, FlagBg, Icon, type IconName } from "@/components/ui";
 import { db, products, shops } from "@/db";
 import { searchCatalogProducts } from "@/db/queries/catalog";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
+import { publicImageUrl } from "@/lib/storage";
 import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
 
 export const metadata: Metadata = {
   title: "Frizmo Shops — Твоят онлайн магазин. Готов днес. Без програмист.",
   description:
-    "Създай собствен онлайн магазин за минути: продукти, поръчки, персонализиран дизайн и видимост в каталога. 14 дни безплатно.",
+    "Създай собствен онлайн магазин за минути: продукти, поръчки, персонализиран дизайн и видимост в каталога. 30 дни безплатно.",
 };
 
 const PAINS: { icon: IconName; title: string; text: string }[] = [
@@ -121,6 +123,9 @@ export default async function LandingPage() {
     : [];
   /* Реални продукти от демо магазините — примерите в секцията „На живо" */
   const { items: exampleProducts } = await searchCatalogProducts();
+  /* Снимка за финалната CTA — първата продуктова снимка на hero магазина */
+  const ctaImagePath = heroProducts.flatMap((p) => p.images)[0] ?? null;
+  const ctaImage = ctaImagePath ? publicImageUrl(ctaImagePath) : null;
 
   return (
     <>
@@ -163,7 +168,7 @@ export default async function LandingPage() {
           className="pointer-events-none absolute inset-0 opacity-60 mix-blend-overlay"
           style={{ backgroundImage: "var(--texture-noise)" }}
         />
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-20 pt-10 md:pt-14">
+        <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-10 md:pt-14">
         <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
           <span className="flex shrink-0 items-center gap-2">
             <FlagBg className="h-3 w-auto" />
@@ -221,7 +226,7 @@ export default async function LandingPage() {
 
       {/* Болката — по-дълбока хартия */}
       <section className="bg-surface-100/60">
-        <div className="mx-auto w-full max-w-6xl px-4 py-24">
+        <div className="mx-auto w-full max-w-7xl px-4 py-24">
           <Kicker>Познато ли ти е</Kicker>
           <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
             Продаваш през Facebook и Viber?
@@ -240,7 +245,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Как работи — editorial номериран списък */}
-      <section className="mx-auto grid w-full max-w-6xl gap-14 px-4 py-24 md:grid-cols-[0.9fr_1.1fr]">
+      <section className="mx-auto grid w-full max-w-7xl gap-14 px-4 py-24 md:grid-cols-[0.9fr_1.1fr]">
         <div>
           <Kicker>Как работи</Kicker>
           <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
@@ -271,7 +276,7 @@ export default async function LandingPage() {
       {/* Витрина: живи демо магазини */}
       {demoShops.length > 0 && (
         <section className="bg-surface-100/60">
-          <div className="mx-auto w-full max-w-6xl px-4 py-24">
+          <div className="mx-auto w-full max-w-7xl px-4 py-24">
             <Kicker>На живо</Kicker>
             <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
               Виж как изглежда на живо
@@ -309,7 +314,7 @@ export default async function LandingPage() {
       )}
 
       {/* Функции */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-24">
+      <section className="mx-auto w-full max-w-7xl px-4 py-24">
         <Kicker>Какво получаваш</Kicker>
         <div className="mt-12 flex flex-col gap-24">
           {FEATURES.map((feature, i) => (
@@ -331,7 +336,7 @@ export default async function LandingPage() {
 
       {/* Цени */}
       <section id="pricing" className="bg-surface-100/60">
-        <div className="mx-auto w-full max-w-5xl px-4 py-24">
+        <div className="mx-auto w-full max-w-6xl px-4 py-24">
           <Kicker>Цени</Kicker>
           <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
             Прости, честни цени
@@ -407,7 +412,7 @@ export default async function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto w-full max-w-3xl px-4 py-24">
+      <section className="mx-auto w-full max-w-4xl px-4 py-24">
         <Kicker>Въпроси</Kicker>
         <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900">
           Често задавани въпроси
@@ -417,27 +422,40 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Финален CTA — единствената тъмнозелена лента (bookend) */}
-      <section className="relative overflow-hidden" style={{ backgroundImage: "var(--gradient-cta)" }}>
+      {/* Финален CTA — снимка от демо магазин + тъмен scrim за четимост (спец §15) */}
+      <section className="relative overflow-hidden bg-ink-900">
+        {ctaImage && (
+          <Image
+            src={ctaImage}
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover"
+            aria-hidden
+          />
+        )}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay"
-          style={{ backgroundImage: "var(--texture-noise)" }}
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, rgb(16 18 16 / 0.88), rgb(16 18 16 / 0.62) 55%, rgb(16 18 16 / 0.45))",
+          }}
         />
-        <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-7 px-4 py-24 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-surface-muted">
+        <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-7 px-4 py-28 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-surface-200">
             Frizmo Shops
           </p>
-          <h2 className="font-display text-4xl font-extrabold tracking-tight text-brand-surface-ink sm:text-6xl">
+          <h2 className="font-display text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
             Първата ти поръчка е по-близо,
             <br className="hidden sm:block" /> отколкото мислиш.
           </h2>
-          <p className="max-w-xl text-lg text-brand-surface-muted">
+          <p className="max-w-xl text-lg text-surface-200">
             Регистрирай се за 2 минути. Ако не ти хареса — просто спираш. {TRIAL_NOTE}
           </p>
           <Link
             href="/auth/register"
-            className="group inline-flex h-13 items-center gap-2 rounded-full bg-brand-surface-ink px-8 text-base font-bold text-brand-surface shadow-float transition-transform hover:-translate-y-0.5"
+            className="group inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 text-base font-bold text-ink-900 shadow-float transition-transform hover:-translate-y-0.5"
           >
             Създай магазина си сега
             <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
