@@ -36,6 +36,40 @@ watermarks, no visible hands or people"
 
 **Crop стандарт:** 4:5 продуктови снимки, 21:9 hero банер.
 
+## Пчелата-маскот (брандов талисман)
+
+Маскот на Frizmo Shops: симпатична работлива пчела в мек clay/claymation 3D
+стил. Идея: „работлив като пчела" (BG културен код) + занаятчийско ателие.
+Използва се системно (auth, onboarding, empty states, грешки, имейли) като
+единен визуален глас, не като декорация.
+
+**Консистентност:** заключена е като Magnific Library **character** асет —
+`name: frizmo-bee-mascot`, `id: 2001559`. Всяка нова поза се генерира с този
+character като референция → същият герой (лице/цветове/форми), нов контекст.
+НЕ се пресъздава от нула (ChatGPT/друг модел губи консистентността).
+
+**Master кадър:** `mascot-refs/image.png` (пчелата маха, чист крем фон) —
+генериран в ChatGPT по style prompt-а по-долу, качен и заключен в Magnific.
+
+**Style prompt (master):** "A cute 3D clay-render mascot character of a
+friendly worker bee, soft matte clay material (claymation / Pixar-style),
+gentle studio lighting with soft shadows. Brand palette, NOT classic
+yellow-and-black: body in warm terracotta and honey-amber with deep
+espresso-brown stripes and soft cream accents. Big expressive friendly eyes,
+rounded chibi proportions, delicate translucent wings. Tiny artisan/market
+apron (craft maker vibe). One small glowing ember-orange dot accent. Warm,
+calm, premium and charming — NOT childish, NOT neon, NOT cartoon-loud."
+
+**Палитра:** теракота + меденo-кехлибарено тяло, еспресо-кафяви ленти, кремави
+акценти, един ember-оранжев акцент (връзка с логото). Никакво ярко жълто-черно.
+
+**Пози (генерират се с character 2001559 при нужда):** маха (welcome/auth),
+закрива очи с ръце (парола фокус), празнува с конфети (onboarding „Публикувай"),
+сочи/носи кутия (empty states), смутена/чеше глава (грешки/404).
+
+**Финес:** remove background за прозрачен PNG в UI; upscale при нужда; финалните
+файлове се оптимизират (WebP/PNG) преди качване в `public/`.
+
 ## Ambient видео (R6.5, отложено)
 
 Ако/когато се произведе: 6–8s loop, без звук, AV1/H.265, ≤1.5MB, `poster`

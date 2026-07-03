@@ -34,6 +34,11 @@
 - **Планове 1–5 ✅** (MVP: фундамент, магазин/продукти, storefront, количка/поръчки, каталог/landing/блог/SEO).
 - **План 6:** Фаза А (платформен /admin) ✅ · Фаза Б (Stripe абонаменти) — **чака старт по изрична заявка**. Дотогава `getShopPlan()` (src/lib/plan.ts) е stub → всички магазини са "pro".
 
+### Брандов маскот (нов, 2026-07-04)
+Clay пчела, заключена като Magnific character асет (id 2001559). Първо приложение:
+auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. Пости за нови пози
+(onboarding празник, empty states, 404) — по желание при следваща сесия.
+
 ### Post-MVP визуален редизайн (в ход)
 Спец: `docs/docs-03-07-2026/2026-07-03-visual-redesign-spec.md` · план: `docs/superpowers/plans/2026-07-03-landing-visual-redesign.md`
 
@@ -72,5 +77,20 @@
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-04** — **Брандов маскот + auth редизайн.** Създаден маскот: clay пчела
+  (идея „работлив като пчела" + занаятчийско ателие), теракота палитра, за системна
+  употреба (auth, onboarding, empty states, грешки, имейли). **Заключен като Magnific
+  character асет `frizmo-bee-mascot`, id 2001559** — консистентност през character
+  референция вместо пресъздаване. Две пози в UI (`public/bee-wave.png` маха,
+  `public/bee-peek.png` закрива очи). **Auth (login/register) цялостно редизайниран:**
+  split екран (форма + брандов теракота панел с маскота), editorial типография,
+  glow+noise; интеракция — фокус в паролата → пчелата закрива очи. e2e селектори
+  запазени. `pnpm check` зелен (99/99 теста). Жив прогрес файл на маскота:
+  **`docs/design/mascot-progress.md`** (чети него при продължаване). Style prompt:
+  `docs/design/asset-prompts.md`; 2k оригинали: `docs/design/mascot-source/`.
+  ⚠️ `mascot-refs/` (в корена на монорепото, извън frizmo-shops) е локална папка с
+  изходните ChatGPT PNG-та — извън git. Пчелата е в Magnific акаунта (id 2001559),
+  достъпна от всяка машина без локалния файл.
 
 - **2026-07-04 · `ced7e55`** — Създаден `main` production branch (идентичен на `dev`). Обновени CLAUDE.md/roadmap/памет + този WORKLOG. Преди това: редизайн на `/shops`, `/products`, `/blog` (+ 3 нови блог статии), фикс dark mode да е само за dashboard/admin, rich OG image, PWA service worker глобално. Всичко на dev + main.
