@@ -146,9 +146,10 @@ export default async function LandingPage() {
         }}
       />
 
-      {/* Hero — full-bleed фон (glow + noise до ръба на екрана), съдържание в контейнер */}
+      {/* Hero — full-bleed фон, заема (почти) целия екран на desktop за да диша.
+          min-h компенсира плаващия хедър (~4.75rem), затова центрираме под него. */}
       <section
-        className="relative overflow-hidden"
+        className="relative flex items-center overflow-hidden lg:min-h-[calc(100svh-4.75rem)]"
         style={{ backgroundImage: "var(--gradient-hero-glow)" }}
       >
         <div
@@ -156,7 +157,7 @@ export default async function LandingPage() {
           className="pointer-events-none absolute inset-0 opacity-60 mix-blend-overlay"
           style={{ backgroundImage: "var(--texture-noise)" }}
         />
-        <div className="relative mx-auto w-full max-w-7xl px-4 pb-24 pt-12 md:pt-16">
+        <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-12 md:pt-16 lg:py-12">
           <div className="grid items-center gap-x-16 gap-y-14 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="flex flex-col items-start gap-6">
               <span className="inline-flex items-center gap-2 rounded-full border border-surface-200 bg-surface-0 px-3.5 py-1.5 text-xs font-semibold text-ink-700 shadow-card">
@@ -212,6 +213,12 @@ export default async function LandingPage() {
             <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
           </div>
         </div>
+
+        {/* Мек преход надолу — размива рязката граница между hero и следващата секция */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-surface-100/60"
+        />
       </section>
 
 
