@@ -8,6 +8,7 @@ import {
 } from "@/components/marketing/feature-mockups";
 import { PhoneMockup } from "@/components/marketing/phone-mockup";
 import { Reveal } from "@/components/marketing/reveal";
+import { RevealList } from "@/components/marketing/reveal-list";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { FlagBg, Icon, type IconName } from "@/components/ui";
 import { db, products, shops } from "@/db";
@@ -203,19 +204,17 @@ export default async function LandingPage() {
             Продаваш през Facebook и Viber?
           </h2>
           <p className="mt-3 text-lg text-ink-500">Знаем как изглежда денят ти.</p>
-          <div className="mt-14 grid gap-x-10 gap-y-12 md:grid-cols-3">
-            {PAINS.map((pain, i) => (
-              <Reveal key={pain.title} delay={i * 0.09}>
-                <div className="flex flex-col gap-4 border-t border-surface-200 pt-6">
+          <RevealList className="mt-14 grid gap-x-10 gap-y-12 md:grid-cols-3">
+            {PAINS.map((pain) => (
+              <div key={pain.title} className="flex flex-col gap-4 border-t border-surface-200 pt-6">
                   <span className="flex size-11 items-center justify-center rounded-full bg-surface-0 text-brand-600 shadow-card">
                     <Icon name={pain.icon} size={21} />
                   </span>
                   <h3 className="text-lg font-bold text-ink-900">{pain.title}</h3>
                   <p className="text-[15px] leading-relaxed text-ink-700">{pain.text}</p>
-                </div>
-              </Reveal>
+              </div>
             ))}
-          </div>
+          </RevealList>
         </div>
       </section>
 
@@ -259,13 +258,11 @@ export default async function LandingPage() {
             <p className="mt-3 text-lg text-ink-500">
               Три демо магазина, направени с Frizmo Shops — кликни и разгледай.
             </p>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {demoShops.map((shop, i) => (
-                <Reveal key={shop.id} delay={i * 0.09}>
-                  <ShopCard shop={shop} />
-                </Reveal>
+            <RevealList className="mt-12 grid gap-6 md:grid-cols-3">
+              {demoShops.map((shop) => (
+                <ShopCard key={shop.id} shop={shop} />
               ))}
-            </div>
+            </RevealList>
           </div>
         </section>
       )}
@@ -303,12 +300,12 @@ export default async function LandingPage() {
           <p className="mt-3 text-lg text-ink-500">
             {TRIAL_NOTE} Без комисиони от продажби.
           </p>
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
-            {PRICING_PLANS.map((plan, i) => {
+          <RevealList className="mt-12 grid gap-6 md:grid-cols-2" itemClassName="h-full">
+            {PRICING_PLANS.map((plan) => {
               const dark = plan.highlighted;
               return (
-                <Reveal key={plan.id} delay={i * 0.09}>
                   <div
+                    key={plan.id}
                     className={`flex h-full flex-col gap-6 rounded-card p-8 ${
                       dark
                         ? "bg-linear-to-br from-brand-surface to-brand-surface-deep text-brand-surface-ink [box-shadow:var(--shadow-brand-tint),var(--shadow-float)]"
@@ -363,10 +360,9 @@ export default async function LandingPage() {
                       Започни безплатно
                     </Link>
                   </div>
-                </Reveal>
               );
             })}
-          </div>
+          </RevealList>
         </div>
       </section>
 
