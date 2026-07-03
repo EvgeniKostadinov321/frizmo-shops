@@ -13,12 +13,12 @@ type HeroStorefrontDemoProps = {
   products: Pick<Product, "id" | "name" | "priceCents" | "promoPriceCents" | "images">[];
 };
 
-/* Fallback при празна база — витрината никога не е празна. */
-const FALLBACK_SHOP = { name: "Ферма Зелена долина", city: "Троян" };
+/* Fallback при празна база — витрината никога не е празна (home crafts нишата). */
+const FALLBACK_SHOP = { name: "Ателие Ръчичка", city: "Пловдив" };
 const FALLBACK_PRODUCTS = [
-  { id: "fallback-1", name: "Краве сирене", priceCents: 1590, image: null },
-  { id: "fallback-2", name: "Планински мед", priceCents: 1250, image: null },
-  { id: "fallback-3", name: "Домашен кашкавал", priceCents: 2300, image: null },
+  { id: "fallback-1", name: "Плетена кошница от ракита", priceCents: 3400, image: null },
+  { id: "fallback-2", name: "Керамична чаша — глазура", priceCents: 2200, image: null },
+  { id: "fallback-3", name: "Ленена покривка, ръчен шев", priceCents: 4500, image: null },
 ];
 
 /**
@@ -40,7 +40,7 @@ export function HeroStorefrontDemo({ shop, products }: HeroStorefrontDemoProps) 
 
   return (
     <m.div initial="hidden" animate="visible" variants={fadeUp} className="mx-auto w-full max-w-md">
-      <BrowserChrome url="frizmo.shop/s/ferma-zelena-dolina">
+      <BrowserChrome url="frizmo.shop/s/atelie-rachichka">
         <m.div
           initial="hidden"
           animate="visible"

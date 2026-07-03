@@ -47,11 +47,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        {/* Anti-FOUC: прилага dark темата преди първото рисуване (ADR dark-mode) */}
+        {/* Anti-FOUC: dark САМО при изричен избор — светлата тема е лицето на бранда,
+            OS предпочитанието не я override-ва (решение от 2026-07-03) */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('frizmo-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.dataset.theme='dark'}}catch(e){}})()",
+              "(function(){try{if(localStorage.getItem('frizmo-theme')==='dark'){document.documentElement.dataset.theme='dark'}}catch(e){}})()",
           }}
         />
         {children}

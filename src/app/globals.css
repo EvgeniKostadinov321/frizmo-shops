@@ -30,22 +30,12 @@ body {
   }
 }
 
-/* Анимации за Drawer/Modal + landing marquee */
+/* Анимации за Drawer/Modal + акордеон */
 @theme {
   --animate-fade-in: fade-in 0.15s ease-out;
   --animate-slide-in-right: slide-in-right 0.2s ease-out;
-  --animate-marquee: marquee 40s linear infinite;
   --animate-accordion-down: accordion-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-accordion-up: accordion-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
   @keyframes accordion-down {
     from {
       height: 0;

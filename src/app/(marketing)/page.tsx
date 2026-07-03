@@ -6,15 +6,16 @@ import {
   ThemeEditorMockup,
   VisibilityMockup,
 } from "@/components/marketing/feature-mockups";
+import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { Reveal } from "@/components/marketing/reveal";
-import { NicheMarquee } from "@/components/marketing/niche-marquee";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { RevealList } from "@/components/marketing/reveal-list";
 import { SpringIconBadge } from "@/components/marketing/spring-icon-badge";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { Accordion, FlagBg, Icon, type IconName } from "@/components/ui";
 import { db, products, shops } from "@/db";
+import { searchCatalogProducts } from "@/db/queries/catalog";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
 
@@ -108,7 +109,9 @@ export default async function LandingPage() {
   const demoShops = await db.query.shops.findMany({
     where: inArray(shops.slug, [...DEMO_SHOP_SLUGS]),
   });
-  const heroShop = demoShops.find((s) => s.slug === DEMO_SHOP_SLUGS[0]) ?? null;
+  /* Водещата ниша е home crafts — Ателие Ръчичка (решение 2026-07-03) */
+  const heroShop =
+    demoShops.find((s) => s.slug === "atelie-rachichka") ?? demoShops[0] ?? null;
   const heroProducts = heroShop
     ? await db.query.products.findMany({
         where: and(eq(products.shopId, heroShop.id), eq(products.status, "active")),
@@ -116,6 +119,8 @@ export default async function LandingPage() {
         limit: 6,
       })
     : [];
+  /* Реални продукти от демо магазините — примерите в секцията „На живо" */
+  const { items: exampleProducts } = await searchCatalogProducts();
 
   return (
     <>
@@ -148,9 +153,9 @@ export default async function LandingPage() {
         }}
       />
 
-      {/* Hero — топла хартия с фин brand glow + noise (спец §15) */}
+      {/* Hero — full-bleed фон (glow + noise до ръба на екрана), съдържание в контейнер */}
       <section
-        className="relative mx-auto w-full max-w-6xl overflow-hidden px-4 pb-20 pt-10 md:pt-14"
+        className="relative overflow-hidden"
         style={{ backgroundImage: "var(--gradient-hero-glow)" }}
       >
         <div
@@ -158,6 +163,7 @@ export default async function LandingPage() {
           className="pointer-events-none absolute inset-0 opacity-60 mix-blend-overlay"
           style={{ backgroundImage: "var(--texture-noise)" }}
         />
+        <div className="relative mx-auto w-full max-w-6xl px-4 pb-20 pt-10 md:pt-14">
         <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
           <span className="flex shrink-0 items-center gap-2">
             <FlagBg className="h-3 w-auto" />
@@ -209,10 +215,9 @@ export default async function LandingPage() {
 
           <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
         </div>
+        </div>
       </section>
 
-      {/* Ниши marquee — социално доказателство (спец §14) */}
-      <NicheMarquee />
 
       {/* Болката — по-дълбока хартия */}
       <section className="bg-surface-100/60">
@@ -279,6 +284,26 @@ export default async function LandingPage() {
                 <ShopCard key={shop.id} shop={shop} />
               ))}
             </RevealList>
+            {exampleProducts.length > 0 && (
+              <>
+                <p className="mt-16 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
+                  Продукти от демо магазините
+                </p>
+                <RevealList className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {exampleProducts.slice(0, 8).map((product) => (
+                    <CatalogProductCard key={product.id} product={product} />
+                  ))}
+                </RevealList>
+                <p className="mt-8 text-center">
+                  <Link
+                    href="/products"
+                    className="text-sm font-medium text-brand-600 hover:text-brand-700"
+                  >
+                    Разгледай всички продукти в каталога →
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
         </section>
       )}

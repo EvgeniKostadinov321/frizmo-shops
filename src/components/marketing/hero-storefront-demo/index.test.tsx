@@ -44,6 +44,6 @@ describe("HeroStorefrontDemo", () => {
 
   it("falls back to a demo shop name when shop is null", () => {
     render(<HeroStorefrontDemo shop={null} products={[]} />);
-    expect(screen.getByText(/Ферма Зелена долина/)).toBeInTheDocument();
+    expect(screen.getByText(/Ателие Ръчичка/)).toBeInTheDocument();
   });
 });
