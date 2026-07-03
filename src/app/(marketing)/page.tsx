@@ -12,7 +12,7 @@ import { NicheMarquee } from "@/components/marketing/niche-marquee";
 import { RevealList } from "@/components/marketing/reveal-list";
 import { SpringIconBadge } from "@/components/marketing/spring-icon-badge";
 import { ShopCard } from "@/components/marketing/shop-card";
-import { FlagBg, Icon, type IconName } from "@/components/ui";
+import { Accordion, FlagBg, Icon, type IconName } from "@/components/ui";
 import { db, products, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
@@ -86,11 +86,11 @@ const FEATURES: { icon: IconName; title: string; text: string; mockup: React.Rea
 ];
 
 const FAQ = [
-  { q: "Трябва ли ми фирма, за да продавам?", a: "За редовна търговска дейност — да (ЕООД, ЕТ или регистрация като земеделски производител/занаятчия). Ако тепърва проучваш, започни безплатния период и говори със счетоводител." },
-  { q: "Как клиентите плащат?", a: "Наложен платеж, банков превод или на място — ти избираш кои методи предлагаш. Плащане с карта идва скоро." },
-  { q: "Мога ли да откажа по всяко време?", a: "Да. Без договори и без неустойки — спираш абонамента и толкова." },
-  { q: "Колко бързо мога да започна?", a: "Първият ти продукт може да е онлайн 10 минути след регистрацията. Сериозно." },
-  { q: "Има ли комисиона от продажбите?", a: "Не. Плащаш само месечния абонамент — всичко от продажбите си е твое." },
+  { value: "company", question: "Трябва ли ми фирма, за да продавам?", answer: "За редовна търговска дейност — да (ЕООД, ЕТ или регистрация като земеделски производител/занаятчия). Ако тепърва проучваш, започни безплатния период и говори със счетоводител." },
+  { value: "payment", question: "Как клиентите плащат?", answer: "Наложен платеж, банков превод или на място — ти избираш кои методи предлагаш. Плащане с карта идва скоро." },
+  { value: "cancel", question: "Мога ли да откажа по всяко време?", answer: "Да. Без договори и без неустойки — спираш абонамента и толкова." },
+  { value: "speed", question: "Колко бързо мога да започна?", answer: "Първият ти продукт може да е онлайн 10 минути след регистрацията. Сериозно." },
+  { value: "commission", question: "Има ли комисиона от продажбите?", answer: "Не. Плащаш само месечния абонамент — всичко от продажбите си е твое." },
 ];
 
 /** Letterspaced editorial kicker с hairline продължение. */
@@ -129,6 +129,20 @@ export default async function LandingPage() {
             operatingSystem: "Web",
             description: "Платформа за създаване на онлайн магазини за българския пазар.",
             offers: { "@type": "Offer", price: "10", priceCurrency: "EUR" },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: FAQ.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: { "@type": "Answer", text: item.answer },
+            })),
           }),
         }}
       />
@@ -373,20 +387,8 @@ export default async function LandingPage() {
         <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900">
           Често задавани въпроси
         </h2>
-        <div className="mt-10 flex flex-col">
-          {FAQ.map((item) => (
-            <details key={item.q} className="group border-t border-surface-200 last:border-b">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-5 font-medium text-ink-900">
-                {item.q}
-                <Icon
-                  name="chevron-down"
-                  size={18}
-                  className="shrink-0 text-ink-500 transition-transform group-open:rotate-180"
-                />
-              </summary>
-              <p className="pb-6 leading-relaxed text-ink-700">{item.a}</p>
-            </details>
-          ))}
+        <div className="mt-10">
+          <Accordion items={FAQ} />
         </div>
       </section>
 
