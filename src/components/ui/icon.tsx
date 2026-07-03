@@ -47,6 +47,10 @@ const ICON_PATHS = {
     "M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0",
     "M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5",
   ],
+  /* Хамбургер меню */
+  menu: ["M4 6h16", "M4 12h16", "M4 18h16"],
+  /* Затваряне */
+  x: ["M18 6 6 18", "m6 6 12 12"],
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

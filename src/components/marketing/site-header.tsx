@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LinkButton, Logo } from "@/components/ui";
+import { usePathname } from "next/navigation";
+import { Icon, LinkButton, Logo } from "@/components/ui";
 
 const nav = [
   { href: "/shops", label: "Магазини" },
@@ -12,11 +13,13 @@ const nav = [
 ];
 
 /**
- * Marketing header: започва прозрачен върху хартията, а при скрол се
- * свива до плаващ pill (издигнат, с фон и сянка).
+ * Marketing header: floating pill на desktop (прозрачен → фон+сянка при скрол),
+ * hamburger + пълноекранен overlay на mobile. Активният линк се подчертава.
  */
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -26,34 +29,105 @@ export function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  /* Заключваме скрола + затваряме с Escape докато overlay-ът е отворен */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  const isActive = (href: string) =>
+    href.startsWith("/#") ? false : pathname === href || pathname.startsWith(`${href}/`);
+
   return (
     <header className="sticky top-0 z-40 px-3 pt-3">
       <div
         className={`mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full px-4 transition-all duration-300 ${
-          scrolled
+          scrolled || menuOpen
             ? "border border-surface-200 bg-surface-0/90 shadow-card backdrop-blur"
             : "border border-transparent"
         }`}
       >
         <Logo className="shrink-0" />
 
-        <nav aria-label="Основна навигация" className="flex items-center gap-1 overflow-x-auto">
+        {/* Desktop навигация */}
+        <nav aria-label="Основна навигация" className="hidden items-center gap-1 md:flex">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex h-11 shrink-0 items-center rounded-full px-3 text-sm font-medium text-ink-700 transition-colors hover:bg-surface-100 hover:text-ink-900"
+              aria-current={isActive(item.href) ? "page" : undefined}
+              className={`flex h-11 items-center rounded-full px-3.5 text-sm font-medium transition-colors ${
+                isActive(item.href)
+                  ? "bg-surface-100 text-ink-900"
+                  : "text-ink-700 hover:bg-surface-100 hover:text-ink-900"
+              }`}
             >
               {item.label}
             </Link>
           ))}
-          <span className="hidden sm:block">
+          <span className="ml-1">
             <LinkButton href="/auth/register" size="sm">
               Създай магазин
             </LinkButton>
           </span>
         </nav>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-nav"
+          aria-label={menuOpen ? "Затвори менюто" : "Отвори менюто"}
+          className="flex size-11 items-center justify-center rounded-full text-ink-900 transition-colors hover:bg-surface-100 md:hidden"
+        >
+          <Icon name={menuOpen ? "x" : "menu"} size={22} />
+        </button>
       </div>
+
+      {/* Mobile пълноекранен overlay */}
+      {menuOpen && (
+        <div
+          id="mobile-nav"
+          className="fixed inset-0 top-19 z-40 animate-fade-in bg-surface-50/95 backdrop-blur md:hidden"
+        >
+          <nav
+            aria-label="Мобилна навигация"
+            className="mx-auto flex max-w-7xl flex-col gap-1 px-6 pt-6"
+          >
+            {nav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={`flex items-center justify-between rounded-2xl px-4 py-4 font-display text-2xl font-extrabold tracking-tight transition-colors ${
+                  isActive(item.href) ? "bg-surface-100 text-ink-900" : "text-ink-900 hover:bg-surface-100"
+                }`}
+              >
+                {item.label}
+                <Icon name="chevron-down" size={20} className="-rotate-90 text-ink-500" />
+              </Link>
+            ))}
+            <LinkButton
+              href="/auth/register"
+              size="lg"
+              className="mt-4 h-14 w-full text-base"
+              onClick={() => setMenuOpen(false)}
+            >
+              Създай магазин
+            </LinkButton>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
