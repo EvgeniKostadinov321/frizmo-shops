@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lora, Space_Grotesk } from "next/font/google";
+import { Inter, Lora, Sofia_Sans, Sofia_Sans_Condensed, Space_Grotesk } from "next/font/google";
 import { CookieConsent } from "@/components/ui/cookie-consent";
 import { Toaster } from "@/components/ui/toaster";
 import { BRAND_THEME_COLOR } from "@/lib/brand";
 import "./globals.css";
 
+/* Платформена типография („Пазарен ден"): Sofia Sans — проектиран в България, пълна кирилица */
+const sofiaSans = Sofia_Sans({ subsets: ["latin", "cyrillic"], variable: "--font-sofia" });
+const sofiaSansCondensed = Sofia_Sans_Condensed({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-sofia-cond",
+});
+/* Inter остава за storefront темата classic (THEME_PRESETS) */
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
 /* Шрифтовете на storefront темите (modern / warm) — виж THEME_PRESETS */
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
@@ -30,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="bg"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${lora.variable} h-full antialiased`}
+      className={`${sofiaSans.variable} ${sofiaSansCondensed.variable} ${inter.variable} ${spaceGrotesk.variable} ${lora.variable} h-full antialiased`}
       /* data-theme се слага от anti-FOUC скрипта преди хидратацията */
       suppressHydrationWarning
     >

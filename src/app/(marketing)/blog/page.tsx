@@ -13,7 +13,9 @@ export default function BlogPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold text-ink-900">Блог</h1>
+      <h1 className="font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
+        Блог
+      </h1>
       <p className="mt-1 text-ink-500">
         Практични съвети за онлайн търговия — без жаргон, направо по същество.
       </p>

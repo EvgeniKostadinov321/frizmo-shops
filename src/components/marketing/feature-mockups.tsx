@@ -9,7 +9,7 @@ function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
     <div
       aria-hidden
-      className="flex h-56 items-center justify-center rounded-card border border-surface-200 bg-linear-to-br from-surface-50 to-brand-50 p-6"
+      className="flex h-64 items-center justify-center rounded-card border border-surface-200 bg-surface-100/70 p-6"
     >
       {children}
     </div>

@@ -46,7 +46,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       <Link href="/blog" className="text-sm text-brand-600 hover:underline">
         ← Всички статии
       </Link>
-      <h1 className="mt-4 text-3xl font-bold leading-tight text-ink-900 sm:text-4xl">
+      <h1 className="mt-4 font-display text-4xl font-extrabold leading-tight tracking-tight text-ink-900 sm:text-5xl">
         {post.title}
       </h1>
       <time dateTime={post.date} className="mt-2 block text-sm text-ink-500">

@@ -1,78 +1,96 @@
-/* Единственото място за дизайн стойности. Компонентите използват само токени. */
+/*
+ * Единственото място за дизайн стойности. Компонентите използват само токени.
+ * Дизайн език „Пазарен ден" (2026-07-03): топла ленена хартия, зелено-черно
+ * мастило, дълбоко зелено като единствен акцент, ember градиент само в hero H1.
+ */
 @theme {
-  /* Бранд — дълбоко „горско" зелено (visual pass 2, 2026-07-03) */
-  --color-brand-50: #eef6f1;
-  --color-brand-100: #d6ebdf;
+  /* Бранд — дълбоко „горско" зелено (единственият акцент на платформата) */
+  --color-brand-50: #edf3ec;
+  --color-brand-100: #d8e8da;
   --color-brand-500: #128352;
   --color-brand-600: #0c6b41;
   --color-brand-700: #085232;
 
   /*
-   * Големи плътни brand повърхности (CTA секции, банери).
-   * ПРАВИЛО: ярък brand цвят никога върху голяма площ — тези токени
-   * дават контролиран фон и в двата режима.
+   * Големи плътни brand повърхности (финален CTA, банери).
+   * ПРАВИЛО: ярък brand цвят никога върху голяма площ.
    */
-  --color-brand-surface: #0a5c38;
-  --color-brand-surface-deep: #07452a;
-  --color-brand-surface-ink: #ffffff;
-  --color-brand-surface-muted: #bfe3d1;
+  --color-brand-surface: #0a4d30;
+  --color-brand-surface-deep: #073823;
+  --color-brand-surface-ink: #f6f3ec;
+  --color-brand-surface-muted: #b7d4c2;
 
-  /* Текст — леко затоплени неутрални */
-  --color-ink-900: #131813;
-  --color-ink-700: #3a453e;
-  --color-ink-500: #67736b;
+  /* Ember — топлината на пазара. САМО за брандовия момент в hero H1. */
+  --color-ember-500: #d97a29;
+  --color-ember-600: #c2452d;
 
-  /* Повърхности */
-  --color-surface-0: #ffffff;
-  --color-surface-50: #f5f7f6;
-  --color-surface-100: #ebeeec;
-  --color-surface-200: #dde2df;
-  --color-surface-300: #c3ccc6;
+  /* Мастило — зелено-черно, затоплено */
+  --color-ink-900: #10150f;
+  --color-ink-700: #414a3f;
+  --color-ink-500: #6f776a;
+
+  /* Хартия — топъл лен (surface-50 = страницата, surface-0 = карти/навигация) */
+  --color-surface-0: #fdfcf8;
+  --color-surface-50: #f7f3ea;
+  --color-surface-100: #efe9dc;
+  --color-surface-200: #e5ddcc;
+  --color-surface-300: #cec4ae;
 
   /* Семантични */
-  --color-danger-600: #cf3e3e;
-  --color-danger-700: #ae3131;
+  --color-danger-600: #c2452d;
+  --color-danger-700: #a33823;
   --color-success-600: #128352;
   --color-warning-600: #b97e14;
 
   /* Радиуси */
-  --radius-control: 0.5rem; /* бутони, инпути */
-  --radius-card: 0.75rem;
+  --radius-control: 0.625rem; /* бутони, инпути */
+  --radius-card: 1rem;
 
-  /* Типография */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Типография: Sofia Sans (BG-designed) — body; Condensed — display заглавия */
+  --font-sans: var(--font-sofia), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sofia-cond), var(--font-sofia), ui-sans-serif, sans-serif;
+
+  /* Сенки — нископрозрачни, многослойни; без glow */
+  --shadow-card: 0 1px 2px rgba(16, 21, 15, 0.04), 0 10px 30px rgba(16, 21, 15, 0.07);
+  --shadow-float:
+    0 24px 60px -20px rgba(16, 21, 15, 0.2), 0 10px 22px -8px rgba(16, 21, 15, 0.08);
 }
 
 /*
- * DARK MODE (виж docs/decisions/2026-07-03-dark-mode.md).
- * Активира се с data-theme="dark" на <html> (toggle в dashboard header-а).
- * Компонентите НЕ се променят — само тези стойности. Никакви dark: варианти!
- * Зеленото е приглушено и десатурирано — без неон върху тъмно.
+ * DARK MODE — „тъмна гора" (виж docs/decisions/2026-07-03-dark-mode.md).
+ * Активира се с data-theme="dark" на <html>. Компонентите НЕ се променят —
+ * само тези стойности. Никакви dark: варианти! Без неон върху тъмно.
  */
 [data-theme="dark"] {
-  --color-brand-50: #10231a;
-  --color-brand-100: #163425;
+  --color-brand-50: #12211a;
+  --color-brand-100: #1a3226;
   --color-brand-500: #2b8f65;
   --color-brand-600: #349e72;
   --color-brand-700: #57b78d;
 
-  --color-brand-surface: #0e2e1f;
-  --color-brand-surface-deep: #0a2317;
-  --color-brand-surface-ink: #e9f4ee;
-  --color-brand-surface-muted: #9dbfad;
+  --color-brand-surface: #0d2b1c;
+  --color-brand-surface-deep: #092015;
+  --color-brand-surface-ink: #eaf2ea;
+  --color-brand-surface-muted: #97b8a4;
 
-  --color-ink-900: #edf2ee;
-  --color-ink-700: #bcc7c0;
-  --color-ink-500: #87938b;
+  --color-ember-500: #e08a3c;
+  --color-ember-600: #d05a40;
 
-  --color-surface-0: #141915;
-  --color-surface-50: #0d110e;
-  --color-surface-100: #1b211d;
-  --color-surface-200: #272f29;
-  --color-surface-300: #37423b;
+  --color-ink-900: #edf1ea;
+  --color-ink-700: #bbc4b6;
+  --color-ink-500: #858e80;
 
-  --color-danger-600: #dd6060;
-  --color-danger-700: #e57f7f;
+  --color-surface-0: #151b16;
+  --color-surface-50: #0c110d;
+  --color-surface-100: #1c231d;
+  --color-surface-200: #2a332b;
+  --color-surface-300: #3c473d;
+
+  --color-danger-600: #dd6c56;
+  --color-danger-700: #e5876f;
   --color-success-600: #349e72;
   --color-warning-600: #d6a044;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 24px 60px -20px rgba(0, 0, 0, 0.55), 0 10px 22px -8px rgba(0, 0, 0, 0.35);
 }

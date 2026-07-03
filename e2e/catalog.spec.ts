@@ -7,7 +7,8 @@ test.describe("Каталог, landing и блог", () => {
     await expect(
       page.getByRole("link", { name: "Създай магазина си безплатно" }),
     ).toBeVisible();
-    await expect(page.getByText("Ферма Зелена долина")).toBeVisible();
+    /* Името се появява и в hero телефона, и в демо картата — first() */
+    await expect(page.getByText("Ферма Зелена долина").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Прости, честни цени" })).toBeVisible();
 
     /* Cookie банерът се затваря и не се връща */

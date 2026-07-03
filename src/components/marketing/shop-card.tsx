@@ -8,7 +8,7 @@ export function ShopCard({ shop }: { shop: Shop }) {
   return (
     <Link
       href={`/s/${shop.slug}`}
-      className="flex flex-col gap-3 rounded-card border border-surface-200 bg-surface-0 p-5 transition-all hover:-translate-y-0.5 hover:border-brand-500 hover:shadow-md"
+      className="flex flex-col gap-3 rounded-card border border-surface-200 bg-surface-0 p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-500 hover:shadow-float"
     >
       <div className="flex items-center gap-3">
         {shop.logoPath ? (
@@ -29,7 +29,7 @@ export function ShopCard({ shop }: { shop: Shop }) {
         )}
         <div className="min-w-0">
           <p className="truncate font-bold text-ink-900">{shop.name}</p>
-          {shop.city && <p className="text-xs text-ink-500">📍 {shop.city}</p>}
+          {shop.city && <p className="text-xs text-ink-500">{shop.city}</p>}
         </div>
       </div>
       {shop.description && (
