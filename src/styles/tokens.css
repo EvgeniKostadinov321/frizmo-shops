@@ -5,21 +5,21 @@
  * Спец: docs/docs-03-07-2026/2026-07-03-visual-redesign-spec.md
  */
 @theme {
-  /* Бранд — дълбоко нефритено зелено (единственият акцент на платформата) */
-  --color-brand-50: #e3efec;
-  --color-brand-100: #c7dfd7;
-  --color-brand-500: #14665a;
-  --color-brand-600: #0f5348;
-  --color-brand-700: #0a3b33;
+  /* Бранд — топла теракота (занаят, пазар; решение 2026-07-03 — без зелено) */
+  --color-brand-50: #faf0e4;
+  --color-brand-100: #f3e0c9;
+  --color-brand-500: #9a5717;
+  --color-brand-600: #7f4712;
+  --color-brand-700: #61350c;
 
   /*
-   * Големи плътни brand повърхности (финален CTA, банери).
-   * ПРАВИЛО: плосък brand цвят никога върху голяма площ — R2 добавя градиент+noise.
+   * Големи плътни brand повърхности (Pro карта, банери) — дълбоко еспресо.
+   * ПРАВИЛО: плосък цвят никога върху голяма площ — R2 добавя градиент+noise.
    */
-  --color-brand-surface: #14665a;
-  --color-brand-surface-deep: #0e4a40;
+  --color-brand-surface: #33241a;
+  --color-brand-surface-deep: #241811;
   --color-brand-surface-ink: #faf8f5;
-  --color-brand-surface-muted: #b7d4c2;
+  --color-brand-surface-muted: #cdb8a0;
 
   /* Ember/кехлибар — САМО за промоции, badges, акцентната дума в hero H1. */
   --color-ember-500: #c97b2d;
@@ -45,7 +45,7 @@
   --color-warning-600: #b97e14;
 
   /* Focus ring */
-  --color-focus: #14665a;
+  --color-focus: #7f4712;
 
   /* Радиуси — консистентност е 50% от „скъпия" вид */
   --radius-control: 0.75rem; /* 12px: бутони, инпути */
@@ -62,11 +62,11 @@
   /* Атмосфера (R2): дълбочина чрез фини преливания, не плоски заливки */
   --gradient-hero-glow: radial-gradient(
     ellipse 80% 60% at 70% 20%,
-    rgb(20 102 90 / 0.07),
+    rgb(201 123 45 / 0.08),
     transparent
   );
-  --gradient-cta: radial-gradient(ellipse at 50% 0%, #1b7a6c 0%, #14665a 45%, #0e4a40 100%);
-  --shadow-brand-tint: 0 12px 30px -12px rgb(20 102 90 / 0.25);
+  --gradient-cta: radial-gradient(ellipse at 50% 0%, #4a3423 0%, #33241a 45%, #241811 100%);
+  --shadow-brand-tint: 0 12px 30px -12px rgb(154 87 23 / 0.25);
 }
 
 :root {
@@ -81,16 +81,16 @@
  * Никакви dark: варианти! Без неон върху тъмно.
  */
 [data-theme="dark"] {
-  --color-brand-50: #1c332e;
-  --color-brand-100: #234139;
-  --color-brand-500: #3fa08f;
-  --color-brand-600: #54b5a4;
-  --color-brand-700: #7bc9bb;
+  --color-brand-50: #33271a;
+  --color-brand-100: #40301f;
+  --color-brand-500: #d99a55;
+  --color-brand-600: #e3ab6e;
+  --color-brand-700: #edc08f;
 
-  --color-brand-surface: #14665a;
-  --color-brand-surface-deep: #0e4a40;
+  --color-brand-surface: #33241a;
+  --color-brand-surface-deep: #241811;
   --color-brand-surface-ink: #eae8e1;
-  --color-brand-surface-muted: #97b8a4;
+  --color-brand-surface-muted: #c9b394;
 
   --color-ember-500: #de9a4e;
   --color-ember-600: #c9853d;
@@ -111,16 +111,16 @@
   --color-success-600: #4fae78;
   --color-warning-600: #d6a044;
 
-  --color-focus: #3fa08f;
+  --color-focus: #d99a55;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-float: 0 24px 60px -20px rgba(0, 0, 0, 0.55), 0 10px 22px -8px rgba(0, 0, 0, 0.35);
 
   --gradient-hero-glow: radial-gradient(
     ellipse 80% 60% at 70% 20%,
-    rgb(63 160 143 / 0.1),
+    rgb(222 154 78 / 0.1),
     transparent
   );
-  --gradient-cta: radial-gradient(ellipse at 50% 0%, #1f8a79 0%, #14665a 45%, #0a3b33 100%);
-  --shadow-brand-tint: 0 12px 30px -12px rgb(63 160 143 / 0.3);
+  --gradient-cta: radial-gradient(ellipse at 50% 0%, #4a3423 0%, #33241a 45%, #1a110b 100%);
+  --shadow-brand-tint: 0 12px 30px -12px rgb(217 154 85 / 0.3);
 }

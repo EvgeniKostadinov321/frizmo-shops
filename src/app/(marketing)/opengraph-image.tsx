@@ -21,7 +21,7 @@ export default function LandingOgImage() {
           alignItems: "flex-start",
           justifyContent: "center",
           padding: "80px",
-          background: "linear-gradient(135deg, #14665a 0%, #0e4a40 100%)",
+          background: "linear-gradient(135deg, #33241a 0%, #241811 100%)",
           color: "#faf8f5",
         }}
       >
