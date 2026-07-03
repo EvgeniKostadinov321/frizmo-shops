@@ -2,21 +2,16 @@ import type { Metadata } from "next";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  OrderNotificationMockup,
-  ThemeEditorMockup,
-  VisibilityMockup,
-} from "@/components/marketing/feature-mockups";
-import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { BeforeAfter } from "@/components/marketing/before-after";
 import { DoneForYou } from "@/components/marketing/done-for-you";
-import { StepCard, type StepVisual } from "@/components/marketing/step-card";
-import { Reveal } from "@/components/marketing/reveal";
+import { FeatureBento } from "@/components/marketing/feature-bento";
+import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
+import { Reveal } from "@/components/marketing/reveal";
 import { RevealList } from "@/components/marketing/reveal-list";
-import { SpringIconBadge } from "@/components/marketing/spring-icon-badge";
 import { ShopCard } from "@/components/marketing/shop-card";
-import { Accordion, FlagBg, Icon, type IconName } from "@/components/ui";
+import { StepCard, type StepVisual } from "@/components/marketing/step-card";
+import { Accordion, FlagBg, Icon } from "@/components/ui";
 import { db, products, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { publicImageUrl } from "@/lib/storage";
@@ -52,27 +47,6 @@ const STEPS: { number: string; title: string; text: string; visual: StepVisual }
     title: "Публикувай",
     text: "Един клик — и магазинът е на живо. Сподели линка, клиентите поръчват веднага.",
     visual: "publish",
-  },
-];
-
-const FEATURES: { icon: IconName; title: string; text: string; mockup: React.ReactNode }[] = [
-  {
-    icon: "palette",
-    title: "Магазин, който изглежда като теб",
-    text: "Теми, твоите цветове, твоето лого, подреждаеми секции — „за нас“, отзиви, галерия, промо банери. Личи си, че е твое, без ред код.",
-    mockup: <ThemeEditorMockup />,
-  },
-  {
-    icon: "bell",
-    title: "Поръчките идват при теб",
-    text: "Нова поръчка? Известие на телефона и имейл за секунди. Потвърждаваш, изпращаш, завършваш — наличностите се следят сами.",
-    mockup: <OrderNotificationMockup />,
-  },
-  {
-    icon: "trending-up",
-    title: "Видимост от първия ден",
-    text: "Магазинът ти е в каталога на Frizmo Shops и се индексира от Google. Клиентите те намират — не обратното.",
-    mockup: <VisibilityMockup />,
   },
 ];
 
@@ -305,25 +279,21 @@ export default async function LandingPage() {
         </section>
       )}
 
-      {/* Функции */}
+      {/* Функции — bento grid */}
       <section className="mx-auto w-full max-w-7xl px-4 py-24">
-        <Kicker>Какво получаваш</Kicker>
-        <div className="mt-12 flex flex-col gap-24">
-          {FEATURES.map((feature, i) => (
-            <Reveal key={feature.title}>
-              <div className="grid items-center gap-10 md:grid-cols-2">
-                <div className={`flex flex-col gap-4 ${i % 2 ? "md:order-2" : ""}`}>
-                  <SpringIconBadge name={feature.icon} />
-                  <h3 className="font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">
-                    {feature.title}
-                  </h3>
-                  <p className="max-w-md text-lg leading-relaxed text-ink-700">{feature.text}</p>
-                </div>
-                <div className={i % 2 ? "md:order-1" : ""}>{feature.mockup}</div>
-              </div>
-            </Reveal>
-          ))}
+        <div className="max-w-2xl">
+          <Kicker>Какво получаваш</Kicker>
+          <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-balance text-ink-900 sm:text-5xl">
+            Всичко за онлайн продажбите — на едно място.
+          </h2>
+          <p className="mt-4 text-lg leading-relaxed text-ink-700">
+            Дизайн, поръчки и видимост в Google. Ти се грижиш за продуктите, останалото е
+            наша работа.
+          </p>
         </div>
+        <Reveal className="mt-14">
+          <FeatureBento />
+        </Reveal>
       </section>
 
       {/* Цени */}
