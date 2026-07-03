@@ -168,7 +168,7 @@ export default async function LandingPage() {
 
         <div className="mt-10 grid items-center gap-14 md:grid-cols-[1.15fr_0.85fr]">
           <div className="flex flex-col items-start gap-7">
-            <h1 className="font-display text-6xl font-extrabold leading-[0.95] tracking-tight text-ink-900 sm:text-7xl lg:text-8xl">
+            <h1 className="font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-balance text-ink-900 sm:text-6xl lg:text-7xl">
               Твоят онлайн{" "}
               <span className="bg-linear-to-r from-ember-500 to-ember-600 bg-clip-text text-transparent">
                 магазин

@@ -35,8 +35,8 @@ export function MiniShopHeader({ name, city }: MiniShopHeaderProps) {
         {(badgeVisible || reducedMotion) && (
           <m.span
             initial={reducedMotion ? false : { scale: 0 }}
-            animate={{ scale: [0, 1.35, 1] }}
-            transition={SPRING_SNAPPY}
+            animate={{ scale: 1 }}
+            transition={{ ...SPRING_SNAPPY, damping: 14 }}
             className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-ember-500 text-[9px] font-bold text-white"
           >
             1
