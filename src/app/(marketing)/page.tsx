@@ -7,7 +7,6 @@ import {
   ThemeEditorMockup,
   VisibilityMockup,
 } from "@/components/marketing/feature-mockups";
-import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { BeforeAfter } from "@/components/marketing/before-after";
 import { StepCard, type StepVisual } from "@/components/marketing/step-card";
@@ -18,7 +17,6 @@ import { SpringIconBadge } from "@/components/marketing/spring-icon-badge";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { Accordion, FlagBg, Icon, type IconName } from "@/components/ui";
 import { db, products, shops } from "@/db";
-import { searchCatalogProducts } from "@/db/queries/catalog";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { publicImageUrl } from "@/lib/storage";
 import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
@@ -109,8 +107,6 @@ export default async function LandingPage() {
         limit: 6,
       })
     : [];
-  /* Реални продукти от демо магазините — примерите в секцията „На живо" */
-  const { items: exampleProducts } = await searchCatalogProducts();
   /* Снимка за финалната CTA — първата продуктова снимка на hero магазина */
   const ctaImagePath = heroProducts.flatMap((p) => p.images)[0] ?? null;
   const ctaImage = ctaImagePath ? publicImageUrl(ctaImagePath) : null;
@@ -282,26 +278,15 @@ export default async function LandingPage() {
                 <ShopCard key={shop.id} shop={shop} />
               ))}
             </RevealList>
-            {exampleProducts.length > 0 && (
-              <>
-                <p className="mt-16 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
-                  Продукти от демо магазините
-                </p>
-                <RevealList className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {exampleProducts.slice(0, 8).map((product) => (
-                    <CatalogProductCard key={product.id} product={product} />
-                  ))}
-                </RevealList>
-                <p className="mt-8 text-center">
-                  <Link
-                    href="/products"
-                    className="text-sm font-medium text-brand-600 hover:text-brand-700"
-                  >
-                    Разгледай всички продукти в каталога →
-                  </Link>
-                </p>
-              </>
-            )}
+            <p className="mt-10">
+              <Link
+                href="/shops"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
+              >
+                Разгледай всички магазини в каталога
+                <span aria-hidden>→</span>
+              </Link>
+            </p>
           </div>
         </section>
       )}
