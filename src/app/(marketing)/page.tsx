@@ -99,10 +99,6 @@ export default async function LandingPage() {
     }
   }
 
-  /* Снимка за финалната CTA — първата продуктова снимка на hero магазина */
-  const ctaImagePath = heroProducts.flatMap((p) => p.images)[0] ?? null;
-  const ctaImage = ctaImagePath ? publicImageUrl(ctaImagePath) : null;
-
   return (
     <>
       <script
@@ -435,22 +431,21 @@ export default async function LandingPage() {
 
       {/* Финален CTA — снимка от демо магазин + тъмен scrim за четимост (спец §15) */}
       <section className="relative overflow-hidden bg-ink-900">
-        {ctaImage && (
-          <Image
-            src={ctaImage}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover"
-            aria-hidden
-          />
-        )}
+        <Image
+          src="/cta-workshop.webp"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          aria-hidden
+        />
+        {/* Тъмен scrim — четимост на центрирания текст върху всяка част от снимката */}
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to top, rgb(16 18 16 / 0.88), rgb(16 18 16 / 0.62) 55%, rgb(16 18 16 / 0.45))",
+              "linear-gradient(to top, rgb(16 18 16 / 0.82), rgb(16 18 16 / 0.68) 50%, rgb(16 18 16 / 0.72))",
           }}
         />
         <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-7 px-4 py-28 text-center">
