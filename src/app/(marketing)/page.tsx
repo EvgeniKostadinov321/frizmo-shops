@@ -10,6 +10,7 @@ import { PhoneMockup } from "@/components/marketing/phone-mockup";
 import { Reveal } from "@/components/marketing/reveal";
 import { NicheMarquee } from "@/components/marketing/niche-marquee";
 import { RevealList } from "@/components/marketing/reveal-list";
+import { SpringIconBadge } from "@/components/marketing/spring-icon-badge";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { FlagBg, Icon, type IconName } from "@/components/ui";
 import { db, products, shops } from "@/db";
@@ -211,9 +212,7 @@ export default async function LandingPage() {
           <RevealList className="mt-14 grid gap-x-10 gap-y-12 md:grid-cols-3">
             {PAINS.map((pain) => (
               <div key={pain.title} className="flex flex-col gap-4 border-t border-surface-200 pt-6">
-                  <span className="flex size-11 items-center justify-center rounded-full bg-surface-0 text-brand-600 shadow-card">
-                    <Icon name={pain.icon} size={21} />
-                  </span>
+                  <SpringIconBadge name={pain.icon} />
                   <h3 className="text-lg font-bold text-ink-900">{pain.title}</h3>
                   <p className="text-[15px] leading-relaxed text-ink-700">{pain.text}</p>
               </div>
@@ -279,9 +278,7 @@ export default async function LandingPage() {
             <Reveal key={feature.title}>
               <div className="grid items-center gap-10 md:grid-cols-2">
                 <div className={`flex flex-col gap-4 ${i % 2 ? "md:order-2" : ""}`}>
-                  <span className="flex size-11 items-center justify-center rounded-full bg-surface-0 text-brand-600 shadow-card">
-                    <Icon name={feature.icon} size={21} />
-                  </span>
+                  <SpringIconBadge name={feature.icon} />
                   <h3 className="font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">
                     {feature.title}
                   </h3>
