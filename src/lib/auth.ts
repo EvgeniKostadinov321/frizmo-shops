@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db, profiles, shops } from "@/db";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
@@ -30,4 +30,15 @@ export async function requireShop() {
   const { user, shop } = await getOwnShop();
   if (!shop) redirect("/dashboard/onboarding");
   return { user, shop };
+}
+
+/** Платформен админ: имейлът е в PLATFORM_ADMIN_EMAILS; иначе 404 (без издаване). */
+export async function requireAdmin() {
+  const user = await requireUser();
+  const admins = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!user.email || !admins.includes(user.email.toLowerCase())) notFound();
+  return user;
 }

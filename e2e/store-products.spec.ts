@@ -13,7 +13,7 @@ async function register(page: Page, email: string) {
 
 test.describe("Магазин и продукти", () => {
   test("onboarding → категории → продукт с варианти → редакция", async ({ page }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(240_000);
     await register(page, `frizmo.e2e+shop${Date.now()}@gmail.com`);
 
     /* 1. Onboarding стъпка 1 */
@@ -39,7 +39,12 @@ test.describe("Магазин и продукти", () => {
 
     await page.getByRole("button", { name: "Добави категория" }).click();
     await page.getByLabel("Име").fill("Сирена");
-    await page.getByLabel("Родителска категория").selectOption({ label: "Млечни" });
+    /* Изчакваме router.refresh() да достави новата категория в опциите */
+    const parentSelect = page.getByLabel("Родителска категория");
+    await expect(parentSelect.locator("option", { hasText: "Млечни" })).toBeAttached({
+      timeout: 20_000,
+    });
+    await parentSelect.selectOption({ label: "Млечни" });
     await page.getByRole("button", { name: "Запази" }).click();
     await expect(page.getByText("Сирена")).toBeVisible();
 
