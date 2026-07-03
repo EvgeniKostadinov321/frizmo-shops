@@ -12,6 +12,21 @@ const eslintConfig = defineConfig([
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // Motion се ползва само през m. + LazyMotion (bundle дисциплина) —
+      // виж src/components/marketing/motion-provider.tsx
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "motion/react",
+              importNames: ["motion"],
+              message:
+                "Използвай `m` с LazyMotion вместо `motion` — виж src/components/marketing/motion-provider.tsx",
+            },
+          ],
+        },
+      ],
     },
   },
   // Override default ignores of eslint-config-next.

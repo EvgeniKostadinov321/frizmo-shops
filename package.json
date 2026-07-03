@@ -24,6 +24,7 @@
     "drizzle-orm": "^0.45.2",
     "gray-matter": "^4.0.3",
     "marked": "^18.0.5",
+    "motion": "^12.42.2",
     "next": "16.2.10",
     "postgres": "^3.4.9",
     "react": "19.2.4",
