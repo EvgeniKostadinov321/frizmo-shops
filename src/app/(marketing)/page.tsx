@@ -107,6 +107,23 @@ export default async function LandingPage() {
         limit: 6,
       })
     : [];
+  /* Cover снимка за всяка демо карта — първата продуктова снимка на магазина.
+     Един заявка за всички демо продукти, после мапваме първата снимка per магазин. */
+  const demoShopIds = demoShops.map((s) => s.id);
+  const demoProducts = demoShopIds.length
+    ? await db.query.products.findMany({
+        where: and(inArray(products.shopId, demoShopIds), eq(products.status, "active")),
+        orderBy: [asc(products.createdAt)],
+      })
+    : [];
+  const coverByShopId = new Map<string, string>();
+  for (const product of demoProducts) {
+    const path = product.images[0];
+    if (path && !coverByShopId.has(product.shopId)) {
+      coverByShopId.set(product.shopId, publicImageUrl(path));
+    }
+  }
+
   /* Снимка за финалната CTA — първата продуктова снимка на hero магазина */
   const ctaImagePath = heroProducts.flatMap((p) => p.images)[0] ?? null;
   const ctaImage = ctaImagePath ? publicImageUrl(ctaImagePath) : null;
@@ -275,7 +292,7 @@ export default async function LandingPage() {
             </p>
             <RevealList className="mt-12 grid gap-6 md:grid-cols-3">
               {demoShops.map((shop) => (
-                <ShopCard key={shop.id} shop={shop} />
+                <ShopCard key={shop.id} shop={shop} coverImage={coverByShopId.get(shop.id)} />
               ))}
             </RevealList>
             <p className="mt-10">
