@@ -311,7 +311,7 @@ export default async function LandingPage() {
                   <div
                     className={`flex h-full flex-col gap-6 rounded-card p-8 ${
                       dark
-                        ? "bg-linear-to-br from-brand-surface to-brand-surface-deep text-brand-surface-ink shadow-float"
+                        ? "bg-linear-to-br from-brand-surface to-brand-surface-deep text-brand-surface-ink [box-shadow:var(--shadow-brand-tint),var(--shadow-float)]"
                         : "border border-surface-200 bg-surface-0 shadow-card"
                     }`}
                   >
@@ -394,8 +394,13 @@ export default async function LandingPage() {
       </section>
 
       {/* Финален CTA — единствената тъмнозелена лента (bookend) */}
-      <section className="bg-linear-to-br from-brand-surface to-brand-surface-deep">
-        <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-7 px-4 py-24 text-center">
+      <section className="relative overflow-hidden" style={{ backgroundImage: "var(--gradient-cta)" }}>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay"
+          style={{ backgroundImage: "var(--texture-noise)" }}
+        />
+        <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-7 px-4 py-24 text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-surface-muted">
             Frizmo Shops
           </p>
