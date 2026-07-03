@@ -130,8 +130,16 @@ export default async function LandingPage() {
         }}
       />
 
-      {/* Hero — светла ленена хартия, огромна display типография */}
-      <section className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 md:pt-14">
+      {/* Hero — топла хартия с фин brand glow + noise (спец §15) */}
+      <section
+        className="relative mx-auto w-full max-w-6xl overflow-hidden px-4 pb-20 pt-10 md:pt-14"
+        style={{ backgroundImage: "var(--gradient-hero-glow)" }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-60 mix-blend-overlay"
+          style={{ backgroundImage: "var(--texture-noise)" }}
+        />
         <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
           <span className="flex shrink-0 items-center gap-2">
             <FlagBg className="h-3 w-auto" />
