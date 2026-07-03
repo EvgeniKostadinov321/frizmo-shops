@@ -9,6 +9,7 @@ import {
 } from "@/components/marketing/feature-mockups";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { BeforeAfter } from "@/components/marketing/before-after";
+import { DoneForYou } from "@/components/marketing/done-for-you";
 import { StepCard, type StepVisual } from "@/components/marketing/step-card";
 import { Reveal } from "@/components/marketing/reveal";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
@@ -226,14 +227,10 @@ export default async function LandingPage() {
             <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
           </div>
         </div>
-
-        {/* Мек преход надолу — размива рязката граница между hero и следващата секция */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-surface-100/60"
-        />
       </section>
 
+      {/* „Ние ще го направим за теб" — безплатна услуга по настройка (акцентна лента) */}
+      <DoneForYou />
 
       {/* Болката — „Преди / След" контраст (различен ритъм от картовите секции) */}
       <section className="bg-surface-100/60">
