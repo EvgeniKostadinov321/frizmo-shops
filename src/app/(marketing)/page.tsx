@@ -22,9 +22,9 @@ import { publicImageUrl } from "@/lib/storage";
 import { PRICING_PLANS, TRIAL_NOTE } from "@/lib/plans-content";
 
 export const metadata: Metadata = {
-  title: "Frizmo Shops — Твоят онлайн магазин. Готов днес. Без програмист.",
+  title: "Frizmo Shops — Продавай повече. Без хаос, без комисиони.",
   description:
-    "Създай собствен онлайн магазин за минути: продукти, поръчки, персонализиран дизайн и видимост в каталога. 30 дни безплатно.",
+    "Истински онлайн магазин със собствен адрес за минути: продукти, поръчки, наличности и видимост в Google. Без комисиона от продажбите. 30 дни безплатно.",
 };
 
 const PAINS: { icon: IconName; title: string; text: string }[] = [
@@ -168,58 +168,61 @@ export default async function LandingPage() {
           className="pointer-events-none absolute inset-0 opacity-60 mix-blend-overlay"
           style={{ backgroundImage: "var(--texture-noise)" }}
         />
-        <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-10 md:pt-14">
-        <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
-          <span className="flex shrink-0 items-center gap-2">
-            <FlagBg className="h-3 w-auto" />
-            Създадено за българския пазар
-          </span>
-          <span aria-hidden className="h-px flex-1 bg-surface-200" />
-          <span className="hidden shrink-0 sm:block">Без комисиони · 24/7</span>
-        </div>
-
-        <div className="mt-10 grid items-center gap-14 md:grid-cols-[1.15fr_0.85fr]">
-          <div className="flex flex-col items-start gap-7">
-            <h1 className="font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-balance text-ink-900 sm:text-6xl lg:text-7xl">
-              Твоят онлайн{" "}
-              <span className="bg-linear-to-r from-ember-500 to-ember-600 bg-clip-text text-transparent">
-                магазин
+        <div className="relative mx-auto w-full max-w-7xl px-4 pb-24 pt-12 md:pt-16">
+          <div className="grid items-center gap-x-16 gap-y-14 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="flex flex-col items-start gap-6">
+              <span className="inline-flex items-center gap-2 rounded-full border border-surface-200 bg-surface-0 px-3.5 py-1.5 text-xs font-semibold text-ink-700 shadow-card">
+                <FlagBg className="h-3 w-auto" />
+                Направено за българските търговци
               </span>
-              .
-              <br />
-              Готов днес.
-              <br />
-              Без програмист.
-            </h1>
-            <p className="max-w-md text-lg leading-relaxed text-ink-700">
-              Продукти, поръчки, красив дизайн и клиенти, които те намират — всичко на
-              едно място, за цената на два кебапчета на ден.
-            </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link
-                href="/auth/register"
-                className="group inline-flex h-13 items-center gap-2 rounded-full bg-ink-900 px-7 text-base font-bold text-surface-0 shadow-card transition-transform hover:-translate-y-0.5"
-              >
-                Създай магазина си безплатно
-                <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
-                  →
+              <h1 className="font-display text-5xl font-extrabold leading-[1.03] tracking-tight text-balance text-ink-900 sm:text-6xl lg:text-[4.5rem]">
+                Продавай повече.
+                <br />
+                Без хаос, без{" "}
+                <span className="relative whitespace-nowrap text-brand-600">
+                  комисиони
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-1 -z-10 h-3 rounded-sm bg-brand-100"
+                  />
                 </span>
-              </Link>
-              <Link
-                href="/shops"
-                className="inline-flex h-13 items-center rounded-full border border-surface-200 bg-surface-0 px-6 text-sm font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
-              >
-                Виж живи магазини
-              </Link>
+                .
+              </h1>
+              <p className="max-w-lg text-lg leading-relaxed text-ink-700">
+                Истински онлайн магазин със собствен адрес — продукти, поръчки, наличности
+                и клиенти, които те намират в Google. Спри да гониш поръчки из чатовете.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Link
+                  href="/auth/register"
+                  className="group inline-flex h-13 items-center gap-2 rounded-full bg-ink-900 px-7 text-base font-bold text-surface-0 shadow-card transition-transform hover:-translate-y-0.5"
+                >
+                  Създай магазина си безплатно
+                  <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </Link>
+                <Link
+                  href="/shops"
+                  className="inline-flex h-13 items-center rounded-full border border-surface-200 bg-surface-0 px-6 text-sm font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
+                >
+                  Виж живи магазини
+                </Link>
+              </div>
+              <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-3 text-sm text-ink-500">
+                {["30 дни безплатно", "Без карта", "Готов за 15 минути", "Без комисиона"].map(
+                  (item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <Icon name="check" size={15} className="shrink-0 text-brand-600" />
+                      {item}
+                    </li>
+                  ),
+                )}
+              </ul>
             </div>
-            <p className="flex items-center gap-2 text-sm text-ink-500">
-              <span className="size-1.5 rounded-full bg-brand-500" aria-hidden />
-              {TRIAL_NOTE}
-            </p>
-          </div>
 
-          <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
-        </div>
+            <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
+          </div>
         </div>
       </section>
 
