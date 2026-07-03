@@ -6,7 +6,7 @@ import {
   ThemeEditorMockup,
   VisibilityMockup,
 } from "@/components/marketing/feature-mockups";
-import { PhoneMockup } from "@/components/marketing/phone-mockup";
+import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { Reveal } from "@/components/marketing/reveal";
 import { NicheMarquee } from "@/components/marketing/niche-marquee";
 import { RevealList } from "@/components/marketing/reveal-list";
@@ -206,9 +206,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <Reveal>
-            <PhoneMockup shop={heroShop} products={heroProducts} />
-          </Reveal>
+          <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
         </div>
       </section>
 
