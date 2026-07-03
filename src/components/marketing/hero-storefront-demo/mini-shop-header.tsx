@@ -19,8 +19,9 @@ export function MiniShopHeader({ name, city }: MiniShopHeaderProps) {
   const [badgeVisible, setBadgeVisible] = useState(false);
 
   useEffect(() => {
-    if (reducedMotion) return;
-    const timer = setTimeout(() => setBadgeVisible(true), 1400);
+    /* При reduced-motion badge-ът се показва веднага (след mount — hydration-safe;
+       queueMicrotask заради react-compiler правилото за setState в effect) */
+    const timer = setTimeout(() => setBadgeVisible(true), reducedMotion ? 0 : 1400);
     return () => clearTimeout(timer);
   }, [reducedMotion]);
 
@@ -32,7 +33,7 @@ export function MiniShopHeader({ name, city }: MiniShopHeaderProps) {
       </div>
       <span className="relative flex size-9 items-center justify-center rounded-full bg-brand-600 text-white">
         <Icon name="store" size={16} />
-        {(badgeVisible || reducedMotion) && (
+        {badgeVisible && (
           <m.span
             initial={reducedMotion ? false : { scale: 0 }}
             animate={{ scale: 1 }}

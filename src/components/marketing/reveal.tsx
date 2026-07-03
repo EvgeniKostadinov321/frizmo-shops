@@ -1,6 +1,6 @@
 "use client";
 
-import { m, useReducedMotion } from "motion/react";
+import { m } from "motion/react";
 import { fadeUp } from "@/lib/motion";
 
 type RevealProps = {
@@ -11,16 +11,10 @@ type RevealProps = {
 };
 
 /**
- * Scroll reveal чрез Motion whileInView. Уважава prefers-reduced-motion
- * (показва съдържанието статично, без анимация) — WCAG 2.3.3.
+ * Scroll reveal чрез Motion whileInView. Reduced-motion се поема централно
+ * от MotionConfig в MotionProvider (без markup разклонение — hydration-safe).
  */
 export function Reveal({ children, className, delay = 0 }: RevealProps) {
-  const reducedMotion = useReducedMotion();
-
-  if (reducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
-
   return (
     <m.div
       className={className}

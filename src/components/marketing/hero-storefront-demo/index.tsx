@@ -1,6 +1,6 @@
 "use client";
 
-import { m, useReducedMotion } from "motion/react";
+import { m } from "motion/react";
 import type { Product, Shop } from "@/db";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { publicImageUrl } from "@/lib/storage";
@@ -24,10 +24,9 @@ const FALLBACK_PRODUCTS = [
 /**
  * Живата hero витрина (спец §4) — сглобява се пред очите на посетителя:
  * прозорец → header → продукти каскадно → badge на количката (~1.4s).
- * При prefers-reduced-motion: статично сглобена. На mobile: 2 продукта.
+ * Reduced-motion се поема централно от MotionConfig. На mobile: 2 продукта.
  */
 export function HeroStorefrontDemo({ shop, products }: HeroStorefrontDemoProps) {
-  const reducedMotion = useReducedMotion();
   const name = shop?.name ?? FALLBACK_SHOP.name;
   const city = shop?.city ?? FALLBACK_SHOP.city;
   const items = products.length
@@ -39,48 +38,28 @@ export function HeroStorefrontDemo({ shop, products }: HeroStorefrontDemoProps) 
       }))
     : FALLBACK_PRODUCTS;
 
-  const content = (
-    <div className="flex flex-col gap-3 bg-surface-50 pb-5">
-      <MiniShopHeader name={name} city={city} />
-      <div className="flex flex-col gap-2 px-5">
-        {items.map((item, i) =>
-          reducedMotion ? (
-            <div key={item.id} className={i === 2 ? "hidden sm:block" : undefined}>
-              <MiniProductCard
-                name={item.name}
-                priceCents={item.priceCents}
-                image={item.image}
-                priority={i === 0}
-              />
-            </div>
-          ) : (
-            <m.div key={item.id} variants={fadeUp} className={i === 2 ? "hidden sm:block" : undefined}>
-              <MiniProductCard
-                name={item.name}
-                priceCents={item.priceCents}
-                image={item.image}
-                priority={i === 0}
-              />
-            </m.div>
-          ),
-        )}
-      </div>
-    </div>
-  );
-
-  if (reducedMotion) {
-    return (
-      <div className="mx-auto w-full max-w-md">
-        <BrowserChrome url="frizmo.shop/s/ferma-zelena-dolina">{content}</BrowserChrome>
-      </div>
-    );
-  }
-
   return (
     <m.div initial="hidden" animate="visible" variants={fadeUp} className="mx-auto w-full max-w-md">
       <BrowserChrome url="frizmo.shop/s/ferma-zelena-dolina">
-        <m.div initial="hidden" animate="visible" variants={staggerContainer(0.15, 0.3)}>
-          {content}
+        <m.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer(0.15, 0.3)}
+          className="flex flex-col gap-3 bg-surface-50 pb-5"
+        >
+          <MiniShopHeader name={name} city={city} />
+          <div className="flex flex-col gap-2 px-5">
+            {items.map((item, i) => (
+              <m.div key={item.id} variants={fadeUp} className={i === 2 ? "hidden sm:block" : undefined}>
+                <MiniProductCard
+                  name={item.name}
+                  priceCents={item.priceCents}
+                  image={item.image}
+                  priority={i === 0}
+                />
+              </m.div>
+            ))}
+          </div>
         </m.div>
       </BrowserChrome>
     </m.div>

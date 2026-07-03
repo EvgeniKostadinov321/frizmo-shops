@@ -1,7 +1,7 @@
 "use client";
 
 import { Children } from "react";
-import { m, useReducedMotion } from "motion/react";
+import { m } from "motion/react";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 
 type RevealListProps = {
@@ -17,23 +17,10 @@ type RevealListProps = {
 /**
  * Stagger grid reveal: децата влизат каскадно при влизане във viewport-а.
  * Server Components подават чист JSX; обвивката е клиентска (Motion).
- * Уважава prefers-reduced-motion (статично съдържание) — WCAG 2.3.3.
+ * Reduced-motion се поема централно от MotionConfig (hydration-safe).
  */
 export function RevealList({ children, className, itemClassName, stagger = 0.06 }: RevealListProps) {
-  const reducedMotion = useReducedMotion();
   const items = Children.toArray(children);
-
-  if (reducedMotion) {
-    return (
-      <div className={className}>
-        {items.map((child, i) => (
-          <div key={i} className={itemClassName}>
-            {child}
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   return (
     <m.div
