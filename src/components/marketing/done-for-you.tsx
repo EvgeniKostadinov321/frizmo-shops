@@ -61,7 +61,7 @@ export function DoneForYou() {
             </span>
             <span className="min-w-0">
               <span className="block text-xs font-medium text-brand-surface-muted">Или ни пиши</span>
-              <span className="block truncate text-lg font-semibold">{EMAIL}</span>
+              <span className="block truncate text-base font-semibold sm:text-lg">{EMAIL}</span>
             </span>
           </a>
         </div>
