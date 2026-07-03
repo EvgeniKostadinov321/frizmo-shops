@@ -9,7 +9,7 @@ import {
 } from "@/components/marketing/feature-mockups";
 import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
-import { PainCard, type PainVisual } from "@/components/marketing/pain-card";
+import { BeforeAfter } from "@/components/marketing/before-after";
 import { StepCard, type StepVisual } from "@/components/marketing/step-card";
 import { Reveal } from "@/components/marketing/reveal";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
@@ -28,27 +28,6 @@ export const metadata: Metadata = {
   description:
     "Истински онлайн магазин със собствен адрес за минути: продукти, поръчки, наличности и видимост в Google. Без комисиона от продажбите. 30 дни безплатно.",
 };
-
-const PAINS: { icon: IconName; title: string; text: string; visual: PainVisual }[] = [
-  {
-    icon: "message-circle",
-    title: "Поръчки из съобщенията",
-    text: "Facebook, Viber, Instagram... поръчките се губят между чатовете, а ти пишеш едно и също по 20 пъти на ден.",
-    visual: "chats",
-  },
-  {
-    icon: "image",
-    title: "Продуктите нямат дом",
-    text: "Снимките потъват във feed-а за един ден. Няма цени, няма наличности, няма място, което да е ТВОЕ.",
-    visual: "feed",
-  },
-  {
-    icon: "search",
-    title: "Никой не те намира",
-    text: "Без собствен сайт те няма в Google. Клиентите намират конкурентите, които са онлайн.",
-    visual: "search",
-  },
-];
 
 const STEPS: { number: string; title: string; text: string; visual: StepVisual }[] = [
   {
@@ -236,7 +215,7 @@ export default async function LandingPage() {
       </section>
 
 
-      {/* Болката — по-дълбока хартия, истински карти с мини визуализации */}
+      {/* Болката — „Преди / След" контраст (различен ритъм от картовите секции) */}
       <section className="bg-surface-100/60">
         <div className="mx-auto w-full max-w-7xl px-4 py-24">
           <div className="max-w-2xl">
@@ -249,17 +228,9 @@ export default async function LandingPage() {
               никой не намира. Има по-добър начин.
             </p>
           </div>
-          <RevealList className="mt-14 grid gap-6 md:grid-cols-3" stagger={0.08}>
-            {PAINS.map((pain) => (
-              <PainCard
-                key={pain.title}
-                icon={pain.icon}
-                title={pain.title}
-                text={pain.text}
-                visual={pain.visual}
-              />
-            ))}
-          </RevealList>
+          <Reveal className="mt-14">
+            <BeforeAfter />
+          </Reveal>
         </div>
       </section>
 
