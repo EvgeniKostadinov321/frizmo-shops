@@ -11,7 +11,7 @@ import { Reveal } from "@/components/marketing/reveal";
 import { RevealList } from "@/components/marketing/reveal-list";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { StepCard, type StepVisual } from "@/components/marketing/step-card";
-import { Accordion, FlagBg, Icon } from "@/components/ui";
+import { Accordion, Icon } from "@/components/ui";
 import { db, products, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { publicImageUrl } from "@/lib/storage";
@@ -145,7 +145,7 @@ export default async function LandingPage() {
           <div className="grid items-center gap-x-16 gap-y-14 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="flex flex-col items-start gap-6">
               <span className="inline-flex items-center gap-2 rounded-full border border-surface-200 bg-surface-0 px-3.5 py-1.5 text-xs font-semibold text-ink-700 shadow-card">
-                <FlagBg className="h-3 w-auto" />
+                <span className="size-1.5 rounded-full bg-brand-600" aria-hidden />
                 Направено за българските търговци
               </span>
               <h1 className="font-display text-5xl font-extrabold leading-[1.03] tracking-tight text-balance text-ink-900 sm:text-6xl lg:text-[4.5rem]">
