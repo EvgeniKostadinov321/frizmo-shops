@@ -78,13 +78,13 @@ export function PainCard({ icon, title, text, visual }: PainCardProps) {
   const Visual = VISUALS[visual];
   return (
     <div className="group flex h-full flex-col gap-5 rounded-card border border-surface-200 bg-surface-0 p-6 shadow-card transition-all hover:-translate-y-1 hover:border-surface-300 hover:shadow-float">
-      <div className="rounded-xl bg-surface-50 p-3.5">
+      <div className="flex h-32 flex-col justify-center rounded-xl bg-surface-50 p-4">
         <Visual />
       </div>
       <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm transition-transform group-hover:scale-105">
         <Icon name={icon} size={22} />
       </span>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-2">
         <h3 className="text-lg font-bold text-ink-900">{title}</h3>
         <p className="text-[15px] leading-relaxed text-ink-700">{text}</p>
       </div>
