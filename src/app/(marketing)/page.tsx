@@ -276,6 +276,9 @@ export default async function LandingPage() {
         </section>
       )}
 
+      {/* Инсталирай като приложение (PWA) */}
+      <InstallAppSection />
+
       {/* Функции — bento grid */}
       <section className="mx-auto w-full max-w-7xl px-4 py-24">
         <div className="max-w-2xl">
@@ -389,11 +392,6 @@ export default async function LandingPage() {
             ))}
           </ul>
         </div>
-      </section>
-
-      {/* Инсталирай като приложение (PWA) */}
-      <section className="bg-surface-100/60">
-        <InstallAppSection />
       </section>
 
       {/* FAQ — split: заглавие + контакт карта вляво, акордеон вдясно */}
