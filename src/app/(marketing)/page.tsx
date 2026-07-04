@@ -6,6 +6,7 @@ import { BeforeAfter } from "@/components/marketing/before-after";
 import { DoneForYou } from "@/components/marketing/done-for-you";
 import { FeatureBento } from "@/components/marketing/feature-bento";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
+import { InstallAppSection } from "@/components/marketing/install-app-section";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { Reveal } from "@/components/marketing/reveal";
 import { RevealList } from "@/components/marketing/reveal-list";
@@ -388,6 +389,11 @@ export default async function LandingPage() {
             ))}
           </ul>
         </div>
+      </section>
+
+      {/* Инсталирай като приложение (PWA) */}
+      <section className="bg-surface-100/60">
+        <InstallAppSection />
       </section>
 
       {/* FAQ — split: заглавие + контакт карта вляво, акордеон вдясно */}
