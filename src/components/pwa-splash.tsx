@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon, Logo } from "@/components/ui";
 
 /* Ключ, който бележи, че потребителят вече е взаимодействал с приложението поне
    веднъж — тогава браузърът разрешава autoplay със звук. Първото отваряне е тихо
@@ -142,10 +143,26 @@ export function PwaSplash() {
         className="absolute inset-0 hidden h-full w-full object-cover motion-reduce:block"
         aria-hidden
       />
-      {/* Wordmark — над кадъра, с отстъп за safe-area/notch. */}
-      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+8%)] flex justify-center px-6">
-        <p className="animate-splash-word font-display text-4xl font-extrabold tracking-tight text-ink-900 drop-shadow-sm sm:text-5xl">
-          Frizmo Shops
+      {/* Старт/прескочи бутон — горе вдясно, влиза в приложението веднага.
+          Спираме propagation, за да не задейства и overlay onClick (двоен leave). */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          leave();
+        }}
+        className="absolute right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-10 flex h-10 items-center gap-1.5 rounded-full border border-surface-300 bg-surface-0/80 px-4 text-sm font-medium text-ink-900 shadow-card backdrop-blur transition-colors hover:bg-surface-0"
+      >
+        Старт
+        <Icon name="chevron-down" size={16} className="-rotate-90" />
+      </button>
+
+      {/* Лого + wordmark (същият lockup като хедъра) — над кадъра, safe-area отстъп.
+          „Frizmo" мастило + „Shops" ember акцент, точно като в хедъра. */}
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+7%)] flex animate-splash-word flex-col items-center gap-3 px-6">
+        <Logo href={null} size={56} withWordmark={false} />
+        <p className="font-display text-4xl font-extrabold tracking-tight text-ink-900 drop-shadow-sm sm:text-5xl">
+          Frizmo <span className="text-ember-500">Shops</span>
         </p>
       </div>
 
