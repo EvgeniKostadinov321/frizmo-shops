@@ -81,6 +81,28 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-04** — **PWA splash / welcome анимация.** Нов `PwaSplash` компонент
+  (`src/components/pwa-splash.tsx`), монтиран в root layout. Показва се САМО в standalone
+  PWA (не в браузър таб — `display-mode: standalone` / iOS `navigator.standalone`), при
+  всеки студен старт; **tap-to-skip** (клик затваря веднага), auto-dismiss при край на
+  видеото или `MAX_MS=3.6s` предпазен таймер. Видео loop на маскота (Seedance 2.0, старт
+  frame = одобрена работилница-сцена) + анимиран CSS wordmark „Frizmo Shops" (rise+fade)
+  върху празното горе. **Звук:** тих по подразбиране (autoplay policy), пуска мелодийката
+  на СЛЕДВАЩИЯ старт след първо взаимодействие (`localStorage frizmo-audio-ok`); fade-out
+  при излизане. Reduced-motion → статичен постер вместо видео. iOS native splash преди
+  React през `appleWebApp.startupImage`. Нови keyframes в globals.css (`splash-word`,
+  `splash-out`). **Асети (Magnific, ~1.7MB общо в public/):** `splash-bee.mp4` (видео,
+  1.4MB), `splash-bee-poster.jpg` (80KB, компресиран от 4.6MB PNG през headless Chromium
+  — няма ffmpeg на тази машина), `splash-welcome.mp3` (240KB, ElevenLabs music v2, топла
+  marimba). Сцена/постер = Nano Banana Pro 9:16 с `bee-wave.png` като референция (пчела-
+  майстор в престилка). `pnpm check` зелен. Само dev (main по заявка).
+
+- **2026-07-04** — **Мобилен UX за редактор на продукт (телефон тест 3).** `7d816ef`.
+  ImageUploader: контролите триене/пренареждане винаги видими на тъч (не само hover),
+  SVG икони; VariantsTable: mobile карти под md (таблицата не се събираше на 375px);
+  OptionsEditor: SVG `x` вместо емоджи; ProductForm: футер бутоните в отделна карта.
+  dev + main.
+
 - **2026-07-04** — **Loading states + dashboard фиксове (телефон тест 2).** (1) Таблото:
   редът „последни поръчки" се чупеше на телефон (badge+сума извън контейнера) → преработен
   на 2-редов stack (номер+име горе, badge+дата долу, сума фиксирана вдясно `shrink-0`);

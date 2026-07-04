@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Lora, Onest, Sofia_Sans, Sofia_Sans_Condensed, Space_Grotesk } from "next/font/google";
+import { PwaSplash } from "@/components/pwa-splash";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { CookieConsent } from "@/components/ui/cookie-consent";
 import { Toaster } from "@/components/ui/toaster";
@@ -28,7 +29,14 @@ export const metadata: Metadata = {
   title: "Frizmo Shops",
   description: "Твоят онлайн магазин. Готов днес. Без програмист.",
   applicationName: "Frizmo Shops",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Frizmo Shops" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Frizmo Shops",
+    /* Native iOS splash преди React да зареди — крие белия flash при старт на
+       PWA-то. Един кадър (маскотът в работилницата) в тон с in-app splash-а. */
+    startupImage: "/splash-bee-poster.jpg",
+  },
 };
 
 export const viewport: Viewport = {
@@ -57,6 +65,7 @@ export default function RootLayout({
               "(function(){try{var p=location.pathname;if((p.indexOf('/dashboard')===0||p.indexOf('/admin')===0)&&localStorage.getItem('frizmo-theme')==='dark'){document.documentElement.dataset.theme='dark'}}catch(e){}})()",
           }}
         />
+        <PwaSplash />
         {children}
         <Toaster />
         <CookieConsent />

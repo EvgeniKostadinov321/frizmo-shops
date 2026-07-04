@@ -69,4 +69,28 @@ body {
       transform: translateX(0);
     }
   }
+
+  /* PWA splash: плавно появяване на wordmark-а (rise + fade) и
+     затихване на целия overlay при излизане. */
+  --animate-splash-word: splash-word 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-splash-out: splash-out 0.45s ease-in forwards;
+  @keyframes splash-word {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes splash-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
 }
