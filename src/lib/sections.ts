@@ -1,3 +1,4 @@
+import { type IconName } from "@/components/ui/icon";
 import {
   sectionSchema,
   siteSettingsSchema,
@@ -8,7 +9,7 @@ import {
 
 interface SectionDef {
   label: string;
-  icon: string;
+  icon: IconName;
   /** За гейта по план в План 6; сега всички са достъпни (trial = Pro). */
   planTier: "starter" | "pro";
   defaultData: Record<string, unknown>;
@@ -17,79 +18,79 @@ interface SectionDef {
 export const SECTION_DEFS: Record<SectionType, SectionDef> = {
   hero: {
     label: "Hero (голямо заглавие)",
-    icon: "🖼️",
+    icon: "layout-panel",
     planTier: "starter",
     defaultData: { layout: "full", title: "", subtitle: "", ctaLabel: "", ctaHref: "", imagePaths: [] },
   },
   announcement: {
     label: "Лента-съобщение",
-    icon: "📣",
+    icon: "megaphone",
     planTier: "pro",
     defaultData: { text: "", href: "" },
   },
   "featured-products": {
     label: "Избрани продукти",
-    icon: "⭐",
+    icon: "star",
     planTier: "starter",
     defaultData: { title: "Избрани продукти", mode: "newest", productIds: [] },
   },
   "category-grid": {
     label: "Категории",
-    icon: "🗂️",
+    icon: "grid",
     planTier: "starter",
     defaultData: { title: "Разгледай по категория", categoryIds: [] },
   },
   "promo-banner": {
     label: "Промо банер",
-    icon: "🏷️",
+    icon: "tag",
     planTier: "pro",
     defaultData: { title: "", text: "", ctaLabel: "", ctaHref: "", imagePath: "" },
   },
   "image-text": {
     label: "Снимка + текст",
-    icon: "📷",
+    icon: "image",
     planTier: "starter",
     defaultData: { title: "", text: "", imagePath: "", imageSide: "left" },
   },
   "rich-text": {
     label: "Текстов блок",
-    icon: "📝",
+    icon: "text",
     planTier: "starter",
     defaultData: { title: "", text: "" },
   },
   testimonials: {
     label: "Отзиви на клиенти",
-    icon: "💬",
+    icon: "quote",
     planTier: "pro",
     defaultData: { title: "Какво казват клиентите", items: [] },
   },
   "trust-badges": {
     label: "Доверие (badges)",
-    icon: "✅",
+    icon: "shield-check",
     planTier: "pro",
     defaultData: { items: [] },
   },
   gallery: {
     label: "Галерия",
-    icon: "🖼",
+    icon: "images",
     planTier: "pro",
     defaultData: { title: "Галерия", imagePaths: [] },
   },
   faq: {
     label: "Често задавани въпроси",
-    icon: "❓",
+    icon: "help-circle",
     planTier: "pro",
     defaultData: { title: "Често задавани въпроси", items: [] },
   },
   "contact-map": {
     label: "Контакти и карта",
-    icon: "📍",
+    icon: "map-pin",
     planTier: "starter",
     defaultData: { title: "Къде да ни намериш", showMap: true },
   },
   socials: {
     label: "Социални мрежи",
-    icon: "🔗",
+    icon: "link",
     planTier: "starter",
     defaultData: { title: "Последвай ни" },
   },

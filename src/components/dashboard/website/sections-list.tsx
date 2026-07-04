@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button } from "@/components/ui";
+import { Button, Icon } from "@/components/ui";
 import { SECTION_DEFS } from "@/lib/sections";
 import type { Section } from "@/schemas/site-settings";
 
@@ -58,9 +58,9 @@ function SortableRow({
         {...attributes}
         {...listeners}
       >
-        ⠿
+        <Icon name="grip-vertical" size={18} />
       </button>
-      <span aria-hidden>{def.icon}</span>
+      <Icon name={def.icon} size={18} className="shrink-0 text-ink-500" />
       <button
         type="button"
         onClick={onEdit}
@@ -75,13 +75,13 @@ function SortableRow({
         title={section.enabled ? "Скрий" : "Покажи"}
         onClick={onToggle}
       >
-        {section.enabled ? "👁" : "🚫"}
+        <Icon name={section.enabled ? "eye" : "eye-off"} size={16} />
       </Button>
       <Button variant="ghost" size="sm" aria-label="Редактирай" onClick={onEdit}>
-        ✎
+        <Icon name="pencil" size={16} />
       </Button>
       <Button variant="ghost" size="sm" aria-label="Премахни" onClick={onRemove}>
-        ✕
+        <Icon name="x" size={16} />
       </Button>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useLatest } from "@/lib/use-latest";
+import { Icon } from "./icon";
 
 export interface ModalProps {
   open: boolean;
@@ -55,7 +56,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             aria-label="Затвори"
             className="flex size-11 items-center justify-center rounded-control text-ink-500 transition-colors hover:bg-surface-100 hover:text-ink-900"
           >
-            ✕
+            <Icon name="x" size={20} />
           </button>
         </div>
         <div>{children}</div>

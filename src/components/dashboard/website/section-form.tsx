@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, Drawer, Input, Select, Textarea } from "@/components/ui";
+import { Button, Checkbox, Drawer, Icon, Input, Select, Textarea } from "@/components/ui";
 import { ImageUploader } from "@/components/dashboard/image-uploader";
 import { SECTION_DEFS } from "@/lib/sections";
 import { TRUST_BADGE_ICONS, type Section } from "@/schemas/site-settings";
@@ -20,12 +20,12 @@ interface SectionFormProps {
 }
 
 const BADGE_LABELS: Record<(typeof TRUST_BADGE_ICONS)[number], string> = {
-  truck: "🚚 Доставка",
-  shield: "🛡️ Сигурност",
-  return: "↩️ Връщане",
-  phone: "📞 Поддръжка",
-  leaf: "🌿 Натурално",
-  star: "⭐ Качество",
+  truck: "Доставка",
+  shield: "Сигурност",
+  return: "Връщане",
+  phone: "Поддръжка",
+  leaf: "Натурално",
+  star: "Качество",
 };
 
 function CheckboxPicker({
@@ -95,7 +95,7 @@ function RowsEditor<T>({
             aria-label="Премахни"
             onClick={() => onChange(rows.filter((_, idx) => idx !== i))}
           >
-            ✕
+            <Icon name="x" size={16} />
           </Button>
         </div>
       ))}
