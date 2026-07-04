@@ -130,6 +130,7 @@ export function PwaSplash() {
         onError={leave}
         aria-hidden
       >
+        <source src="/splash-bee.webm" type="video/webm" />
         <source src="/splash-bee.mp4" type="video/mp4" />
       </video>
       {/* Reduced-motion fallback: статичен постер вместо видеото. next/image
