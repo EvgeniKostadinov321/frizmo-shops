@@ -81,6 +81,22 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-04 · `2378545`** — **Full-screen уебсайт билдър + welcome модал.** Редакторът
+  на магазина (таб „Уебсайт") вече заема целия екран вместо да е притиснат в dashboard
+  контейнера. Изнесен в собствена route група `(builder)/dashboard/website` без dashboard
+  header/sidebar (URL остава `/dashboard/website`; guard в page чрез `requireShop()`). Нов
+  layout: топ-бар (← Табло, име, статус, Публикувай/Запази) + ляв панел 380px с **3 таба**
+  (Тема/Секции/За нас) + голяма preview зона; на телефон 4-ти таб „Преглед" показва iframe-а
+  на цял екран. Welcome intro модал (`website-intro-modal.tsx`) при всяко влизане (localStorage
+  „не показвай повече"): билдърът е за десктоп + done-for-you настройка през
+  **supportfrizmo@gmail.com**. Попътно: **всички емоджита в билдъра → `<Icon>`** (правило
+  без емоджита в платформения UI) — +16 нови икони в `icon.tsx` (секционни + grip/monitor/
+  smartphone/sparkles), Modal close бутонът също. Данните/мутациите непроменени. Спец+план:
+  `docs/superpowers/{specs,plans}/2026-07-04-website-builder-fullscreen*.md`. Гейт зелен
+  (119 unit теста). ⚠️ Гоча при build: dev сървър на порт 3000 беше натрупал 195 DB конекции
+  (dev hot-reload leak) → изчерпан Supabase pooler (limit 200) → `EMAXCONN` при prerender.
+  Фикс: спри dev сървъра преди build (освобождава конекциите), после рестартирай.
+
 - **2026-07-04** — **Post-MVP стратегически roadmap** (посока, не изпълнение):
   `docs/superpowers/specs/2026-07-04-post-mvp-roadmap.md`. 6 теми от реалния опит на
   собственика: §1 плащания на абонаменти (Epay+банков хибрид+Stripe, абстрактен
