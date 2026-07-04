@@ -14,6 +14,8 @@ export const BUSINESS_CATEGORIES = [
   "Друго",
 ] as const;
 
+export type BusinessCategory = (typeof BUSINESS_CATEGORIES)[number];
+
 export const shopSchema = z.object({
   name: z.string().trim().min(2, "Въведи име на магазина").max(80),
   businessCategory: z.enum(BUSINESS_CATEGORIES, { message: "Избери категория" }),

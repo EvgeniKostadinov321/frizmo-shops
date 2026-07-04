@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import { Select } from "@/components/ui";
-import { PALETTE_PRESETS, THEME_LABELS, THEME_PRESETS } from "@/lib/themes";
+import { PALETTE_PRESETS, THEME_LABELS, THEME_META, THEME_PRESETS } from "@/lib/themes";
 import { THEMES, type SiteSettings, type ThemeId } from "@/schemas/site-settings";
 
 interface ThemePanelProps {
@@ -37,39 +37,63 @@ function ColorField({
 }
 
 export function ThemePanel({ settings, onChange }: ThemePanelProps) {
+  const lightThemes = THEMES.filter((t) => !THEME_META[t].isDark);
+  const darkThemes = THEMES.filter((t) => THEME_META[t].isDark);
+
+  function ThemeButton({ theme }: { theme: ThemeId }) {
+    const preset = THEME_PRESETS[theme];
+    const active = settings.theme === theme;
+    return (
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={() => onChange({ theme })}
+        title={THEME_META[theme].tagline}
+        className={`flex flex-col gap-1.5 rounded-control border-2 p-2 text-left transition-colors ${
+          active ? "border-brand-600" : "border-surface-200 hover:border-surface-300"
+        }`}
+      >
+        <span
+          className="h-10 w-full rounded"
+          style={{ background: preset["--sf-bg"], border: `1px solid ${preset["--sf-border"]}` }}
+        >
+          <span
+            className="mx-2 mt-2 block h-2 w-1/2 rounded-full"
+            style={{ background: settings.primaryColor }}
+          />
+          <span
+            className="mx-2 mt-1 block h-1.5 w-3/4 rounded-full"
+            style={{ background: preset["--sf-border"] }}
+          />
+        </span>
+        <span className="text-xs font-medium text-ink-900">{THEME_LABELS[theme]}</span>
+      </button>
+    );
+  }
+
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {THEMES.map((theme: ThemeId) => {
-          const preset = THEME_PRESETS[theme];
-          const active = settings.theme === theme;
-          return (
-            <button
-              key={theme}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onChange({ theme })}
-              className={`flex flex-col gap-1.5 rounded-control border-2 p-2 text-left transition-colors ${
-                active ? "border-brand-600" : "border-surface-200 hover:border-surface-300"
-              }`}
-            >
-              <span
-                className="h-10 w-full rounded"
-                style={{ background: preset["--sf-bg"], border: `1px solid ${preset["--sf-border"]}` }}
-              >
-                <span
-                  className="mx-2 mt-2 block h-2 w-1/2 rounded-full"
-                  style={{ background: settings.primaryColor }}
-                />
-                <span
-                  className="mx-2 mt-1 block h-1.5 w-3/4 rounded-full"
-                  style={{ background: preset["--sf-border"] }}
-                />
-              </span>
-              <span className="text-xs font-medium text-ink-900">{THEME_LABELS[theme]}</span>
-            </button>
-          );
-        })}
+      <div className="flex flex-col gap-3">
+        <div>
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-ink-500">
+            Светли
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {lightThemes.map((theme) => (
+              <ThemeButton key={theme} theme={theme} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-ink-500">
+            Тъмни
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {darkThemes.map((theme) => (
+              <ThemeButton key={theme} theme={theme} />
+            ))}
+          </div>
+        </div>
       </div>
 
       <div>

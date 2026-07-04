@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lora, Onest, Sofia_Sans, Sofia_Sans_Condensed, Space_Grotesk } from "next/font/google";
+import { Inter, Lora, Onest, Oswald, Playfair_Display, Sofia_Sans, Sofia_Sans_Condensed, Space_Grotesk } from "next/font/google";
 import { PwaSplash } from "@/components/pwa-splash";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { CookieConsent } from "@/components/ui/cookie-consent";
@@ -20,9 +20,13 @@ const sofiaSansCondensed = Sofia_Sans_Condensed({
 });
 /* Inter остава за storefront темата classic (THEME_PRESETS) */
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
-/* Шрифтовете на storefront темите (modern / warm) — виж THEME_PRESETS */
+/* Шрифтовете на storefront темите — виж THEME_PRESETS */
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
 const lora = Lora({ subsets: ["latin", "cyrillic"], variable: "--font-lora" });
+/* Display сериф за темата „Оникс" (premium, висок контраст) */
+const playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" });
+/* Кондензиран за темите „Основа"/„Гранит" (индустриални) */
+const oswald = Oswald({ subsets: ["latin", "cyrillic"], variable: "--font-condensed" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://frizmo-shops.vercel.app"),
@@ -51,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="bg"
-      className={`${sofiaSans.variable} ${onest.variable} ${sofiaSansCondensed.variable} ${inter.variable} ${spaceGrotesk.variable} ${lora.variable} h-full antialiased`}
+      className={`${sofiaSans.variable} ${onest.variable} ${sofiaSansCondensed.variable} ${inter.variable} ${spaceGrotesk.variable} ${lora.variable} ${playfair.variable} ${oswald.variable} h-full antialiased`}
       /* data-theme се слага от anti-FOUC скрипта преди хидратацията */
       suppressHydrationWarning
     >

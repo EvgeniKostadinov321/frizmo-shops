@@ -137,7 +137,17 @@ export const sectionSchema = z.discriminatedUnion("type", [
   sectionSchemas.socials,
 ]);
 
-export const THEMES = ["classic", "modern", "warm"] as const;
+export const THEMES = [
+  "classic",
+  "atelie",
+  "vitrina",
+  "puls",
+  "efir",
+  "oniks",
+  "signal",
+  "osnova",
+  "granit",
+] as const;
 
 export const siteSettingsSchema = z.object({
   theme: z.enum(THEMES).default("classic"),
