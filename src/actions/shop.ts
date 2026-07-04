@@ -88,6 +88,10 @@ export async function createShop(
     ownerId: user.id,
   }));
 
+  /* Инвалидирай dashboard layout-а: той е рендериран с shop=null отпреди
+     създаването (nav-ът е скрит). Без това soft navigation към /dashboard
+     (напр. „Прескочи засега") показва празна странична навигация до презареждане. */
+  revalidatePath("/dashboard", "layout");
   redirect("/dashboard/onboarding?step=2");
 }
 
