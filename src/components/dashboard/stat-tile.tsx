@@ -16,17 +16,21 @@ interface StatTileProps {
  */
 export function StatTile({ label, value, icon, href, accent = false }: StatTileProps) {
   const body = (
-    <div className="flex h-full items-center gap-4 rounded-card border border-surface-200 bg-surface-0 p-4 transition-colors group-hover:border-brand-500">
+    /* Мобилно: икона отгоре, текст отдолу (ползва цялата ширина — дълги суми/
+       етикети се събират). Десктоп (sm+): икона отляво, текст отдясно. */
+    <div className="flex h-full flex-col gap-2 rounded-card border border-surface-200 bg-surface-0 p-4 transition-colors group-hover:border-brand-500 sm:flex-row sm:items-center sm:gap-4">
       <span
-        className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ${
+        className={`flex size-10 shrink-0 items-center justify-center rounded-2xl sm:size-11 ${
           accent ? "bg-brand-500 text-surface-0" : "bg-surface-100 text-ink-700"
         }`}
       >
         <Icon name={icon} size={20} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-xs font-medium text-ink-500">{label}</p>
-        <p className="mt-0.5 text-2xl font-bold tabular-nums text-ink-900">{value}</p>
+        <p className="text-xs font-medium text-ink-500">{label}</p>
+        <p className="mt-0.5 truncate text-xl font-bold tabular-nums text-ink-900 sm:text-2xl">
+          {value}
+        </p>
       </div>
     </div>
   );
