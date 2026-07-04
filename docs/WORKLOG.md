@@ -81,6 +81,15 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-04** — **PWA install секция + инструкции modal.** Landing секция „Frizmo
+  винаги под ръка" (ползи + телефон визуал + бутон „Как да инсталирам") → цялоекранен
+  modal с точни per-платформа/браузър стъпки (`src/lib/pwa-platform.ts`, unit-тестван:
+  iOS Safari/не-Safari, Android Chrome/Samsung/Firefox, Desktop). Ръчен превключвател
+  при грешна детекция. Секция вместо банер — избягва overlap с cookie банера. Съзнателно
+  без native `beforeinstallprompt` (капризен) — само ръчни стъпки. Спец+план:
+  `docs/superpowers/specs/2026-07-04-pwa-install-guide-design.md`,
+  `docs/superpowers/plans/2026-07-04-pwa-install-guide.md`.
+
 - **2026-07-04 · `9d8b8d4`** — **PWA splash / welcome анимация** (финализиран след
   тест на телефон: landing-мигане, статично видео на iOS, изрязване, lockup). Финалният
   вид: маскот видео в работилница + лого + „Frizmo **Shops**" (ember акцент) + „Старт"
