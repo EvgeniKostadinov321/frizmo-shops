@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Button, Input, Logo } from "@/components/ui";
+import { Button, Icon, Input, Logo } from "@/components/ui";
 import type { AuthFormState } from "@/actions/auth";
 
 interface AuthFormProps {
@@ -42,6 +42,16 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           className="pointer-events-none absolute inset-0 bg-[image:var(--gradient-hero-glow)]"
         />
         <div className="relative flex w-full max-w-md flex-col gap-7">
+          {/* Назад към landing — винаги наличен изход (напр. след logout, за да не
+              се налага ръчно чистене на URL-а). */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-ink-500 transition-colors hover:text-ink-900"
+          >
+            <Icon name="chevron-down" size={16} className="rotate-90" />
+            Назад към сайта
+          </Link>
+
           {/* Лого — центрирано на мобилно, ляво на desktop */}
           <div className="flex justify-center lg:justify-start">
             <Logo href="/" />
