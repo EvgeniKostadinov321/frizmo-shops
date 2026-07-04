@@ -65,6 +65,15 @@ export default function RootLayout({
               "(function(){try{var p=location.pathname;if((p.indexOf('/dashboard')===0||p.indexOf('/admin')===0)&&localStorage.getItem('frizmo-theme')==='dark'){document.documentElement.dataset.theme='dark'}}catch(e){}})()",
           }}
         />
+        {/* Инстант splash-shell: при standalone PWA рисува крем екран ВЕДНАГА
+            (преди React), за да не мигне landing-ът. React PwaSplash поема отгоре
+            и маха shell-а (#pwa-splash-shell) щом монтира видеото. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var s=(window.navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);if(!s)return;var d=document.createElement('div');d.id='pwa-splash-shell';d.style.cssText='position:fixed;inset:0;z-index:99;background:#faf8f5';document.documentElement.appendChild(d)}catch(e){}})()",
+          }}
+        />
         <PwaSplash />
         {children}
         <Toaster />

@@ -43,6 +43,17 @@ export function PwaSplash() {
        (проектно гочи, виж CLAUDE-frontend.md). */
     queueMicrotask(() => setPhase("showing"));
 
+    /* iOS standalone НЕ пуска autoPlay видео надеждно само с атрибута —
+       форсираме play() явно. muted като property (не само атрибут) е нужно на
+       iOS, за да е позволен autoplay без взаимодействие. */
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.play().catch(() => {
+        /* Ако и форсираният play гръмне → остава poster-ът; таймерът излиза. */
+      });
+    }
+
     /* Опит за пускане на музиката. При първо отваряне браузърът блокира звука —
        ловим тихо; при следващи стартове (вече има взаимодействие) свири. */
     const audio = audioRef.current;
@@ -67,6 +78,12 @@ export function PwaSplash() {
       window.removeEventListener("keydown", markInteracted);
     };
   }, []);
+
+  /* Щом React overlay-ят е в DOM (phase="showing"), махаме инстант splash-shell-а
+     от layout скрипта — без да мигне landing-ът между двата слоя. */
+  useEffect(() => {
+    if (phase === "showing") document.getElementById("pwa-splash-shell")?.remove();
+  }, [phase]);
 
   function leave() {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -94,42 +111,41 @@ export function PwaSplash() {
         /* Край на fade-out анимацията → демонтираме overlay-я. */
         if (e.animationName.startsWith("splash-out")) setPhase("done");
       }}
-      className={`fixed inset-0 z-100 flex flex-col items-center justify-center gap-6 bg-surface-50 ${
-        phase === "leaving" ? "animate-splash-out" : "animate-fade-in"
+      className={`fixed inset-0 z-100 overflow-hidden bg-surface-50 ${
+        phase === "leaving" ? "animate-splash-out" : ""
       }`}
     >
-      {/* Видеото на маскота в кръгъл кадър — poster показва статичния кадър
-          при reduced-motion / докато зареди. muted → autoplay винаги минава. */}
-      <div className="relative aspect-9/16 w-full max-w-sm overflow-hidden">
-        <video
-          ref={videoRef}
-          className="h-full w-full object-cover motion-reduce:hidden"
-          muted
-          playsInline
-          autoPlay
-          preload="auto"
-          poster="/splash-bee-poster.jpg"
-          onEnded={leave}
-          onError={leave}
-          aria-hidden
-        >
-          <source src="/splash-bee.mp4" type="video/mp4" />
-        </video>
-        {/* Reduced-motion fallback: статичен постер вместо видеото. next/image
-            е неуместен тук — статичен splash asset, не минава оптимизация. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/splash-bee-poster.jpg"
-          alt=""
-          className="hidden h-full w-full object-cover motion-reduce:block"
-          aria-hidden
-        />
-        {/* Wordmark върху горното празно пространство на кадъра. */}
-        <div className="absolute inset-x-0 top-[14%] flex justify-center">
-          <p className="animate-splash-word font-display text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">
-            Frizmo Shops
-          </p>
-        </div>
+      {/* Видеото покрива ЦЕЛИЯ екран (object-cover) — без ленти/изрязване.
+          poster показва статичния кадър докато зареди / при reduced-motion.
+          muted + форсиран play() (виж effect) → тръгва и на iOS standalone. */}
+      <video
+        ref={videoRef}
+        className="absolute inset-0 h-full w-full object-cover motion-reduce:hidden"
+        muted
+        playsInline
+        autoPlay
+        preload="auto"
+        poster="/splash-bee-poster.jpg"
+        onEnded={leave}
+        onError={leave}
+        aria-hidden
+      >
+        <source src="/splash-bee.mp4" type="video/mp4" />
+      </video>
+      {/* Reduced-motion fallback: статичен постер вместо видеото. next/image
+          е неуместен тук — статичен splash asset, не минава оптимизация. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/splash-bee-poster.jpg"
+        alt=""
+        className="absolute inset-0 hidden h-full w-full object-cover motion-reduce:block"
+        aria-hidden
+      />
+      {/* Wordmark — над кадъра, с отстъп за safe-area/notch. */}
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+8%)] flex justify-center px-6">
+        <p className="animate-splash-word font-display text-4xl font-extrabold tracking-tight text-ink-900 drop-shadow-sm sm:text-5xl">
+          Frizmo Shops
+        </p>
       </div>
 
       <audio ref={audioRef} preload="auto" aria-hidden>
