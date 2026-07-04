@@ -40,6 +40,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [toDelete, setToDelete] = useState<Product | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -61,13 +62,19 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
   }, [search]);
 
   async function handleToggle(product: Product) {
-    const result = await toggleProductStatus({ id: product.id });
-    if (!result.ok) toast.error(result.error);
-    router.refresh();
+    setTogglingId(product.id);
+    try {
+      const result = await toggleProductStatus({ id: product.id });
+      if (!result.ok) toast.error(result.error);
+      router.refresh();
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function handleDelete() {
     if (!toDelete) return;
+    /* ConfirmDialog показва spinner на бутона по време на await-а. */
     const result = await deleteProduct({ id: toDelete.id });
     if (!result.ok) toast.error(result.error);
     else toast.success("Продуктът е изтрит.");
@@ -163,7 +170,13 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                     <span className="text-ink-500"> · {product.stock ?? "—"} бр.</span>
                   </span>
                   <div className="mt-1 flex items-center gap-2">
-                    <button type="button" onClick={() => handleToggle(product)} aria-label="Смени статуса">
+                    <button
+                      type="button"
+                      onClick={() => handleToggle(product)}
+                      disabled={togglingId === product.id}
+                      aria-label="Смени статуса"
+                      className={togglingId === product.id ? "opacity-50" : ""}
+                    >
                       <Badge tone={product.status === "active" ? "success" : "neutral"}>
                         {product.status === "active" ? "Активен" : "Неактивен"}
                       </Badge>
@@ -244,7 +257,9 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                     <button
                       type="button"
                       onClick={() => handleToggle(product)}
+                      disabled={togglingId === product.id}
                       aria-label="Смени статуса"
+                      className={togglingId === product.id ? "opacity-50" : ""}
                     >
                       <Badge tone={product.status === "active" ? "success" : "neutral"}>
                         {product.status === "active" ? "Активен" : "Неактивен"}

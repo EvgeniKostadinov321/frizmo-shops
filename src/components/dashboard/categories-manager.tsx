@@ -37,6 +37,8 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
   const [parentId, setParentId] = useState("");
   const [nameError, setNameError] = useState<string>();
   const [saving, setSaving] = useState(false);
+  /* Коя категория има текущо действие (местене) — за spinner на бутона. */
+  const [pending, setPending] = useState<{ id: string; dir: "up" | "down" } | null>(null);
 
   const parentOptions = tree.map((c) => ({ value: c.id, label: c.name }));
 
@@ -78,9 +80,14 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
   }
 
   async function handleMove(id: string, direction: "up" | "down") {
-    const result = await moveCategory({ id, direction });
-    if (!result.ok) toast.error(result.error);
-    router.refresh();
+    setPending({ id, dir: direction });
+    try {
+      const result = await moveCategory({ id, direction });
+      if (!result.ok) toast.error(result.error);
+      router.refresh();
+    } finally {
+      setPending(null);
+    }
   }
 
   async function handleDelete() {
@@ -114,10 +121,24 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <Button variant="ghost" size="sm" aria-label="Премести нагоре" onClick={() => handleMove(category.id, "up")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Премести нагоре"
+            loading={pending?.id === category.id && pending.dir === "up"}
+            disabled={pending !== null}
+            onClick={() => handleMove(category.id, "up")}
+          >
             <Icon name="arrow-up" size={18} />
           </Button>
-          <Button variant="ghost" size="sm" aria-label="Премести надолу" onClick={() => handleMove(category.id, "down")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Премести надолу"
+            loading={pending?.id === category.id && pending.dir === "down"}
+            disabled={pending !== null}
+            onClick={() => handleMove(category.id, "down")}
+          >
             <Icon name="arrow-down" size={18} />
           </Button>
           <Button variant="ghost" size="sm" aria-label="Редактирай" onClick={() => openEdit(category)}>

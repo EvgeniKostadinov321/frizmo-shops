@@ -53,8 +53,9 @@ export function Button({
       className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
-      {loading && <Spinner size="sm" />}
-      {children}
+      {/* При loading показваме само spinner-а (замества съдържанието) — чисто и за
+          текстови, и за icon-only бутони. */}
+      {loading ? <Spinner size="sm" /> : children}
     </button>
   );
 }

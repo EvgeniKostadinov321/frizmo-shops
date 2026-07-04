@@ -42,11 +42,18 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
   const [toDelete, setToDelete] = useState<{ kind: "shipping" | "payment"; id: string; name: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  /* Кой ред има текущо действие (toggle) — за spinner на бутона. */
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
-  async function run(action: () => Promise<{ ok: boolean; error?: string }>) {
-    const result = await action();
-    if (!result.ok) toast.error(result.error ?? "Грешка.");
-    router.refresh();
+  async function run(id: string, action: () => Promise<{ ok: boolean; error?: string }>) {
+    setPendingId(id);
+    try {
+      const result = await action();
+      if (!result.ok) toast.error(result.error ?? "Грешка.");
+      router.refresh();
+    } finally {
+      setPendingId(null);
+    }
   }
 
   async function handleSaveShipping() {
@@ -124,7 +131,8 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 variant="ghost"
                 size="sm"
                 aria-label={m.active ? "Изключи" : "Включи"}
-                onClick={() => run(() => toggleShippingMethod({ id: m.id }))}
+                loading={pendingId === m.id}
+                onClick={() => run(m.id, () => toggleShippingMethod({ id: m.id }))}
               >
                 <Icon name={m.active ? "eye" : "eye-off"} size={18} />
               </Button>
@@ -185,7 +193,8 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 variant="ghost"
                 size="sm"
                 aria-label={m.active ? "Изключи" : "Включи"}
-                onClick={() => run(() => togglePaymentMethod({ id: m.id }))}
+                loading={pendingId === m.id}
+                onClick={() => run(m.id, () => togglePaymentMethod({ id: m.id }))}
               >
                 <Icon name={m.active ? "eye" : "eye-off"} size={18} />
               </Button>
@@ -301,7 +310,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
         open={toDelete !== null}
         onClose={() => setToDelete(null)}
         onConfirm={() =>
-          run(() =>
+          run(toDelete!.id, () =>
             toDelete!.kind === "shipping"
               ? deleteShippingMethod({ id: toDelete!.id })
               : deletePaymentMethod({ id: toDelete!.id }),

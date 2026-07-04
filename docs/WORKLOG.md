@@ -81,6 +81,18 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-04** — **Loading states + dashboard фиксове (телефон тест 2).** (1) Таблото:
+  редът „последни поръчки" се чупеше на телефон (badge+сума извън контейнера) → преработен
+  на 2-редов stack (номер+име горе, badge+дата долу, сума фиксирана вдясно `shrink-0`);
+  `Badge` получи `shrink-0 whitespace-nowrap`. (2) Категории „премести нагоре/надолу"
+  всъщност работеше (потвърдено в базата) — липсваше визуален feedback → сега spinner на
+  бутона. (3+общо) **Loading states** навсякъде: `Button loading` вече замества съдържанието
+  само със spinner (важи и за icon-only); per-item pending state в `categories-manager`
+  (move), `fulfillment-manager` (eye toggle, `run(id, action)`), `product-list` (status
+  toggle → opacity+disabled). (4) Навигация към страници без индикатор → добавени
+  `loading.tsx` skeleton-и за **orders, orders/[id], categories, fulfillment**. `pnpm check`
+  зелен (106 теста). Уебсайт билдър НЕ пипан.
+
 - **2026-07-04** — **Dashboard мобилен UX пакет (6 проблема от тест на телефон).**
   (1) Мобилна навигация: `DashboardNav` → бутон „☰ текуща страница" отваря **fullscreen
   меню** (< md); десктоп = вертикална навигация. (2) Продукти/поръчки: **карти на

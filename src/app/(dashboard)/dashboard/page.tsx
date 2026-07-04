@@ -105,20 +105,24 @@ export default async function DashboardPage() {
                 <li key={order.id}>
                   <Link
                     href={`/dashboard/orders/${order.id}`}
-                    className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-50"
+                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-50 sm:px-5"
                   >
-                    <span className="w-14 shrink-0 font-medium tabular-nums text-ink-500">
-                      #{String(order.orderNumber).padStart(4, "0")}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-medium text-ink-900">
-                      {order.customerName}
-                    </span>
-                    <OrderStatusBadge status={order.status} />
-                    <span className="w-24 shrink-0 text-right font-bold tabular-nums text-ink-900">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="shrink-0 text-xs font-medium tabular-nums text-ink-500">
+                          #{String(order.orderNumber).padStart(4, "0")}
+                        </span>
+                        <span className="truncate font-medium text-ink-900">{order.customerName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <OrderStatusBadge status={order.status} />
+                        <span className="text-xs text-ink-500">
+                          {dateFormat.format(order.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-bold tabular-nums text-ink-900">
                       {formatPrice(order.totalCents)}
-                    </span>
-                    <span className="hidden w-16 shrink-0 text-right text-sm text-ink-500 sm:block">
-                      {dateFormat.format(order.createdAt)}
                     </span>
                   </Link>
                 </li>
