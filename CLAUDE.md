@@ -11,6 +11,8 @@ SaaS платформа за онлайн магазини (BG пазар, EUR).
 
 **Post-MVP визуален редизайн (в ход, спец `docs/docs-03-07-2026/2026-07-03-visual-redesign-spec.md`):** брандът е сменен от зелено на **теракота** (`brand-*` в tokens.css); публичните страници са **само светли** (dark е само за /dashboard + /admin — anti-FOUC скриптът в layout.tsx е гейтнат по път, `ForceLightTheme` на marketing); primary бутон = тъмен (`bg-ink-900`); цени 20/35 €, trial 30 дни без grace. Редизайнирани секция по секция: landing (hero профит-first, before/after, step visuals, feature bento, done-for-you сервиз, responsive header с мобилно меню, footer), `/shops` и `/products` (hero зона, cover снимки, сортиране, филтър-чипове, скрити тест-магазини), `/blog` (editorial списък + акцентна статия + 5 статии с категория/време за четене/TOC). Всичко проверено responsive на 375px. Логото и CTA/OG снимките са AI-генерирани (Magnific) в `public/`.
 
+**PWA (2026-07-04):** manifest `standalone` + splash/welcome анимация при студен старт на инсталираното PWA (`src/components/pwa-splash.tsx`, монтиран в root layout + инстант splash-shell скрипт срещу мигане на landing-а). Показва се САМО в standalone (не в браузър таб); маскот видео в работилница + брандов lockup (лого + „Frizmo Shops") + „Старт" бутон; tap-to-skip; звук тих на 1-во отваряне; **reduced-motion → статичен постер** (уважава се). Асети: `public/splash-bee.{mp4,webm}` + `splash-bee-poster.jpg` + `splash-welcome.mp3`. Генерационен пайплайн и iOS faststart урокът: `docs/design/mascot-progress.md`.
+
 ## Задължителен контекст при всяка задача
 
 @CLAUDE-frontend.md
@@ -50,6 +52,7 @@ node scripts/cleanup-e2e.mjs      # чисти e2e акаунтите/магаз
 * Преди commit: сканирай за невидими контролни символи (`[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]`) — генерацията понякога ги вкарва в стрингове/hex цветове.
 * Блог frontmatter (YAML): типографската двойка „…“ вътре в `"..."` стойност е ОК, но „…" (с прав закриващ `"`) чупи YAML-а (прав `"` затваря стринга рано → билдът гърми с YAMLException). В BG текст в YAML използвай пълната двойка „…“ или преформулирай без кавички.
 * Windows: PowerShell е основният shell; multiline commit съобщение → временен файл + `git commit -F` (here-string с кавички се чупи).
+* PWA видео на iOS: генерираните видеа (Seedance/Magnific) имат `moov` atom в КРАЯ → iOS standalone PWA показва само първия кадър (статично). Фикс: ffmpeg `-movflags +faststart` (moov отпред). Провери с `moov` позицията спрямо `mdat` — работещият `bee-wave.mp4` има moov отпред. Ръчен Node faststart чупи decode-а; ползвай ffmpeg. На тази Windows машина няма ffmpeg — свали `ffmpeg-static` временно (binary в pnpm store), ползвай, после `pnpm remove`.
 * Push към `main`/`master` е блокиран за агента — финалния merge прави потребителят.
 * E2e: само `@gmail.com` алиас имейли (Supabase отхвърля други); cookie банерът се маркира като видян с `addInitScript` → `localStorage frizmo-cookie-notice=1`.
 * `.env.local` ключове: Supabase URL/publishable/secret, `DATABASE_URL` (:6543, transaction pooler) / `DATABASE_URL_MIGRATIONS` (:5432, session), `NEXT_PUBLIC_HERE_API_KEY`, `RESEND_API_KEY`, VAPID двойка + subject, `PLATFORM_ADMIN_EMAILS` (comma-separated; дава достъп до /admin).

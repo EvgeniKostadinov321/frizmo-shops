@@ -19,6 +19,15 @@
   Sofia Sans (Condensed display), ленена хартия, hairlines, ember градиент само в hero,
   PhoneMockup с реални данни, Reveal scroll анимации, pill header, dark „тъмна гора".
 
+## PWA / мобилен pass (2026-07-04) — изпълнено
+
+- [x] **PWA splash / welcome анимация** — маскот видео в работилница + брандов lockup
+  (лого + „Frizmo **Shops**" ember) + „Старт" бутон, при студен старт на инсталираното
+  PWA. tap-to-skip; тих звук с активиране на 2-ро отваряне; reduced-motion → статичен
+  постер; iOS native splash. Детайли и генерационен пайплайн: `docs/design/mascot-progress.md`.
+- [x] **Мобилен UX на dashboard редактора** — опции/варианти като карти под md, снимки
+  с видими тъч контроли, футер бутони отделени, StatTile без overflow.
+
 ## Отворено за следващ pass (събирай тук)
 
 - [ ] **Потребителят не е доволен от резултата на „Пазарен ден" на живо (2026-07-03)** —

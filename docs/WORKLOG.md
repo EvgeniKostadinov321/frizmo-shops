@@ -81,6 +81,12 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-04 · `9d8b8d4`** — **PWA splash / welcome анимация** (финализиран след
+  тест на телефон: landing-мигане, статично видео на iOS, изрязване, lockup). Финалният
+  вид: маскот видео в работилница + лого + „Frizmo **Shops**" (ember акцент) + „Старт"
+  бутон; tap-to-skip; reduced-motion → статичен постер; iOS faststart фикс. Пълните
+  детайли в записа по-долу + `docs/design/mascot-progress.md`.
+
 - **2026-07-04** — **PWA splash / welcome анимация.** Нов `PwaSplash` компонент
   (`src/components/pwa-splash.tsx`), монтиран в root layout. Показва се САМО в standalone
   PWA (не в браузър таб — `display-mode: standalone` / iOS `navigator.standalone`), при
