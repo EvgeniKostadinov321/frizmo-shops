@@ -12,7 +12,9 @@ import {
   Button,
   Card,
   Checkbox,
+  Icon,
   Input,
+  LinkButton,
   PriceInput,
   Select,
   Textarea,
@@ -162,16 +164,32 @@ export function ProductForm({
         />
         {/* В onboarding (simple) още няма категории — полето само би обърквало;
             добавят се по-късно от таб „Категории". */}
-        {!simple && (
-          <Select
-            label="Категория"
-            options={categories}
-            placeholder="— Без категория —"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            error={fieldErrors.categoryId}
-          />
-        )}
+        {!simple &&
+          (categories.length > 0 ? (
+            <Select
+              label="Категория"
+              options={categories}
+              placeholder="— Без категория —"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              error={fieldErrors.categoryId}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-ink-900">Категория</span>
+              <div className="flex flex-col gap-2 rounded-control border border-dashed border-surface-300 bg-surface-50 p-4">
+                <p className="text-sm text-ink-500">
+                  Още нямаш категории. Създай няколко, за да подредиш продуктите си.
+                </p>
+                <div>
+                  <LinkButton href="/dashboard/categories" variant="secondary" size="sm">
+                    <Icon name="plus" size={16} />
+                    Добави категории
+                  </LinkButton>
+                </div>
+              </div>
+            </div>
+          ))}
         <Textarea
           label="Описание"
           value={description}
