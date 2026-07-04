@@ -115,6 +115,12 @@ const ICON_PATHS = {
     "m8 6 4-4 4 4",
     "M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7",
   ],
+  /* Изтегляне/инсталиране (стрелка надолу в поставка) */
+  download: [
+    "M12 15V3",
+    "m7 10 5 5 5-5",
+    "M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4",
+  ],
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

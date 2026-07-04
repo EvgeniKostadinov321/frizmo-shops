@@ -18,7 +18,7 @@ export function InstallAppButton({ className = "" }: { className?: string }) {
         onClick={() => setOpen(true)}
         className={`inline-flex h-13 items-center gap-2 rounded-full border border-surface-200 bg-surface-0 px-6 text-sm font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900 ${className}`}
       >
-        <Icon name="phone" size={16} className="shrink-0" />
+        <Icon name="download" size={16} className="shrink-0" />
         Инсталирай приложението
       </button>
       <InstallGuideModal open={open} onClose={() => setOpen(false)} />
