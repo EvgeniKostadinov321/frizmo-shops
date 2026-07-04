@@ -25,7 +25,7 @@ export default async function DashboardLayout({
       </header>
 
       {shop ? (
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
           <aside className="md:w-48 md:shrink-0">
             <DashboardNav />
           </aside>

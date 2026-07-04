@@ -25,6 +25,21 @@ export const DAY_LABELS = [
   "Неделя",
 ] as const;
 
+/**
+ * Опции за час на всеки половин час (00:00 – 23:30) в 24-часов формат.
+ * Native `<input type="time">` показва AM/PM според локала на потребителя, което
+ * обърква българските търговци — затова ползваме Select с тези опции.
+ */
+export const TIME_OPTIONS: { value: string; label: string }[] = Array.from(
+  { length: 48 },
+  (_, i) => {
+    const h = String(Math.floor(i / 2)).padStart(2, "0");
+    const m = i % 2 === 0 ? "00" : "30";
+    const value = `${h}:${m}`;
+    return { value, label: value };
+  },
+);
+
 /** Делници 9–18, уикенд почивен — разумна начална стойност. */
 export function defaultWorkingDays(): WorkingDay[] {
   return DAY_LABELS.map((_, i) => ({

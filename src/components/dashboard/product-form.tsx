@@ -160,14 +160,18 @@ export function ProductForm({
           onChange={(e) => setName(e.target.value)}
           error={fieldErrors.name}
         />
-        <Select
-          label="Категория"
-          options={categories}
-          placeholder="— Без категория —"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          error={fieldErrors.categoryId}
-        />
+        {/* В onboarding (simple) още няма категории — полето само би обърквало;
+            добавят се по-късно от таб „Категории". */}
+        {!simple && (
+          <Select
+            label="Категория"
+            options={categories}
+            placeholder="— Без категория —"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            error={fieldErrors.categoryId}
+          />
+        )}
         <Textarea
           label="Описание"
           value={description}

@@ -11,18 +11,52 @@ async function register(page: Page, email: string) {
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
+/** Минава през onboarding wizard-а (Основно → Контакти → Работно време) с
+    минимума задължителни полета и създава магазина. */
+async function createShopViaWizard(page: Page, name: string, category: string) {
+  await page.getByRole("link", { name: "Създай магазин" }).click();
+  await page.getByLabel("Име на магазина").fill(name);
+  await page.getByLabel("Категория на бизнеса").selectOption(category);
+  /* Стъпка 1 → 2 → 3, изчаквайки индикатора да маркира всяка под-стъпка, преди
+     да продължим (бутонът „Напред"→„Създай магазина" се сменя при смяна на
+     стъпка — чакаме стабилно състояние, за да не уцелим бутона по време на
+     re-render). */
+  await page.getByRole("button", { name: "Напред" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Контакти" })).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await page.getByRole("button", { name: "Напред" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Работно време" })).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await page.getByRole("button", { name: "Създай магазина" }).click();
+  await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
+}
+
 test.describe("Магазин и продукти", () => {
   test("onboarding → категории → продукт с варианти → редакция", async ({ page }) => {
     test.setTimeout(240_000);
     await register(page, `frizmo.e2e+shop${Date.now()}@gmail.com`);
 
-    /* 1. Onboarding стъпка 1 */
+    /* 1. Onboarding wizard: стъпка „Основно" → „Контакти" (град) → „Работно време" */
     await page.getByRole("link", { name: "Създай магазин" }).click();
     await expect(page.getByRole("heading", { name: "Да създадем магазина ти" })).toBeVisible();
     await page.getByLabel("Име на магазина").fill("Е2Е Ферма");
     await page.getByLabel("Категория на бизнеса").selectOption("Храни и напитки");
-    await page.getByText("Още детайли").click();
+    /* Стъпка „Основно" → „Контакти": изчакваме индикатора да маркира стъпка 2 */
+    await page.getByRole("button", { name: "Напред" }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "Контакти" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
     await page.getByLabel("Град").fill("Пловдив");
+    /* „Контакти" → „Работно време": чакаме индикатора, после създаваме */
+    await page.getByRole("button", { name: "Напред" }).click();
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "Работно време" }),
+    ).toHaveAttribute("data-active", "true");
     await page.getByRole("button", { name: "Създай магазина" }).click();
 
     /* 2. Стъпка 2 → прескачаме */
@@ -87,11 +121,7 @@ test.describe("Магазин и продукти", () => {
 
     /* Първи търговец с магазин и продукт */
     await register(page, `frizmo.e2e+owner${stamp}@gmail.com`);
-    await page.getByRole("link", { name: "Създай магазин" }).click();
-    await page.getByLabel("Име на магазина").fill("Магазин на собственика");
-    await page.getByLabel("Категория на бизнеса").selectOption("Друго");
-    await page.getByRole("button", { name: "Създай магазина" }).click();
-    await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
+    await createShopViaWizard(page, "Магазин на собственика", "Друго");
 
     await page.getByLabel("Име на продукта").fill("Таен продукт");
     await page.getByLabel("Цена", { exact: true }).fill("10");
@@ -107,13 +137,7 @@ test.describe("Магазин и продукти", () => {
     const context = await browser.newContext();
     const intruder = await context.newPage();
     await register(intruder, `frizmo.e2e+intruder${stamp}@gmail.com`);
-    await intruder.getByRole("link", { name: "Създай магазин" }).click();
-    await intruder.getByLabel("Име на магазина").fill("Магазин на натрапника");
-    await intruder.getByLabel("Категория на бизнеса").selectOption("Друго");
-    await intruder.getByRole("button", { name: "Създай магазина" }).click();
-    await expect(
-      intruder.getByRole("heading", { name: "Добави първия си продукт" }),
-    ).toBeVisible();
+    await createShopViaWizard(intruder, "Магазин на натрапника", "Друго");
 
     await intruder.goto(productUrl);
     await expect(

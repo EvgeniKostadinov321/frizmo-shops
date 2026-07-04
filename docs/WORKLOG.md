@@ -61,7 +61,7 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Следващо (кандидати — уточни при следваща сесия)
 
-- Продължаване на секция-по-секция редизайн (кои са останали: storefront `/s/{slug}`, dashboard, auth страници?).
+- Продължаване на секция-по-секция редизайн — **остана storefront `/s/{slug}`** (публичният магазин; той има собствена `--sf-*` тема, „Пазарен ден" НЕ важи там). Dashboard/onboarding/auth вече редизайнирани.
 - План 6 Фаза Б — Stripe абонаменти (само при изрична заявка).
 - Проверка, че Vercel production е вързан към `main`.
 - Пренасяне на живата документация и в Saas проекта (по желание).
@@ -80,6 +80,26 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-04** — **Dashboard/onboarding UX пакет + slug втвърдяване + responsive фикс.**
+  (1) Theme toggle: емоджи ☀️/🌙 → SVG икони (sun/moon в icon.tsx) с morph преход.
+  (2) Onboarding: create вече е **3-стъпков wizard** (`shop-wizard.tsx`: Основно* →
+  Контакти → Работно време; само стъпка 1 задължителна). Външният индикатор стана
+  **progress лента** (`onboarding-progress.tsx`), вътрешен 3-точков в wizard-а.
+  ⚠️ e2e/React гоча: клик на „Напред" насред re-render задействаше нативен submit →
+  фикс с `onSubmit` guard (`if(!isLast) preventDefault`) + различни `key` на бутоните.
+  (3) Работно време: опростено (Пон–Пет един ред + Съб + Нед) с toggle „Различно време
+  по дни"; часовете са **24ч custom `<TimeSelect>`** (`ui/time-select.tsx`) вместо
+  native `<input type=time>` (показваше AM/PM по локал). (4) Slug/URL: retry при
+  UNIQUE race (`insertShopWithUniqueSlug`, Postgres 23505) + live preview на адреса на
+  blur в onboarding + замразен URL показан read-only в edit. (5) Onboarding продуктова
+  форма (simple): скрита „Категория" (още няма категории). (6) **Табло редизайн**:
+  компактни `<StatTile>` KPI + „Последни поръчки" + „Следващи стъпки"; dashboard
+  контейнер `max-w-6xl` → `max-w-7xl`. (7) Responsive одит на всички 8 dashboard
+  страници на 375px (влязъл в реален магазин) → всички чисти, **освен таб „Уебсайт"**
+  (грид не се свиваше) → фикс с `min-w-0` + theme picker `grid-cols-2 sm:grid-cols-3`.
+  `pnpm check` зелен (105 теста), store-products e2e 2/2. Seed скрипт за личния магазин:
+  `scripts/seed-my-shop.mjs` (таргет по slug + owner email проверка; НЕ пипа site_settings).
 
 - **2026-07-04** — **Dashboard welcome + видео пчела + onboarding редизайн** (продължение
   на маскота). Празното табло → „момент на посрещане" (пчела + 3-стъпкова карта + CTA).

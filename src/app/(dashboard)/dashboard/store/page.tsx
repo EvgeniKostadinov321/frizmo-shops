@@ -33,6 +33,7 @@ export default async function StorePage() {
       <ShopForm
         mode="edit"
         action={updateShop}
+        slug={shop.slug}
         initial={{
           name: shop.name,
           businessCategory: shop.businessCategory,

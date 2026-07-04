@@ -8,7 +8,7 @@ import { db, shops } from "@/db";
 import { getOwnShop, requireShop } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
-import { generateUniqueShopSlug } from "@/lib/shop-slug";
+import { insertShopWithUniqueSlug, previewShopSlug } from "@/lib/shop-slug";
 import { shopSchema, type ShopInput } from "@/schemas/shop";
 
 export type ShopFormState = {
@@ -80,10 +80,29 @@ export async function createShop(
   if (shop) return { error: "Вече имаш магазин." };
 
   const values = sanitizedValues(parsed.data);
-  const slug = await generateUniqueShopSlug(values.name);
-  await db.insert(shops).values({ ...values, slug, ownerId: user.id });
+  /* Retry при race: UNIQUE constraint-ът гарантира уникален slug, helper-ът го
+     превръща в тихо `-2` вместо 500 при паралелно създаване. */
+  await insertShopWithUniqueSlug(values.name, (slug) => ({
+    ...values,
+    slug,
+    ownerId: user.id,
+  }));
 
   redirect("/dashboard/onboarding?step=2");
+}
+
+/**
+ * Live preview на адреса при попълване на името (onboarding). Автентикиран
+ * потребител без магазин; само чете. Връща предвидения slug + дали базовият е зает.
+ */
+export async function previewShopSlugAction(
+  name: string,
+): Promise<{ slug: string; taken: boolean } | null> {
+  const trimmed = sanitizeText(String(name ?? ""), 80).trim();
+  if (trimmed.length < 2) return null;
+  /* Само логнат потребител (onboarding е зад auth) — без нужда от rate-limit. */
+  await getOwnShop();
+  return previewShopSlug(trimmed);
 }
 
 export async function updateShop(

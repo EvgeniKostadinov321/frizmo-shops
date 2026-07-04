@@ -1,48 +1,37 @@
 const STEPS = ["Магазин", "Първи продукт"] as const;
 
 /**
- * Editorial стъпков индикатор за onboarding („Пазарен ден"): номерирани
- * кръгове, свързани с hairline; активната стъпка е brand, минатите — с чек.
+ * Общ прогрес на onboarding-а като тънка лента („докъде си в целия процес").
+ * Йерархия: тази лента е за макро-прогреса (магазин → продукт), а детайлните
+ * под-стъпки на магазина имат свой номериран индикатор в `ShopWizard`.
  * Само токени → работи light + dark.
  */
 export function OnboardingProgress({ step }: { step: 1 | 2 }) {
+  const total = STEPS.length;
+  const pct = Math.round((step / total) * 100);
+  const label = STEPS[step - 1];
+
   return (
-    <ol className="flex items-center gap-3" aria-label="Стъпки за създаване">
-      {STEPS.map((label, i) => {
-        const n = i + 1;
-        const active = n === step;
-        const done = n < step;
-        return (
-          <li key={label} className="flex items-center gap-3">
-            <span
-              className={`flex size-8 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold transition-colors ${
-                active
-                  ? "bg-brand-500 text-surface-0"
-                  : done
-                    ? "bg-brand-100 text-brand-700"
-                    : "border border-surface-300 bg-surface-0 text-ink-500"
-              }`}
-              aria-current={active ? "step" : undefined}
-            >
-              {done ? (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              ) : (
-                n
-              )}
-            </span>
-            <span
-              className={`text-sm font-medium ${active ? "text-ink-900" : "text-ink-500"}`}
-            >
-              {label}
-            </span>
-            {i < STEPS.length - 1 && (
-              <span aria-hidden className="h-px w-8 bg-surface-300 sm:w-12" />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div aria-label={`Стъпка ${step} от ${total}: ${label}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
+          Стъпка {step} от {total}
+          <span className="ml-2 text-ink-700">· {label}</span>
+        </p>
+        <span className="text-[11px] font-bold text-brand-600 tabular-nums">{pct}%</span>
+      </div>
+      <div
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-200"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="h-full rounded-full bg-brand-500 transition-[width] duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   );
 }

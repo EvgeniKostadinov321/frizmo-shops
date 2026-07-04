@@ -137,7 +137,9 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-        <div className="flex flex-col gap-4">
+        {/* min-w-0: без него grid item-ът не се свива под min-content на
+            съдържанието и панелът чупи ширината на телефон (< lg). */}
+        <div className="flex min-w-0 flex-col gap-4">
           <Card className="flex flex-col gap-3">
             <h2 className="font-bold text-ink-900">Тема и цветове</h2>
             <ThemePanel settings={settings} onChange={(patch) => update({ ...settings, ...patch })} />

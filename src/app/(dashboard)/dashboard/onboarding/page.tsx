@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createShop } from "@/actions/shop";
 import { OnboardingProgress } from "@/components/dashboard/onboarding-progress";
 import { ProductForm } from "@/components/dashboard/product-form";
-import { ShopForm } from "@/components/dashboard/shop-form";
+import { ShopWizard } from "@/components/dashboard/shop-wizard";
 import { getOwnShop } from "@/lib/auth";
 
 export const metadata = { title: "Създай магазина си — Frizmo Shops" };
@@ -49,10 +49,11 @@ export default async function OnboardingPage() {
     return (
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
         <OnboardingProgress step={1} />
-        <OnboardingHeader kicker="Стъпка 1 от 2" title="Да създадем магазина ти">
-          Попълни основното — всичко може да се променя по-късно.
+        <OnboardingHeader kicker="Твоят магазин" title="Да създадем магазина ти">
+          Попълни основното — контактите и работното време можеш да добавиш сега
+          или по-късно.
         </OnboardingHeader>
-        <ShopForm mode="create" action={createShop} />
+        <ShopWizard action={createShop} />
       </div>
     );
   }
@@ -60,7 +61,7 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <OnboardingProgress step={2} />
-      <OnboardingHeader kicker="Стъпка 2 от 2" title="Добави първия си продукт">
+      <OnboardingHeader kicker="Първи продукт" title="Добави първия си продукт">
         Магазинът „{shop.name}“ е създаден! Добави първия продукт — детайли като
         характеристики и варианти можеш да добавиш по-късно.
       </OnboardingHeader>

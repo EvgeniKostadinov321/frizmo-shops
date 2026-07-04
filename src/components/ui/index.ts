@@ -19,3 +19,4 @@ export { Select } from "./select";
 export { Spinner } from "./spinner";
 export { Table, TBody, TCell, TH, THead, TRow } from "./table";
 export { Textarea } from "./textarea";
+export { TimeSelect } from "./time-select";

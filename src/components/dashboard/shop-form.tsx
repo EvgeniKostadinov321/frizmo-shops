@@ -23,19 +23,21 @@ export interface ShopFormInitial {
 }
 
 interface ShopFormProps {
-  mode: "create" | "edit";
+  /** Създаването минава през `ShopWizard`; тази форма е за редакция. */
+  mode?: "edit";
   initial?: ShopFormInitial;
+  /** Публичният адрес на магазина — замразен след създаване (показва се read-only). */
+  slug?: string;
   action: (prev: ShopFormState, formData: FormData) => Promise<ShopFormState>;
 }
 
 const categoryOptions = BUSINESS_CATEGORIES.map((c) => ({ value: c, label: c }));
 
-export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
+export function ShopForm({ initial = {}, slug, action }: ShopFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
   const [address, setAddress] = useState(initial.address ?? "");
   const [city, setCity] = useState(initial.city ?? "");
   const [days, setDays] = useState<WorkingDay[]>(initial.workingDays ?? defaultWorkingDays());
-  const isCreate = mode === "create";
 
   useEffect(() => {
     if (state.ok) toast.success("Промените са запазени.");
@@ -102,13 +104,21 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
     <Card>
       <form action={formAction} className="flex flex-col gap-4" noValidate>
         <input type="hidden" name="workingHours" value={JSON.stringify({ days })} />
+        {slug && (
+          <div className="rounded-control border border-surface-200 bg-surface-50 px-3 py-2.5">
+            <p className="text-xs font-medium text-ink-500">Адрес на магазина</p>
+            <p className="mt-0.5 text-sm font-medium text-ink-900">/s/{slug}</p>
+            <p className="mt-1 text-xs text-ink-500">
+              Адресът е постоянен и не се променя при смяна на името.
+            </p>
+          </div>
+        )}
         <Input
           label="Име на магазина"
           name="name"
           required
           defaultValue={initial.name}
           error={state.fieldErrors?.name}
-          hint={isCreate ? "От името се създава публичният адрес на магазина." : undefined}
         />
         <Select
           label="Категория на бизнеса"
@@ -127,21 +137,12 @@ export function ShopForm({ mode, initial = {}, action }: ShopFormProps) {
           error={state.fieldErrors?.description}
         />
 
-        {isCreate ? (
-          <details className="rounded-control border border-surface-200 p-4">
-            <summary className="cursor-pointer text-sm font-medium text-ink-700">
-              Още детайли (адрес, контакти, работно време) — по избор
-            </summary>
-            <div className="pt-4">{detailFields}</div>
-          </details>
-        ) : (
-          detailFields
-        )}
+        {detailFields}
 
         {state.error && <p className="text-sm text-danger-600">{state.error}</p>}
         <div>
           <Button type="submit" loading={pending}>
-            {isCreate ? "Създай магазина" : "Запази промените"}
+            Запази промените
           </Button>
         </div>
       </form>

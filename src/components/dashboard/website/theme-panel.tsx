@@ -38,8 +38,8 @@ function ColorField({
 
 export function ThemePanel({ settings, onChange }: ThemePanelProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {THEMES.map((theme: ThemeId) => {
           const preset = THEME_PRESETS[theme];
           const active = settings.theme === theme;
@@ -74,7 +74,7 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
 
       <div>
         <p className="mb-2 text-sm font-medium text-ink-900">Цветова комбинация</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {PALETTE_PRESETS.map((palette) => {
             const active =
               settings.primaryColor === palette.primary &&
