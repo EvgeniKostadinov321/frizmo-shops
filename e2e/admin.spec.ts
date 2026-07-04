@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { selectOption } from "./helpers";
 
 async function register(page: Page, email: string) {
   /* Cookie банерът покрива бутони — маркираме го като видян */
@@ -63,7 +64,7 @@ test.describe("Платформен админ", () => {
     await register(merchant, `frizmo.e2e+victim${stamp}@gmail.com`);
     await merchant.getByRole("link", { name: "Създай магазин" }).click();
     await merchant.getByLabel("Име на магазина").fill(`Магазин за скриване ${stamp}`);
-    await merchant.getByLabel("Категория на бизнеса").selectOption("Друго");
+    await selectOption(merchant, "Категория на бизнеса", "Друго");
     await merchant.getByRole("button", { name: "Създай магазина" }).click();
     await merchant.getByLabel("Име на продукта").fill("Продукт");
     await merchant.getByLabel("Цена", { exact: true }).fill("10");

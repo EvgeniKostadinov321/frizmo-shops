@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/dashboard/order-status-badge";
+import { OrderStatusFilter } from "@/components/dashboard/order-status-filter";
 import { EmptyState, Table, TBody, TCell, TH, THead, TRow } from "@/components/ui";
 import { getOrders } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
@@ -27,8 +28,8 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  const statusFilters = [
-    { value: "", label: "Всички" },
+  const statusOptions = [
+    { value: "", label: "Всички статуси" },
     ...Object.entries(ORDER_STATUS_LABELS).map(([value, meta]) => ({
       value,
       label: meta.label,
@@ -39,34 +40,46 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold text-ink-900">Поръчки</h1>
 
-      <div className="flex flex-wrap gap-2">
-        {statusFilters.map((f) => {
-          const active = (params.status ?? "") === f.value;
-          return (
-            <Link
-              key={f.value}
-              href={f.value ? `/dashboard/orders?status=${f.value}` : "/dashboard/orders"}
-              className={`flex h-9 items-center rounded-full border px-3 text-sm transition-colors ${
-                active
-                  ? "border-brand-600 bg-brand-600 text-white"
-                  : "border-surface-300 text-ink-700 hover:border-brand-500"
-              }`}
-            >
-              {f.label}
-            </Link>
-          );
-        })}
+      <div className="sm:max-w-xs">
+        <OrderStatusFilter options={statusOptions} value={params.status ?? ""} />
       </div>
 
       {items.length === 0 ? (
         <EmptyState
-          icon="🧾"
+          icon="receipt"
           title={params.status ? "Няма поръчки с този статус" : "Още нямаш поръчки"}
           description="Когато клиент направи поръчка от магазина ти, тя ще се появи тук — с имейл и известие до теб."
         />
       ) : (
         <>
-          <Table>
+          {/* Мобилно: карти (таблицата е за десктоп) */}
+          <ul className="flex flex-col gap-3 md:hidden">
+            {items.map((order) => (
+              <li key={order.id}>
+                <Link
+                  href={`/dashboard/orders/${order.id}`}
+                  className="flex items-center gap-3 rounded-card border border-surface-200 bg-surface-0 p-4 transition-colors hover:border-brand-500"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium tabular-nums text-ink-900">
+                        #{String(order.orderNumber).padStart(4, "0")}
+                      </span>
+                      <OrderStatusBadge status={order.status} />
+                    </div>
+                    <p className="mt-1 truncate text-sm text-ink-700">{order.customerName}</p>
+                    <p className="text-xs text-ink-500">{dateFormat.format(order.createdAt)}</p>
+                  </div>
+                  <span className="shrink-0 font-bold tabular-nums text-ink-900">
+                    {formatPrice(order.totalCents)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Десктоп: таблица */}
+          <Table className="hidden md:block">
             <THead>
               <TH>№</TH>
               <TH>Дата</TH>

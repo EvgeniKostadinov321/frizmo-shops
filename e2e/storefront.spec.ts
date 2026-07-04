@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { selectOption } from "./helpers";
 
 async function register(page: Page, email: string) {
   /* Cookie банерът покрива бутони — маркираме го като видян */
@@ -21,7 +22,7 @@ test("персонализация → публикуване → публиче
   /* Магазин + продукт с вариант */
   await page.getByRole("link", { name: "Създай магазин" }).click();
   await page.getByLabel("Име на магазина").fill("Е2Е Витрина");
-  await page.getByLabel("Категория на бизнеса").selectOption("Дрехи и мода");
+  await selectOption(page, "Категория на бизнеса", "Дрехи и мода");
   await page.getByRole("button", { name: "Създай магазина" }).click();
   await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
 

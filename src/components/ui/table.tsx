@@ -1,8 +1,8 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 
-export function Table({ children }: { children: ReactNode }) {
+export function Table({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className="overflow-x-auto rounded-card border border-surface-200 bg-surface-0">
+    <div className={`overflow-x-auto rounded-card border border-surface-200 bg-surface-0 ${className}`}>
       <table className="w-full text-sm">{children}</table>
     </div>
   );

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { selectOption } from "./helpers";
 
 async function register(page: Page, email: string) {
   /* Cookie банерът покрива бутони — маркираме го като видян */
@@ -21,7 +22,7 @@ test("пълен поръчков цикъл: deal промоция → checkout
   /* Магазин + продукт с наличност 5 и промоция „2 за 30" */
   await page.getByRole("link", { name: "Създай магазин" }).click();
   await page.getByLabel("Име на магазина").fill("Е2Е Поръчки");
-  await page.getByLabel("Категория на бизнеса").selectOption("Храни и напитки");
+  await selectOption(page, "Категория на бизнеса", "Храни и напитки");
   await page.getByRole("button", { name: "Създай магазина" }).click();
   await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
 

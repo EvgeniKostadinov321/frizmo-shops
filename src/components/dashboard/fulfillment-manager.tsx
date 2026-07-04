@@ -18,6 +18,7 @@ import {
   Card,
   ConfirmDialog,
   Drawer,
+  Icon,
   Input,
   PriceInput,
   Select,
@@ -125,7 +126,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 aria-label={m.active ? "Изключи" : "Включи"}
                 onClick={() => run(() => toggleShippingMethod({ id: m.id }))}
               >
-                {m.active ? "👁" : "🚫"}
+                <Icon name={m.active ? "eye" : "eye-off"} size={18} />
               </Button>
               <Button
                 variant="ghost"
@@ -141,7 +142,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                   })
                 }
               >
-                ✎
+                <Icon name="pencil" size={18} />
               </Button>
               <Button
                 variant="ghost"
@@ -149,7 +150,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 aria-label="Изтрий"
                 onClick={() => setToDelete({ kind: "shipping", id: m.id, name: m.name })}
               >
-                🗑
+                <Icon name="trash" size={18} />
               </Button>
             </div>
           </div>
@@ -186,7 +187,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 aria-label={m.active ? "Изключи" : "Включи"}
                 onClick={() => run(() => togglePaymentMethod({ id: m.id }))}
               >
-                {m.active ? "👁" : "🚫"}
+                <Icon name={m.active ? "eye" : "eye-off"} size={18} />
               </Button>
               <Button
                 variant="ghost"
@@ -196,7 +197,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                   setPaymentDraft({ id: m.id, type: m.type, name: m.name, details: m.details })
                 }
               >
-                ✎
+                <Icon name="pencil" size={18} />
               </Button>
               <Button
                 variant="ghost"
@@ -204,7 +205,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 aria-label="Изтрий"
                 onClick={() => setToDelete({ kind: "payment", id: m.id, name: m.name })}
               >
-                🗑
+                <Icon name="trash" size={18} />
               </Button>
             </div>
           </div>

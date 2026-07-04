@@ -81,6 +81,22 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-04** — **Dashboard мобилен UX пакет (6 проблема от тест на телефон).**
+  (1) Мобилна навигация: `DashboardNav` → бутон „☰ текуща страница" отваря **fullscreen
+  меню** (< md); десктоп = вертикална навигация. (2) Продукти/поръчки: **карти на
+  мобилно** (`md:hidden`), таблица на десктоп (`hidden md:block`; `Table` вече приема
+  className). (3+общо) **`ui/select.tsx` пренаписан като брандов custom dropdown**
+  (панел като TimeSelect, затваря отвън/Escape, клавиатура, достъпен) — заменя грозния
+  native select навсякъде вкл. iPhone. ⚠️ Запазен **event-съвместим API**
+  (`onChange` подава `{target:{value}}`) → нито един от 11-те callers не се пипа;
+  поддържа и controlled (dashboard) и uncontrolled `defaultValue`+`name` (каталог форми).
+  6-те e2e `.selectOption()` мигрирани през нов `e2e/helpers.ts` (`selectOption` кликва
+  тригер+опция). (4) Поръчки: pill филтри → dropdown (`OrderStatusFilter`); **6 фалшиви
+  поръчки** (всички статуси) чрез `scripts/seed-my-orders.mjs`. (5+6) **Всички емоджи
+  икони → SVG** (pencil/trash/arrow-up/down/eye/eye-off/image/receipt/palette в icon.tsx);
+  `EmptyState.icon` вече е `IconName`, не емоджи. Стрелките в категории = „премести
+  нагоре/надолу". `pnpm check` зелен (106 теста). Уебсайт билдър НЕ пипан (по заявка).
+
 - **2026-07-04** — **Dashboard/onboarding UX пакет + slug втвърдяване + responsive фикс.**
   (1) Theme toggle: емоджи ☀️/🌙 → SVG икони (sun/moon в icon.tsx) с morph преход.
   (2) Onboarding: create вече е **3-стъпков wizard** (`shop-wizard.tsx`: Основно* →

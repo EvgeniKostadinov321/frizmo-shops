@@ -15,6 +15,7 @@ import {
   ConfirmDialog,
   Drawer,
   EmptyState,
+  Icon,
   Input,
   Select,
 } from "@/components/ui";
@@ -113,17 +114,17 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <Button variant="ghost" size="sm" aria-label="Нагоре" onClick={() => handleMove(category.id, "up")}>
-            ↑
+          <Button variant="ghost" size="sm" aria-label="Премести нагоре" onClick={() => handleMove(category.id, "up")}>
+            <Icon name="arrow-up" size={18} />
           </Button>
-          <Button variant="ghost" size="sm" aria-label="Надолу" onClick={() => handleMove(category.id, "down")}>
-            ↓
+          <Button variant="ghost" size="sm" aria-label="Премести надолу" onClick={() => handleMove(category.id, "down")}>
+            <Icon name="arrow-down" size={18} />
           </Button>
           <Button variant="ghost" size="sm" aria-label="Редактирай" onClick={() => openEdit(category)}>
-            ✎
+            <Icon name="pencil" size={18} />
           </Button>
           <Button variant="ghost" size="sm" aria-label="Изтрий" onClick={() => setToDelete(category)}>
-            🗑
+            <Icon name="trash" size={18} />
           </Button>
         </div>
       </div>
@@ -139,7 +140,7 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
 
       {tree.length === 0 ? (
         <EmptyState
-          icon="🗂️"
+          icon="palette"
           title="Още нямаш категории"
           description="Категориите помагат на клиентите да намират продуктите ти по-лесно. Пример: „Млечни продукти“ с подкатегория „Сирена“."
           action={<Button onClick={openCreate}>Създай първата</Button>}

@@ -12,6 +12,7 @@ import {
   Button,
   ConfirmDialog,
   EmptyState,
+  Icon,
   Input,
   LinkButton,
   Select,
@@ -108,14 +109,87 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
 
       {items.length === 0 ? (
         <EmptyState
-          icon="📦"
+          icon="store"
           title={total === 0 && !searchParams.toString() ? "Още нямаш продукти" : "Няма резултати"}
           description="Добави продукт и той ще се появи тук."
           action={<LinkButton href="/dashboard/products/new">Добави продукт</LinkButton>}
         />
       ) : (
         <>
-          <Table>
+          {/* Мобилно: карти (таблицата е за десктоп) */}
+          <ul className="flex flex-col gap-3 md:hidden">
+            {items.map((product) => (
+              <li
+                key={product.id}
+                className="flex gap-3 rounded-card border border-surface-200 bg-surface-0 p-3"
+              >
+                <Link
+                  href={`/dashboard/products/${product.id}`}
+                  className="relative size-16 shrink-0 overflow-hidden rounded-control border border-surface-200 bg-surface-50"
+                >
+                  {product.images[0] ? (
+                    <Image
+                      src={publicImageUrl(product.images[0])}
+                      alt=""
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="flex size-full items-center justify-center text-surface-300">
+                      <Icon name="image" size={24} />
+                    </span>
+                  )}
+                </Link>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <Link
+                    href={`/dashboard/products/${product.id}`}
+                    className="truncate font-medium text-ink-900 hover:text-brand-600"
+                  >
+                    {product.name}
+                  </Link>
+                  <span className="text-xs text-ink-500">
+                    {product.categoryId ? (categoryLabels.get(product.categoryId) ?? "—") : "Без категория"}
+                  </span>
+                  <span className="text-sm font-medium text-ink-900">
+                    {product.promoPriceCents !== null ? (
+                      <>
+                        <span className="text-danger-600">{formatPrice(product.promoPriceCents)}</span>{" "}
+                        <s className="text-xs text-ink-500">{formatPrice(product.priceCents)}</s>
+                      </>
+                    ) : (
+                      formatPrice(product.priceCents)
+                    )}
+                    <span className="text-ink-500"> · {product.stock ?? "—"} бр.</span>
+                  </span>
+                  <div className="mt-1 flex items-center gap-2">
+                    <button type="button" onClick={() => handleToggle(product)} aria-label="Смени статуса">
+                      <Badge tone={product.status === "active" ? "success" : "neutral"}>
+                        {product.status === "active" ? "Активен" : "Неактивен"}
+                      </Badge>
+                    </button>
+                    <span className="flex-1" />
+                    <Link href={`/dashboard/products/${product.id}`}>
+                      <Button variant="ghost" size="sm" aria-label="Редактирай">
+                        <Icon name="pencil" size={18} />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Изтрий"
+                      onClick={() => setToDelete(product)}
+                    >
+                      <Icon name="trash" size={18} />
+                    </Button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Десктоп: таблица */}
+          <Table className="hidden md:block">
             <THead>
               <TH>Продукт</TH>
               <TH>Категория</TH>
@@ -142,8 +216,8 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                             className="object-cover"
                           />
                         ) : (
-                          <span className="flex size-full items-center justify-center text-ink-500">
-                            📦
+                          <span className="flex size-full items-center justify-center text-surface-300">
+                            <Icon name="image" size={20} />
                           </span>
                         )}
                       </span>
@@ -181,7 +255,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                     <div className="flex justify-end gap-1">
                       <Link href={`/dashboard/products/${product.id}`}>
                         <Button variant="ghost" size="sm" aria-label="Редактирай">
-                          ✎
+                          <Icon name="pencil" size={18} />
                         </Button>
                       </Link>
                       <Button
@@ -190,7 +264,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                         aria-label="Изтрий"
                         onClick={() => setToDelete(product)}
                       >
-                        🗑
+                        <Icon name="trash" size={18} />
                       </Button>
                     </div>
                   </TCell>

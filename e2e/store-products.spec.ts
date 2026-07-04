@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { selectOption } from "./helpers";
 
 async function register(page: Page, email: string) {
   /* Cookie банерът покрива бутони — маркираме го като видян */
@@ -16,7 +17,7 @@ async function register(page: Page, email: string) {
 async function createShopViaWizard(page: Page, name: string, category: string) {
   await page.getByRole("link", { name: "Създай магазин" }).click();
   await page.getByLabel("Име на магазина").fill(name);
-  await page.getByLabel("Категория на бизнеса").selectOption(category);
+  await selectOption(page, "Категория на бизнеса", category);
   /* Стъпка 1 → 2 → 3, изчаквайки индикатора да маркира всяка под-стъпка, преди
      да продължим (бутонът „Напред"→„Създай магазина" се сменя при смяна на
      стъпка — чакаме стабилно състояние, за да не уцелим бутона по време на
@@ -44,7 +45,7 @@ test.describe("Магазин и продукти", () => {
     await page.getByRole("link", { name: "Създай магазин" }).click();
     await expect(page.getByRole("heading", { name: "Да създадем магазина ти" })).toBeVisible();
     await page.getByLabel("Име на магазина").fill("Е2Е Ферма");
-    await page.getByLabel("Категория на бизнеса").selectOption("Храни и напитки");
+    await selectOption(page, "Категория на бизнеса", "Храни и напитки");
     /* Стъпка „Основно" → „Контакти": изчакваме индикатора да маркира стъпка 2 */
     await page.getByRole("button", { name: "Напред" }).click();
     await expect(page.getByRole("listitem").filter({ hasText: "Контакти" })).toHaveAttribute(
@@ -73,12 +74,14 @@ test.describe("Магазин и продукти", () => {
 
     await page.getByRole("button", { name: "Добави категория" }).click();
     await page.getByLabel("Име").fill("Сирена");
-    /* Изчакваме router.refresh() да достави новата категория в опциите */
-    const parentSelect = page.getByLabel("Родителска категория");
-    await expect(parentSelect.locator("option", { hasText: "Млечни" })).toBeAttached({
+    /* Изчакваме router.refresh() да достави новата категория в опциите на custom
+       Select-а, после избираме „Млечни" за родител. */
+    await page.getByLabel("Родителска категория", { exact: true }).click();
+    const parentList = page.getByRole("listbox", { name: "Родителска категория" });
+    await expect(parentList.getByRole("option", { name: "Млечни", exact: true })).toBeVisible({
       timeout: 20_000,
     });
-    await parentSelect.selectOption({ label: "Млечни" });
+    await parentList.getByRole("option", { name: "Млечни", exact: true }).click();
     await page.getByRole("button", { name: "Запази" }).click();
     await expect(page.getByText("Сирена")).toBeVisible();
 
@@ -87,7 +90,7 @@ test.describe("Магазин и продукти", () => {
     await page.getByRole("link", { name: "Нов продукт" }).click();
 
     await page.getByLabel("Име на продукта").fill("Краве сирене");
-    await page.getByLabel("Категория", { exact: true }).selectOption({ label: "Млечни → Сирена" });
+    await selectOption(page, "Категория", "Млечни → Сирена");
     await page.getByLabel("Цена", { exact: true }).fill("12,50");
 
     await page.locator('input[type="file"]').setInputFiles("e2e/fixtures/product.png");
