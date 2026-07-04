@@ -109,6 +109,12 @@ const ICON_PATHS = {
   ],
   /* Луна — тъмна тема */
   moon: ["M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"],
+  /* Споделяне (iOS share sheet иконата — стрелка нагоре от кутия) */
+  share: [
+    "M12 2v13",
+    "m8 6 4-4 4 4",
+    "M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7",
+  ],
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
