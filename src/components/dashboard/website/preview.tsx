@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { Button } from "@/components/ui";
+import { Button, Icon } from "@/components/ui";
 
 export interface WebsitePreviewHandle {
   refresh: () => void;
@@ -31,9 +31,9 @@ export const WebsitePreview = forwardRef<WebsitePreviewHandle, { slug: string }>
     }));
 
     return (
-      <div className="hidden flex-col gap-2 lg:flex">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-2 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1">
             {PAGES.map((page) => (
               <Button
                 key={page.path}
@@ -50,28 +50,30 @@ export const WebsitePreview = forwardRef<WebsitePreviewHandle, { slug: string }>
             <Button
               variant={device === "desktop" ? "secondary" : "ghost"}
               size="sm"
+              aria-label="Десктоп изглед"
               aria-pressed={device === "desktop"}
               onClick={() => setDevice("desktop")}
             >
-              🖥
+              <Icon name="monitor" size={16} />
             </Button>
             <Button
               variant={device === "mobile" ? "secondary" : "ghost"}
               size="sm"
+              aria-label="Мобилен изглед"
               aria-pressed={device === "mobile"}
               onClick={() => setDevice("mobile")}
             >
-              📱
+              <Icon name="smartphone" size={16} />
             </Button>
           </div>
         </div>
-        <div className="flex justify-center overflow-hidden rounded-card border border-surface-200 bg-surface-100 p-3">
+        <div className="flex min-h-0 flex-1 justify-center overflow-hidden rounded-card border border-surface-200 bg-surface-100 p-3">
           <iframe
             ref={iframeRef}
             src={`/s/${slug}${pagePath}`}
             title="Преглед на магазина"
-            className={`h-[70vh] rounded-control border border-surface-300 bg-surface-0 transition-all ${
-              device === "mobile" ? "w-97.5" : "w-full"
+            className={`h-full rounded-control border border-surface-300 bg-surface-0 transition-all ${
+              device === "mobile" ? "w-97.5 max-w-full" : "w-full"
             }`}
           />
         </div>
