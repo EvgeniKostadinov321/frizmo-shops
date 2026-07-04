@@ -72,9 +72,9 @@ export function getInstallInstructions(os: OS, browser: Browser): InstallGuide {
       deviceLabel: "iPhone · Safari",
       canInstall: "manual",
       steps: [
-        { text: "Тапни бутона „Сподели“ в лентата долу.", icon: "share" },
+        { text: "Натисни бутона „Сподели“ в лентата долу.", icon: "share" },
         { text: "Превърти и избери „Към началния екран“.", icon: "plus" },
-        { text: "Тапни „Добави“ горе вдясно.", icon: "check" },
+        { text: "Натисни „Добави“ горе вдясно.", icon: "check" },
       ],
     };
   }

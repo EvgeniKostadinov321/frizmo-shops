@@ -10,7 +10,7 @@ import { InstallGuideModal } from "./install-guide-modal";
 const BENEFITS: { icon: IconName; title: string; text: string }[] = [
   { icon: "rocket", title: "Мигновено", text: "Като истинско приложение — без браузър." },
   { icon: "bell", title: "Известия", text: "Веднага научаваш за нова поръчка." },
-  { icon: "store", title: "На екрана", text: "Един тап — без да търсиш линк." },
+  { icon: "store", title: "На екрана", text: "Едно натискане — без да търсиш линк." },
 ];
 
 export function InstallAppSection() {
