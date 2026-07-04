@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Icon } from "@/components/ui";
 import type { Product } from "@/db";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
@@ -23,8 +24,8 @@ export function ProductCard({ product, base }: { product: Product; base: string 
             className="object-cover transition-transform group-hover:scale-105"
           />
         ) : (
-          <span className="flex size-full items-center justify-center text-4xl" aria-hidden>
-            📦
+          <span className="flex size-full items-center justify-center bg-(--sf-surface)" aria-hidden>
+            <Icon name="image" size={40} className="text-(--sf-muted) opacity-40" />
           </span>
         )}
         {product.promoPriceCents !== null && (

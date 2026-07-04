@@ -13,6 +13,7 @@ import {
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 import { variantKey } from "@/lib/variants";
+import { Icon } from "@/components/ui";
 
 interface VariantPickerProps {
   shopId: string;
@@ -101,8 +102,8 @@ export function VariantPicker({
               priority
             />
           ) : (
-            <span className="flex size-full items-center justify-center text-6xl" aria-hidden>
-              📦
+            <span className="flex size-full items-center justify-center bg-(--sf-surface)" aria-hidden>
+              <Icon name="image" size={56} className="text-(--sf-muted) opacity-40" />
             </span>
           )}
         </div>
@@ -181,7 +182,7 @@ export function VariantPicker({
 
         {deal && (
           <p className="rounded-(--sf-radius) bg-(--sf-surface) px-3 py-2 text-sm font-medium text-(--sf-accent)">
-            🏷 Купи {deal.quantity} бр за общо {formatPrice(deal.totalPriceCents)}
+            Купи {deal.quantity} бр за общо {formatPrice(deal.totalPriceCents)}
           </p>
         )}
 

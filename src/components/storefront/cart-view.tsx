@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { Icon } from "@/components/ui";
 import { priceCartAction, type CartLineView } from "@/actions/cart";
 import { formatPrice } from "@/lib/money";
 import {
@@ -66,9 +67,7 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
   if (stored.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <span aria-hidden className="text-5xl">
-          🛒
-        </span>
+        <Icon name="shopping-cart" size={44} className="text-(--sf-muted) opacity-50" />
         <p className="text-(--sf-muted)">Количката ти е празна.</p>
         <Link
           href={`${base}/products`}
@@ -116,8 +115,8 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
                     className="object-cover"
                   />
                 ) : (
-                  <span className="flex size-full items-center justify-center text-2xl" aria-hidden>
-                    📦
+                  <span className="flex size-full items-center justify-center" aria-hidden>
+                    <Icon name="image" size={24} className="text-(--sf-muted) opacity-40" />
                   </span>
                 )}
               </Link>
@@ -130,7 +129,7 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
                   <p className="text-xs text-(--sf-muted)">{line.variantLabel}</p>
                 )}
                 {line.appliedDeal && (
-                  <p className="text-xs font-medium text-(--sf-accent)">🏷 {line.appliedDeal}</p>
+                  <p className="text-xs font-medium text-(--sf-accent)">{line.appliedDeal}</p>
                 )}
                 {line.error && (
                   <p className="text-xs font-medium text-(--sf-accent)">
@@ -170,9 +169,9 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
                       type="button"
                       aria-label="Премахни от количката"
                       onClick={() => removeFromCart(shopId, storedLine)}
-                      className="text-(--sf-muted) hover:opacity-70"
+                      className="flex items-center text-(--sf-muted) hover:opacity-70"
                     >
-                      ✕
+                      <Icon name="x" size={16} />
                     </button>
                   </div>
                 </div>

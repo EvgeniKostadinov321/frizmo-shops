@@ -1,3 +1,4 @@
+import { Icon } from "@/components/ui";
 import { formatWorkingHours, parseWorkingHours } from "@/lib/working-hours";
 import type { SectionOfType } from "@/schemas/site-settings";
 import { SectionShell } from "./shared";
@@ -17,18 +18,23 @@ export function ContactMapSection({ data, ctx }: ContactMapProps) {
     <SectionShell title={data.title || "Къде да ни намериш"}>
       <div className="grid gap-6 md:grid-cols-2">
         <div className="flex flex-col gap-2 text-(--sf-muted)">
-          {fullAddress && <p className="text-(--sf-text)">📍 {fullAddress}</p>}
+          {fullAddress && (
+            <p className="flex items-center gap-2 text-(--sf-text)">
+              <Icon name="map-pin" size={18} className="shrink-0 text-(--sf-primary)" />
+              {fullAddress}
+            </p>
+          )}
           {shop.phone && (
-            <p>
-              📞{" "}
+            <p className="flex items-center gap-2">
+              <Icon name="phone" size={18} className="shrink-0 text-(--sf-primary)" />
               <a href={`tel:${shop.phone}`} className="hover:opacity-70">
                 {shop.phone}
               </a>
             </p>
           )}
           {shop.email && (
-            <p>
-              ✉️{" "}
+            <p className="flex items-center gap-2">
+              <Icon name="mail" size={18} className="shrink-0 text-(--sf-primary)" />
               <a href={`mailto:${shop.email}`} className="hover:opacity-70">
                 {shop.email}
               </a>
