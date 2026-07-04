@@ -6,6 +6,7 @@ import { BeforeAfter } from "@/components/marketing/before-after";
 import { DoneForYou } from "@/components/marketing/done-for-you";
 import { FeatureBento } from "@/components/marketing/feature-bento";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
+import { InstallAppButton } from "@/components/marketing/install-app-button";
 import { InstallAppSection } from "@/components/marketing/install-app-section";
 import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { Reveal } from "@/components/marketing/reveal";
@@ -176,12 +177,7 @@ export default async function LandingPage() {
                     →
                   </span>
                 </Link>
-                <Link
-                  href="/shops"
-                  className="inline-flex h-13 items-center rounded-full border border-surface-200 bg-surface-0 px-6 text-sm font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
-                >
-                  Виж живи магазини
-                </Link>
+                <InstallAppButton />
               </div>
               <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-3 text-sm text-ink-500">
                 {["30 дни безплатно", "Без карта", "Готов за 15 минути", "Без комисиона"].map(
