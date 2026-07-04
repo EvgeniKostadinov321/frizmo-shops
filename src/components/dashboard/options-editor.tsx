@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Input } from "@/components/ui";
+import { Button, Icon, Input } from "@/components/ui";
 import type { OptionAxis } from "@/lib/variants";
 
 interface OptionsEditorProps {
@@ -32,16 +32,16 @@ function ValuesInput({
         {axis.values.map((value) => (
           <span
             key={value}
-            className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700"
+            className="inline-flex items-center gap-1 rounded-full bg-brand-50 py-1 pl-2.5 pr-1 text-xs font-medium text-brand-700"
           >
             {value}
             <button
               type="button"
               aria-label={`Премахни ${value}`}
               onClick={() => onRemove(value)}
-              className="text-brand-600 hover:text-brand-700"
+              className="flex size-5 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100 hover:text-brand-700"
             >
-              ✕
+              <Icon name="x" size={12} />
             </button>
           </span>
         ))}
@@ -95,7 +95,7 @@ export function OptionsEditor({ axes, onChange }: OptionsEditorProps) {
               aria-label="Премахни опцията"
               onClick={() => onChange(axes.filter((_, idx) => idx !== i))}
             >
-              ✕
+              <Icon name="x" size={18} />
             </Button>
           </div>
           <ValuesInput

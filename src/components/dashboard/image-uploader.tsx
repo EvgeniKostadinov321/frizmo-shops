@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { requestImageUpload } from "@/actions/uploads";
-import { Spinner } from "@/components/ui";
+import { Icon, Spinner } from "@/components/ui";
 import {
   ALLOWED_IMAGE_EXT,
   fileExtension,
@@ -108,32 +108,34 @@ export function ImageUploader({
               Корица
             </span>
           )}
-          <div className="absolute inset-x-0 bottom-0 flex justify-between bg-ink-900/60 px-1 py-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          {/* Триене (горе вдясно) — винаги видимо на тъч, hover на десктоп. */}
+          <button
+            type="button"
+            aria-label="Премахни снимката"
+            onClick={() => onChange(images.filter((p) => p !== path))}
+            className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-ink-900/70 text-white transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+          >
+            <Icon name="x" size={14} />
+          </button>
+          {/* Пренареждане (долу) — стрелки наляво/надясно. */}
+          <div className="absolute inset-x-0 bottom-0 flex justify-between bg-ink-900/60 px-1 py-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
             <button
               type="button"
               aria-label="Премести наляво"
               onClick={() => move(i, -1)}
               disabled={i === 0}
-              className="px-1 text-xs text-white disabled:opacity-40"
+              className="flex size-6 items-center justify-center text-white disabled:opacity-40"
             >
-              ←
-            </button>
-            <button
-              type="button"
-              aria-label="Премахни снимката"
-              onClick={() => onChange(images.filter((p) => p !== path))}
-              className="px-1 text-xs text-white"
-            >
-              ✕
+              <Icon name="arrow-up" size={16} className="-rotate-90" />
             </button>
             <button
               type="button"
               aria-label="Премести надясно"
               onClick={() => move(i, 1)}
               disabled={i === images.length - 1}
-              className="px-1 text-xs text-white disabled:opacity-40"
+              className="flex size-6 items-center justify-center text-white disabled:opacity-40"
             >
-              →
+              <Icon name="arrow-down" size={16} className="-rotate-90" />
             </button>
           </div>
         </div>
@@ -154,7 +156,7 @@ export function ImageUploader({
           onClick={() => inputRef.current?.click()}
           className="flex size-24 flex-col items-center justify-center gap-1 rounded-control border-2 border-dashed border-surface-300 text-ink-500 transition-colors hover:border-brand-500 hover:text-brand-600"
         >
-          <span className="text-xl">+</span>
+          <Icon name="plus" size={20} />
           <span className="text-xs">Добави</span>
         </button>
       )}

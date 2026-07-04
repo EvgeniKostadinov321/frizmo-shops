@@ -269,7 +269,9 @@ export function ProductForm({
         </>
       )}
 
-      <div className="flex items-center gap-3">
+      {/* Футерът е отделна карта с горен отстъп — не се слива с последната
+          секция (feedback от 2026-07-04, снимка от мобилно). */}
+      <div className="mt-2 flex items-center gap-3 rounded-card border border-surface-200 bg-surface-0 p-4">
         <Button type="submit" loading={saving}>
           {productId ? "Запази промените" : "Създай продукта"}
         </Button>
