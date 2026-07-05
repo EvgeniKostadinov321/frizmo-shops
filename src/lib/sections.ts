@@ -32,13 +32,13 @@ export const SECTION_DEFS: Record<SectionType, SectionDef> = {
     label: "Избрани продукти",
     icon: "star",
     planTier: "starter",
-    defaultData: { title: "Избрани продукти", mode: "newest", productIds: [] },
+    defaultData: { variant: 1, title: "Избрани продукти", mode: "newest", productIds: [] },
   },
   "category-grid": {
     label: "Категории",
     icon: "grid",
     planTier: "starter",
-    defaultData: { title: "Разгледай по категория", categoryIds: [] },
+    defaultData: { variant: 1, title: "Разгледай по категория", categoryIds: [] },
   },
   "promo-banner": {
     label: "Промо банер",
@@ -50,19 +50,19 @@ export const SECTION_DEFS: Record<SectionType, SectionDef> = {
     label: "Снимка + текст",
     icon: "image",
     planTier: "starter",
-    defaultData: { title: "", text: "", imagePath: "", imageSide: "left" },
+    defaultData: { variant: 1, title: "", text: "", imagePath: "", imageSide: "left" },
   },
   "rich-text": {
     label: "Текстов блок",
     icon: "text",
     planTier: "starter",
-    defaultData: { title: "", text: "" },
+    defaultData: { variant: 1, title: "", text: "" },
   },
   testimonials: {
     label: "Отзиви на клиенти",
     icon: "quote",
     planTier: "pro",
-    defaultData: { title: "Какво казват клиентите", items: [] },
+    defaultData: { variant: 1, title: "Какво казват клиентите", items: [] },
   },
   "trust-badges": {
     label: "Доверие (badges)",
@@ -74,25 +74,25 @@ export const SECTION_DEFS: Record<SectionType, SectionDef> = {
     label: "Галерия",
     icon: "images",
     planTier: "pro",
-    defaultData: { title: "Галерия", imagePaths: [] },
+    defaultData: { variant: 1, title: "Галерия", imagePaths: [] },
   },
   faq: {
     label: "Често задавани въпроси",
     icon: "help-circle",
     planTier: "pro",
-    defaultData: { title: "Често задавани въпроси", items: [] },
+    defaultData: { variant: 1, title: "Често задавани въпроси", items: [] },
   },
   "contact-map": {
     label: "Контакти и карта",
     icon: "map-pin",
     planTier: "starter",
-    defaultData: { title: "Къде да ни намериш", showMap: true },
+    defaultData: { variant: 1, title: "Къде да ни намериш", showMap: true },
   },
   socials: {
     label: "Социални мрежи",
     icon: "link",
     planTier: "starter",
-    defaultData: { title: "Последвай ни" },
+    defaultData: { variant: 1, title: "Последвай ни" },
   },
 };
 

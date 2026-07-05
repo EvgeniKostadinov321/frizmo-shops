@@ -1,3 +1,4 @@
+import type { Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
@@ -6,11 +7,23 @@ import { StorefrontHeader } from "@/components/storefront/header";
 import { PreviewListener } from "@/components/storefront/preview-listener";
 import { AnnouncementSection } from "@/components/storefront/sections/announcement";
 import { getPublicCategories, getPublicShop } from "@/db/queries/storefront";
-import { themeStyle } from "@/lib/themes";
+import { THEME_PRESETS, themeStyle } from "@/lib/themes";
 
 interface StorefrontLayoutProps {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
+}
+
+/** theme-color = фонът на темата на магазина — браузърният chrome/PWA лентата
+ *  е в цвета на МАГАЗИНА, не на платформата (getPublicShop е react cache-нат,
+ *  заявката се дели с layout-а). */
+export async function generateViewport({
+  params,
+}: Pick<StorefrontLayoutProps, "params">): Promise<Viewport> {
+  const { slug } = await params;
+  const result = await getPublicShop(slug);
+  if (!result) return {};
+  return { themeColor: THEME_PRESETS[result.settings.theme]["--sf-bg"] };
 }
 
 export default async function StorefrontLayout({ children, params }: StorefrontLayoutProps) {
@@ -61,7 +74,10 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
           "--sf-chrome": `${chromeRem}rem`,
         } as CSSProperties
       }
-      className="flex min-h-screen flex-col bg-(--sf-bg) text-(--sf-text)"
+      /* overflow-x-clip: защитна мрежа срещу хоризонтален overflow (w-screen
+         компенсира скролбара, елементи-бегълци). clip НЕ създава scroll
+         контейнер → sticky header-ът продължава да работи (за разлика от hidden). */
+      className="flex min-h-screen flex-col overflow-x-clip bg-(--sf-bg) text-(--sf-text)"
     >
       {viewerIsOwner && <PreviewListener />}
       {viewerIsOwner && (shop.status !== "published" || viewingDraft) && (

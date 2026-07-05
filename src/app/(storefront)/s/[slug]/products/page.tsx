@@ -71,7 +71,7 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
           />
           <button
             type="submit"
-            className="h-11 rounded-(--sf-radius) bg-(--sf-primary) px-4 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
+            className="sf-cta h-11 rounded-(--sf-radius) bg-(--sf-primary) px-4 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
           >
             Търси
           </button>

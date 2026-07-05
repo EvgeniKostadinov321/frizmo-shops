@@ -1,13 +1,8 @@
-import type { SectionOfType } from "@/schemas/site-settings";
-import { SectionShell, type SectionTone } from "./shared";
+import { SectionShell } from "../shared";
+import type { FaqVariantProps } from "./index";
 
-export function FaqSection({
-  data,
-  tone,
-}: {
-  data: SectionOfType<"faq">["data"];
-  tone?: SectionTone;
-}) {
+/** Вариант 1 — центриран акордеон с карти. */
+export function FaqAccordion({ data, tone }: FaqVariantProps) {
   const items = data.items.filter((i) => i.question.trim() && i.answer.trim());
   if (items.length === 0) return null;
 

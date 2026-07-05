@@ -6,11 +6,20 @@ import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 
 /** Процент отстъпка за промо badge-а (закръглен). */
-function discountPercent(priceCents: number, promoCents: number): number {
+export function discountPercent(priceCents: number, promoCents: number): number {
   return Math.round((1 - promoCents / priceCents) * 100);
 }
 
-export function ProductCard({ product, base }: { product: Product; base: string }) {
+export function ProductCard({
+  product,
+  base,
+  ratio = "portrait",
+}: {
+  product: Product;
+  base: string;
+  /** portrait = 4:5 (стандарт); square = 1:1 (компактни композиции, напр. 2×2). */
+  ratio?: "portrait" | "square";
+}) {
   const cover = product.images[0];
   const hoverImage = product.images[1];
   const outOfStock = product.stock !== null && product.stock <= 0;
@@ -19,10 +28,14 @@ export function ProductCard({ product, base }: { product: Product; base: string 
   return (
     <Link
       href={`${base}/p/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) shadow-(--sf-shadow) transition-transform duration-300 hover:-translate-y-0.5"
+      className="group flex flex-col overflow-hidden rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) shadow-(--sf-shadow) transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-(--sf-shadow-hover)"
     >
-      {/* Image-first: 4:5 формат, hover zoom + втора снимка при наличие */}
-      <span className="relative aspect-4/5 w-full overflow-hidden bg-(--sf-surface)">
+      {/* Image-first: hover zoom + втора снимка при наличие */}
+      <span
+        className={`sf-frame relative w-full overflow-hidden bg-(--sf-surface) ${
+          ratio === "square" ? "aspect-square" : "aspect-4/5"
+        }`}
+      >
         {cover ? (
           <>
             <Image
@@ -60,18 +73,18 @@ export function ProductCard({ product, base }: { product: Product; base: string 
           </span>
         )}
       </span>
-      {/* Editorial ред: име вляво · цена вдясно */}
-      <span className="flex flex-1 items-baseline justify-between gap-3 p-4">
-        <span className="line-clamp-2 font-medium leading-snug text-(--sf-text)">
+      {/* Име на чист ред, цената отдолу — не се чупи при тесни карти */}
+      <span className="flex flex-1 flex-col gap-0.5 px-4 py-3">
+        <span className="truncate font-medium leading-snug text-(--sf-text)" title={product.name}>
           {product.name}
         </span>
-        <span className="flex shrink-0 items-baseline gap-2">
-          {promo !== null && (
-            <s className="text-sm text-(--sf-muted)">{formatPrice(product.priceCents)}</s>
-          )}
+        <span className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-(--sf-text)">
             {formatPrice(promo ?? product.priceCents)}
           </span>
+          {promo !== null && (
+            <s className="text-sm text-(--sf-muted)">{formatPrice(product.priceCents)}</s>
+          )}
         </span>
       </span>
     </Link>

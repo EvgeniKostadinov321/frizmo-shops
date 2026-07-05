@@ -23,6 +23,32 @@ body {
 }
 
 /*
+ * Кадър-ринг (ефект D): 1px вътрешен ръб върху снимковите контейнери —
+ * „затваря" кадъра, когато снимката е в тона на фона. Цветът е темов токен
+ * (светлите теми: тъмен; тъмните: светъл). border-radius се наследява.
+ */
+.sf-frame {
+  position: relative;
+}
+.sf-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--sf-photo-ring);
+}
+
+/*
+ * Материален CTA (ефект C): микро-градиент + 1px вътрешен светъл ръб върху
+ * primary бутоните — само при темите с --sf-cta-gloss (иначе none = плосък).
+ */
+.sf-cta {
+  background-image: var(--sf-cta-gloss, none);
+  box-shadow: var(--sf-cta-edge, none);
+}
+
+/*
  * Тънък скролбар за storefront-а — цветовете идват от темата, така че всяка от
  * 9-те теми автоматично получава скролбар в своя тон. Само публичните
  * магазини; платформата пази системния си скролбар.
@@ -165,6 +191,17 @@ html:has([data-storefront])::-webkit-scrollbar-thumb:hover {
 .sf-marquee {
   animation: sf-marquee 40s linear infinite;
 }
+/* Фото-стена: по-бавен ход, втори ред в обратна посока, hover = пауза. */
+.sf-marquee-slow {
+  animation: sf-marquee 60s linear infinite;
+}
+.sf-marquee-reverse {
+  animation-direction: reverse;
+}
+.sf-marquee:hover,
+.sf-marquee-slow:hover {
+  animation-play-state: paused;
+}
 
 /* Едва доловим Ken Burns върху hero снимката — снимката „диша". */
 @keyframes sf-kenburns {
@@ -195,7 +232,8 @@ html:has([data-storefront])::-webkit-scrollbar-thumb:hover {
 @media (prefers-reduced-motion: reduce) {
   .sf-rise,
   .sf-kenburns,
-  .sf-marquee {
+  .sf-marquee,
+  .sf-marquee-slow {
     animation: none;
   }
 }

@@ -234,6 +234,58 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
           })}
         </div>
       </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-ink-900">Оформление на footer-а</p>
+        <div className="grid grid-cols-2 gap-2">
+          {([1, 2] as const).map((variant) => {
+            const active = settings.footerVariant === variant;
+            const label = variant === 1 ? "Богат (колони)" : "Минимален (центриран)";
+            return (
+              <button
+                key={variant}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onChange({ footerVariant: variant })}
+                className={`flex flex-col items-center gap-1.5 rounded-control border-2 p-2 text-center transition-colors ${
+                  active ? "border-brand-600" : "border-surface-200 hover:border-surface-300"
+                }`}
+              >
+                <span className="flex h-8 w-full items-center justify-center rounded bg-surface-100 text-ink-700">
+                  {variant === 1 ? (
+                    <span className="flex w-full items-start justify-between px-1.5">
+                      <span className="flex flex-col gap-0.5">
+                        <span className="h-1.5 w-5 rounded-full bg-current opacity-80" />
+                        <span className="h-1 w-6 rounded-full bg-current opacity-30" />
+                      </span>
+                      <span className="flex gap-1">
+                        <span className="flex flex-col gap-0.5">
+                          <span className="h-1 w-3 rounded-full bg-current opacity-40" />
+                          <span className="h-1 w-3 rounded-full bg-current opacity-40" />
+                        </span>
+                        <span className="flex flex-col gap-0.5">
+                          <span className="h-1 w-3 rounded-full bg-current opacity-40" />
+                          <span className="h-1 w-3 rounded-full bg-current opacity-40" />
+                        </span>
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="flex flex-col items-center gap-0.5">
+                      <span className="h-1.5 w-5 rounded-full bg-current opacity-80" />
+                      <span className="flex gap-0.5">
+                        <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+                        <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+                        <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+                      </span>
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs font-medium text-ink-900">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

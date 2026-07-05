@@ -25,6 +25,11 @@ export function HeroSplit({ data, ctx }: HeroVariantProps) {
   return (
     <section className="relative grid w-full md:min-h-[calc(100dvh-var(--sf-chrome,4.75rem))] md:grid-cols-12">
       <div className="sf-grain relative z-10 flex items-center overflow-hidden px-4 py-16 md:col-span-7 md:py-24 md:pl-[max(1rem,calc((100vw-72rem)/2+1rem))] md:pr-12">
+        {/* Primary „мъгла" зад текста (ефект B) — само при топлите/меките теми */}
+        <div
+          aria-hidden
+          className="absolute inset-0 [background:var(--sf-hero-mist)]"
+        />
         <Watermark letter={initial} />
         <div className="relative flex max-w-2xl flex-col items-start gap-6">
           <div className="sf-rise" style={stagger(0)}>
@@ -52,7 +57,7 @@ export function HeroSplit({ data, ctx }: HeroVariantProps) {
       </div>
       {image ? (
         <div className="relative flex md:col-span-5 md:items-stretch md:py-10 md:pr-[max(1rem,calc((100vw-72rem)/2+1rem))]">
-          <div className="relative min-h-[52svh] w-full overflow-hidden md:min-h-0 md:rounded-(--sf-hero-radius) md:[box-shadow:var(--sf-hero-frame)]">
+          <div className="sf-frame relative min-h-[52svh] w-full overflow-hidden md:min-h-0 md:rounded-(--sf-hero-radius) md:[box-shadow:var(--sf-hero-frame)]">
             <Image
               src={publicImageUrl(image)}
               alt=""

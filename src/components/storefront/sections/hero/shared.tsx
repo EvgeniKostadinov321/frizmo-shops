@@ -27,7 +27,7 @@ export function HeroCta({
   return (
     <Link
       href={href || `${base}/products`}
-      className={`inline-flex items-center rounded-(--sf-radius) bg-(--sf-primary) font-medium text-(--sf-on-primary) transition-all hover:opacity-90 hover:shadow-lg ${
+      className={`sf-cta inline-flex items-center rounded-(--sf-radius) bg-(--sf-primary) font-medium text-(--sf-on-primary) transition-all hover:opacity-90 hover:shadow-lg ${
         large ? "h-14 px-9 text-lg" : "h-12 px-7"
       }`}
     >
@@ -63,8 +63,10 @@ export function HeroKicker({
   const parts = [category, city].filter(Boolean);
   if (parts.length === 0) return null;
   return (
+    /* nowrap само от sm: нагоре — на 320–375px дълга категория иначе
+       създава хоризонтален overflow на цялата страница (R1 от одита). */
     <p
-      className={`whitespace-nowrap text-[12px] font-bold uppercase tracking-[0.24em] ${
+      className={`text-pretty text-[12px] font-bold uppercase tracking-[0.24em] sm:whitespace-nowrap ${
         light ? "text-(--sf-accent-ink-dark)" : "text-(--sf-primary)"
       }`}
     >
@@ -86,11 +88,13 @@ export function AccentTitle({
   dark?: boolean;
   className: string;
 }) {
+  /* break-words: защита срещу еднословни дълги имена, които не могат да се
+     пренесат при min стойността на clamp-а на тесен екран (R5 от одита). */
   const words = title.trim().split(/\s+/);
-  if (words.length < 2) return <h1 className={className}>{title}</h1>;
+  if (words.length < 2) return <h1 className={`wrap-break-word ${className}`}>{title}</h1>;
   const accent = words[words.length - 1];
   return (
-    <h1 className={className}>
+    <h1 className={`wrap-break-word ${className}`}>
       {words.slice(0, -1).join(" ")}{" "}
       <span
         className={`[font-style:var(--sf-title-accent-style)] ${

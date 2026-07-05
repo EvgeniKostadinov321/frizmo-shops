@@ -2,13 +2,40 @@ import Image from "next/image";
 import Link from "next/link";
 import { publicImageUrl } from "@/lib/storage";
 import type { SectionOfType } from "@/schemas/site-settings";
+import type { SectionContext } from "./index";
 
-export function PromoBannerSection({ data }: { data: SectionOfType<"promo-banner">["data"] }) {
+export function PromoBannerSection({
+  data,
+  ctx,
+}: {
+  data: SectionOfType<"promo-banner">["data"];
+  ctx: SectionContext;
+}) {
   if (!data.title && !data.text) return null;
   const hasImage = Boolean(data.imagePath);
 
-  /* Брандов момент: плътен --sf-primary (или снимка + overlay), ОГРОМНО
-     заглавие вляво, текст + CTA-„купон" (dashed рамка) вдясно. */
+  /* „Купон-билет": целият текст с кода живее ВЪТРЕ в dashed рамка (талон за
+     отрязване) — показва се винаги при наличен текст, не зависи от CTA полетата.
+     Празен href → към продуктите. */
+  const ticketInner = (
+    <>
+      {data.text && <span className="text-lg font-medium">{data.text}</span>}
+      {data.ctaLabel && (
+        <span className="inline-flex items-center gap-1.5 font-(family-name:--sf-font-heading) text-lg tracking-[0.14em]">
+          {data.ctaLabel}
+          <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
+            →
+          </span>
+        </span>
+      )}
+    </>
+  );
+  const ticketClass = `group inline-flex max-w-full flex-wrap items-center gap-x-6 gap-y-2 border-2 border-dashed px-6 py-4 transition-colors ${
+    hasImage
+      ? "border-white/60 hover:border-white"
+      : "border-(--sf-on-primary)/60 hover:border-(--sf-on-primary)"
+  }`;
+
   return (
     <section className={`relative w-full overflow-hidden ${hasImage ? "" : "bg-(--sf-primary)"}`}>
       {hasImage && (
@@ -20,38 +47,40 @@ export function PromoBannerSection({ data }: { data: SectionOfType<"promo-banner
             sizes="100vw"
             className="object-cover"
           />
-          <div aria-hidden className="absolute inset-0" style={{ background: "var(--sf-overlay)" }} />
+          {/* Диагонален scrim (плътен вляво, под текста) — четимост върху
+              всякаква снимка; дясната част диша. */}
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(100deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.6) 34%, rgba(0,0,0,.22) 62%, rgba(0,0,0,.05) 85%)",
+            }}
+          />
         </>
       )}
       <div
-        className={`relative mx-auto flex min-h-80 w-full max-w-6xl flex-col justify-center gap-8 px-4 py-14 md:flex-row md:items-center md:justify-between ${
+        className={`relative mx-auto flex min-h-72 w-full max-w-6xl flex-col justify-center gap-5 px-4 py-14 ${
           hasImage ? "text-white" : "text-(--sf-on-primary)"
         }`}
       >
-        <div className="flex max-w-2xl flex-col gap-2">
-          {data.title && (
-            <h2 className="text-[clamp(2.25rem,6vw,4.25rem)] leading-[1.02]">{data.title}</h2>
-          )}
-        </div>
-        <div className="flex shrink-0 flex-col items-start gap-4 md:items-end">
-          {data.text && (
-            <p className={`max-w-sm text-lg md:text-right ${hasImage ? "text-white/90" : "opacity-90"}`}>
-              {data.text}
-            </p>
-          )}
-          {data.ctaLabel && data.ctaHref && (
-            <Link
-              href={data.ctaHref}
-              className={`inline-flex h-13 items-center border-2 border-dashed px-8 font-(family-name:--sf-font-heading) text-lg tracking-[0.18em] transition-colors ${
-                hasImage
-                  ? "border-white/70 text-white hover:bg-white hover:text-black"
-                  : "border-(--sf-on-primary)/70 text-(--sf-on-primary) hover:bg-(--sf-on-primary) hover:text-(--sf-primary)"
-              }`}
-            >
-              {data.ctaLabel}
-            </Link>
-          )}
-        </div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] opacity-75">Оферта</p>
+        {data.title && (
+          <h2 className="max-w-3xl text-balance text-[clamp(2.25rem,6vw,4.25rem)] leading-[1.02]">
+            {data.title}
+          </h2>
+        )}
+        {(data.text || data.ctaLabel) && (
+          <div className="mt-2">
+            {data.ctaLabel ? (
+              <Link href={data.ctaHref || `${ctx.base}/products`} className={ticketClass}>
+                {ticketInner}
+              </Link>
+            ) : (
+              <div className={ticketClass}>{ticketInner}</div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

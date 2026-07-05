@@ -91,7 +91,7 @@ export function VariantPicker({
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div className="flex flex-col gap-3">
-        <div className="relative aspect-square w-full overflow-hidden rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface)">
+        <div className="sf-frame relative aspect-square w-full overflow-hidden rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface)">
           {currentImage ? (
             <Image
               src={publicImageUrl(currentImage)}
@@ -222,7 +222,7 @@ export function VariantPicker({
                 setQty(1);
                 toast.success("Добавено в количката.");
               }}
-              className="h-12 flex-1 rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="sf-cta h-12 flex-1 rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Добави в количката
             </button>

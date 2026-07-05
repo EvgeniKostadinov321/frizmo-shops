@@ -230,7 +230,9 @@ export function MobileMenu({
       />
       {/* Панел отдясно — плъзга се навътре/навън */}
       <aside
-        className={`absolute inset-y-0 right-0 flex w-[min(360px,85vw)] flex-col bg-(--sf-bg) text-(--sf-text) shadow-(--sf-shadow) transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+        /* pb env(): при notch/home-indicator (standalone) долният ред не
+           попада под системната зона (R6 от одита; 0 в обикновен браузър). */
+        className={`absolute inset-y-0 right-0 flex w-[min(360px,85vw)] flex-col bg-(--sf-bg) pb-[env(safe-area-inset-bottom)] text-(--sf-text) shadow-(--sf-shadow) transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
           shown ? "translate-x-0" : "translate-x-full"
         }`}
       >

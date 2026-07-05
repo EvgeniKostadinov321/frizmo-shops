@@ -7,8 +7,9 @@ import { Icon } from "@/components/ui";
 interface GalleryGridProps {
   /** Публични URL-и на снимките (генерирани на сървъра). */
   urls: string[];
-  /** duo = 1–2 снимки централен дует; masonry = 3+ разновисоки колони. */
-  variant: "duo" | "masonry";
+  /** duo = 1–2 снимки дует · masonry = разновисоки колони · strip = филмова
+   *  лента (ръчно плъзгане) · wall = движеща се стена (авто-marquee редове). */
+  variant: "duo" | "masonry" | "strip" | "wall";
 }
 
 /** Пропорция per позиция за masonry ритъма. */
@@ -51,9 +52,82 @@ export function GalleryGrid({ urls, variant }: GalleryGridProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [index, step]);
 
+  /* Стена: два реда (четни/нечетни индекси), движещи се в противоположни
+     посоки. Всеки ред се УМНОЖАВА до ≥14 плочки, така че половината от loop-а
+     да е по-широка от всеки екран — иначе лентата „свършва" по средата.
+     Двете половини на loop-а са идентични → -50% рестартът е безшевен
+     (никакво премигване по конструкция). Клонингите са aria-hidden/без фокус,
+     а повторените URL-и не тежат: браузърът ги тегли по веднъж. */
+  const indexed = urls.map((url, index) => ({ url, index }));
+  const baseRows =
+    urls.length < 4
+      ? [indexed]
+      : [indexed.filter((_, i) => i % 2 === 0), indexed.filter((_, i) => i % 2 === 1)];
+  const wallRows = baseRows.map((row) => {
+    const tiled = [...row];
+    while (tiled.length < 14) tiled.push(...row);
+    return tiled;
+  });
+
   return (
     <>
-      {variant === "duo" ? (
+      {variant === "wall" ? (
+        /* Edge-to-edge: стената чупи контейнера и опира в двата ръба. */
+        <div className="relative left-1/2 flex w-screen -translate-x-1/2 flex-col gap-3 overflow-hidden">
+          {wallRows.map((row, rowIdx) => (
+            <div key={rowIdx} className="overflow-hidden">
+              <div
+                className={`flex w-max gap-3 sf-marquee-slow ${rowIdx % 2 === 1 ? "sf-marquee-reverse" : ""}`}
+              >
+                {[...row, ...row].map(({ url, index }, i) => {
+                  const isClone = i >= row.length;
+                  return (
+                    <button
+                      key={`${url}-${i}`}
+                      type="button"
+                      aria-hidden={isClone}
+                      tabIndex={isClone ? -1 : 0}
+                      aria-label={`Увеличи снимка ${index + 1}`}
+                      onClick={() => open(index)}
+                      className={`sf-frame relative h-48 shrink-0 cursor-zoom-in overflow-hidden rounded-(--sf-radius) shadow-(--sf-shadow) md:h-60 ${aspectClass(index)}`}
+                    >
+                      <Image
+                        src={url}
+                        alt=""
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : variant === "strip" ? (
+        /* Филмова лента: фиксирана височина, редуващи се пропорции → widths
+           следват aspect-а; swipe/скрол с snap, следващата снимка наднича. */
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
+          {urls.map((url, i) => (
+            <button
+              key={url}
+              type="button"
+              aria-label={`Увеличи снимка ${i + 1}`}
+              onClick={() => open(i)}
+              className={`sf-frame relative h-72 shrink-0 cursor-zoom-in snap-start overflow-hidden rounded-(--sf-radius) shadow-(--sf-shadow) md:h-96 ${aspectClass(i)}`}
+            >
+              <Image
+                src={url}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 70vw, 40vw"
+                className="object-cover transition-transform duration-500 hover:scale-[1.04]"
+              />
+            </button>
+          ))}
+        </div>
+      ) : variant === "duo" ? (
         <div className={`mx-auto grid max-w-4xl gap-4 ${urls.length === 2 ? "sm:grid-cols-2" : ""}`}>
           {urls.map((url, i) => (
             <button
@@ -61,7 +135,7 @@ export function GalleryGrid({ urls, variant }: GalleryGridProps) {
               type="button"
               aria-label={`Увеличи снимка ${i + 1}`}
               onClick={() => open(i)}
-              className="relative aspect-4/3 cursor-zoom-in overflow-hidden rounded-(--sf-radius) shadow-(--sf-shadow)"
+              className="sf-frame relative aspect-4/3 cursor-zoom-in overflow-hidden rounded-(--sf-radius) shadow-(--sf-shadow)"
             >
               <Image
                 src={url}
@@ -81,7 +155,7 @@ export function GalleryGrid({ urls, variant }: GalleryGridProps) {
               type="button"
               aria-label={`Увеличи снимка ${i + 1}`}
               onClick={() => open(i)}
-              className={`relative block w-full cursor-zoom-in overflow-hidden rounded-(--sf-radius) shadow-(--sf-shadow) ${aspectClass(i)}`}
+              className={`sf-frame relative block w-full cursor-zoom-in overflow-hidden rounded-(--sf-radius) shadow-(--sf-shadow) ${aspectClass(i)}`}
             >
               <Image
                 src={url}

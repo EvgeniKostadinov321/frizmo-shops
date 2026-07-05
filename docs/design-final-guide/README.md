@@ -13,6 +13,7 @@ Header + Hero редизайна.
 | 3 | [variants-architecture.md](variants-architecture.md) | Структурата за 3 варианта на всяка секция/елемент |
 | 4 | [theme-signatures.md](theme-signatures.md) | Уникалният „подпис" на всяка от 9-те теми — custom детайли през токени |
 | 5 | [hero-header-audit-2026-07-05.md](hero-header-audit-2026-07-05.md) | Одит на първата редизайн итерация: кое работи, кое не и защо |
+| 6 | [responsive-pwa-audit-2026-07-05.md](responsive-pwa-audit-2026-07-05.md) | Responsive/PWA одит: 8-те находки (поправени) + уроците за всеки нов компонент |
 
 ## Работен ред при ВСЯКА дизайн задача (правило от 2026-07-05)
 

@@ -32,12 +32,12 @@ export function HeroStatement({ data, ctx }: HeroVariantProps) {
       <div
         aria-hidden
         className="absolute -right-32 -top-40 size-168 rounded-full"
-        style={{ background: tint(7) }}
+        style={{ background: tint(13) }}
       />
       <div
         aria-hidden
         className="absolute -bottom-52 -left-36 size-136 rounded-full"
-        style={{ background: tint(4) }}
+        style={{ background: tint(8) }}
       />
       <div
         aria-hidden
@@ -53,7 +53,7 @@ export function HeroStatement({ data, ctx }: HeroVariantProps) {
           <div className="sf-rise" style={stagger(1)}>
             <AccentTitle
               title={title}
-              className="text-balance text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] text-(--sf-text)"
+              className="wrap-break-word text-balance text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] text-(--sf-text)"
             />
           </div>
           {data.subtitle && (
@@ -77,10 +77,12 @@ export function HeroStatement({ data, ctx }: HeroVariantProps) {
         {image && (
           <div className="sf-rise relative mx-auto w-64 sm:w-72 md:w-full md:max-w-sm" style={stagger(4)}>
             <div
-              className="relative rotate-2 overflow-hidden rounded-(--sf-radius) transition-transform duration-500 hover:rotate-0"
+              /* Фото-рамка (raised паспарту) + плътна primary офсетна сянка —
+                 картичката „стои", не плува (одит 2026-07-05). */
+              className="relative rotate-2 overflow-hidden rounded-(--sf-radius) border-8 border-(--sf-surface-raised) transition-transform duration-500 hover:rotate-0"
               style={{ boxShadow: "0.875rem 0.875rem 0 0 var(--sf-primary)" }}
             >
-              <div className="relative aspect-4/5">
+              <div className="sf-frame relative aspect-4/5">
                 <Image
                   src={publicImageUrl(image)}
                   alt=""

@@ -14,10 +14,20 @@ export function GallerySection({
   if (paths.length === 0) return null;
   const urls = paths.map(publicImageUrl);
 
-  /* 1–2 снимки: централен дует; 3+: masonry. Кликът отваря lightbox. */
+  /* Вариант 1 = адаптивна мозайка (1–2 → дует, 3+ → masonry);
+     2 = филмова лента; 3 = движеща се стена. Кликът винаги отваря lightbox. */
+  const grid =
+    data.variant === 2
+      ? ("strip" as const)
+      : data.variant === 3
+        ? ("wall" as const)
+        : paths.length <= 2
+          ? ("duo" as const)
+          : ("masonry" as const);
+
   return (
     <SectionShell kicker="Галерия" title={data.title || "Галерия"} tone={tone}>
-      <GalleryGrid urls={urls} variant={paths.length <= 2 ? "duo" : "masonry"} />
+      <GalleryGrid urls={urls} variant={grid} />
     </SectionShell>
   );
 }

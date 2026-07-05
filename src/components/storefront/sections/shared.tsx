@@ -32,7 +32,13 @@ export function SectionShell({
   className?: string;
 }) {
   return (
-    <section className={tone === "surface" ? "bg-(--sf-surface)" : ""}>
+    /* surface + wash: едва доловим вертикален градиент (ефект A) — само при
+       темите с --sf-surface-wash ≠ none (меките). */
+    <section
+      className={
+        tone === "surface" ? "bg-(--sf-surface) [background-image:var(--sf-surface-wash)]" : ""
+      }
+    >
       <div className={`mx-auto w-full max-w-6xl px-4 py-16 sm:py-20 ${className}`}>
         {(title || kicker) && !titleHidden && (
           <div className="mb-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">

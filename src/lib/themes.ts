@@ -36,7 +36,30 @@ export interface ThemeVars {
   "--sf-hero-frame": string;
   /** Стил на акцентната дума в hero заглавието: italic при серифните теми. */
   "--sf-title-accent-style": string;
+  /** Кадър-ринг: 1px вътрешен ръб на снимките (свет. теми тъмен, тъмни — светъл)
+   *  — „затваря" кадъра при снимка в тона на фона. Универсална корекция. */
+  "--sf-photo-ring": string;
+  /** Едва доловим вертикален градиент на surface лентите (само меките теми). */
+  "--sf-surface-wash": string;
+  /** Radial „мъгла" от primary зад hero текста (само топлите/меките теми). */
+  "--sf-hero-mist": string;
+  /** Материален CTA: микро-градиент върху primary (само където бутонът е
+   *  голяма плоска повърхност). none = плосък бутон (нарочно при Пулс и др.). */
+  "--sf-cta-gloss": string;
+  /** Вътрешен светъл ръб на материалния CTA (върви с gloss). */
+  "--sf-cta-edge": string;
+  /** По-дълбока сянка при hover на карти (тъмните теми: без промяна — ринг). */
+  "--sf-shadow-hover": string;
 }
+
+/* Общи стойности за ефект-токените. */
+const WASH =
+  "linear-gradient(to bottom, color-mix(in oklab, var(--sf-surface), var(--sf-bg) 60%), var(--sf-surface) 55%)";
+const MIST =
+  "radial-gradient(42rem 30rem at 20% 45%, color-mix(in oklab, var(--sf-primary) 7%, transparent), transparent 70%)";
+const CTA_GLOSS =
+  "linear-gradient(to bottom, color-mix(in oklab, var(--sf-primary), #ffffff 7%), color-mix(in oklab, var(--sf-primary), #000000 8%))";
+const CTA_EDGE = "inset 0 1px 0 0 color-mix(in oklab, var(--sf-primary), #ffffff 25%)";
 
 /* Overlay градиенти — две плътности (тъмните теми искат по-плътно затъмняване). */
 const OVERLAY_LIGHT =
@@ -45,25 +68,34 @@ const OVERLAY_DARK =
   "linear-gradient(to top, rgba(0,0,0,.74) 0%, rgba(0,0,0,.4) 45%, rgba(0,0,0,.14) 100%)";
 
 export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
-  /* Изчистена, безвремева — за всеки бизнес */
+  /* Изчистена, безвремева — за всеки бизнес. Heading = Onest (неутрален, но
+     с лице — Inter като display беше generic под прага; одит 2026-07-05). */
   classic: {
     "--sf-bg": "#ffffff",
-    "--sf-surface": "#f6f6f4",
+    "--sf-surface": "#f2f2ef",
     "--sf-surface-raised": "#ffffff",
     "--sf-text": "#1d1d1b",
     "--sf-muted": "#6d6d68",
-    "--sf-border": "#e6e6e2",
-    "--sf-shadow": "0 1px 3px rgba(29,29,27,.07), 0 6px 20px rgba(29,29,27,.06)",
+    "--sf-border": "#e2e2dd",
+    "--sf-shadow": "0 1px 3px rgba(29,29,27,.08), 0 10px 30px rgba(29,29,27,.10)",
     "--sf-overlay": OVERLAY_LIGHT,
     "--sf-radius": "0.375rem",
-    "--sf-heading-weight": "700",
-    "--sf-font-heading": "var(--font-inter), ui-sans-serif, sans-serif",
+    "--sf-heading-weight": "800",
+    "--sf-font-heading": "var(--font-onest), ui-sans-serif, sans-serif",
     "--sf-font-body": "var(--font-inter), ui-sans-serif, sans-serif",
     "--sf-nav-case": "none",
     "--sf-nav-tracking": "0.01em",
     "--sf-hero-radius": "0.375rem",
     "--sf-hero-frame": "none",
     "--sf-title-accent-style": "normal",
+    /* Карта на ефектите (одит 2026-07-05): Класик = C+D+E — неутралността е
+       характерът, без атмосферни ефекти; само „невидимото качество". */
+    "--sf-photo-ring": "rgba(0,0,0,.06)",
+    "--sf-surface-wash": "none",
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": CTA_GLOSS,
+    "--sf-cta-edge": CTA_EDGE,
+    "--sf-shadow-hover": "0 2px 6px rgba(29,29,27,.10), 0 16px 40px rgba(29,29,27,.14)",
   },
   /* Ателие — топла светла, сериф: занаяти, храни артизан, за дома */
   atelie: {
@@ -73,7 +105,7 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-text": "#33271a",
     "--sf-muted": "#80705c",
     "--sf-border": "#e9ddc9",
-    "--sf-shadow": "0 1px 3px rgba(51,39,26,.08), 0 8px 24px rgba(51,39,26,.07)",
+    "--sf-shadow": "0 1px 3px rgba(51,39,26,.10), 0 12px 32px rgba(51,39,26,.12)",
     "--sf-overlay": OVERLAY_LIGHT,
     "--sf-radius": "0.625rem",
     "--sf-heading-weight": "700",
@@ -84,6 +116,14 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-hero-radius": "18rem 18rem 0.625rem 0.625rem",
     "--sf-hero-frame": "none",
     "--sf-title-accent-style": "italic",
+    /* Ателие = A+B+D+E: „хартия, не екран" — светлина върху лен + теракотена
+       мъгла. Без C: артизанският бутон е нарочно матов. */
+    "--sf-photo-ring": "rgba(51,39,26,.08)",
+    "--sf-surface-wash": WASH,
+    "--sf-hero-mist": MIST,
+    "--sf-cta-gloss": "none",
+    "--sf-cta-edge": "none",
+    "--sf-shadow-hover": "0 2px 6px rgba(51,39,26,.12), 0 18px 44px rgba(51,39,26,.16)",
   },
   /* Витрина — изчистена светла, image-first: мода премиум, обувки */
   vitrina: {
@@ -104,6 +144,13 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-hero-radius": "0",
     "--sf-hero-frame": "none",
     "--sf-title-accent-style": "normal",
+    /* Витрина = само D: галерийната плоскост Е подписът. */
+    "--sf-photo-ring": "rgba(0,0,0,.06)",
+    "--sf-surface-wash": "none",
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": "none",
+    "--sf-cta-edge": "none",
+    "--sf-shadow-hover": "0 1px 2px rgba(17,17,17,.05), 0 4px 14px rgba(17,17,17,.05)",
   },
   /* Пулс — ТЪМНА смела: streetwear, младежки брандове, аксесоари */
   puls: {
@@ -124,19 +171,28 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-hero-radius": "0",
     "--sf-hero-frame": "-0.875rem 0.875rem 0 0 var(--sf-accent)",
     "--sf-title-accent-style": "normal",
+    /* Пулс = само D (светъл ринг): неонът е нарочно плосък. */
+    "--sf-photo-ring": "rgba(255,255,255,.08)",
+    "--sf-surface-wash": "none",
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": "none",
+    "--sf-cta-edge": "none",
+    "--sf-shadow-hover": "0 0 0 1px #2e2e2e",
   },
-  /* Ефир — светла wellness: козметика clean, натурална грижа, био */
+  /* Ефир — светла wellness: козметика clean, натурална грижа, био.
+     Контрастът вдигнат (одит 2026-07-05): розова мъгла в 3% диапазон +
+     тежест 600 четеше „изпрано". */
   efir: {
     "--sf-bg": "#fdf1ef",
-    "--sf-surface": "#f8e6e3",
+    "--sf-surface": "#f7e0dc",
     "--sf-surface-raised": "#fffafb",
-    "--sf-text": "#5a3d47",
-    "--sf-muted": "#9b7d86",
-    "--sf-border": "#f0dfe4",
-    "--sf-shadow": "0 1px 3px rgba(90,61,71,.08), 0 8px 24px rgba(90,61,71,.07)",
+    "--sf-text": "#4e323d",
+    "--sf-muted": "#94737e",
+    "--sf-border": "#ecd2d8",
+    "--sf-shadow": "0 1px 3px rgba(90,61,71,.10), 0 12px 32px rgba(90,61,71,.12)",
     "--sf-overlay": OVERLAY_LIGHT,
     "--sf-radius": "0.75rem",
-    "--sf-heading-weight": "600",
+    "--sf-heading-weight": "700",
     "--sf-font-heading": "var(--font-lora), Georgia, serif",
     "--sf-font-body": "var(--font-inter), ui-sans-serif, sans-serif",
     "--sf-nav-case": "none",
@@ -144,6 +200,13 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-hero-radius": "18rem 18rem 0.75rem 0.75rem",
     "--sf-hero-frame": "none",
     "--sf-title-accent-style": "italic",
+    /* Ефир = A+B+C+D+E (пълния сет): най-бледата тема — wellness дълбочина. */
+    "--sf-photo-ring": "rgba(90,61,71,.08)",
+    "--sf-surface-wash": WASH,
+    "--sf-hero-mist": MIST,
+    "--sf-cta-gloss": CTA_GLOSS,
+    "--sf-cta-edge": CTA_EDGE,
+    "--sf-shadow-hover": "0 2px 6px rgba(90,61,71,.12), 0 18px 44px rgba(90,61,71,.16)",
   },
   /* Оникс — ТЪМНА premium, display сериф: луксозна козметика, бижута */
   oniks: {
@@ -164,16 +227,25 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-hero-radius": "0.25rem",
     "--sf-hero-frame": "0 0 0 1px var(--sf-accent)",
     "--sf-title-accent-style": "italic",
+    /* Оникс = C+D: златото никога не е плоско (материален CTA); светъл ринг
+       пази тъмните кадри. Нищо друго — темата е добра. */
+    "--sf-photo-ring": "rgba(243,234,217,.10)",
+    "--sf-surface-wash": "none",
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": CTA_GLOSS,
+    "--sf-cta-edge": CTA_EDGE,
+    "--sf-shadow-hover": "0 0 0 1px #2e2519",
   },
-  /* Сигнал — студена структурирана, trust-focused: електроника, техника */
+  /* Сигнал — студена структурирана, trust-focused: електроника, техника.
+     Контраст + подпис (одит 2026-07-05): сиво-на-сиво без детайл = анонимна. */
   signal: {
     "--sf-bg": "#f4f6f8",
-    "--sf-surface": "#e9eef2",
+    "--sf-surface": "#e3eaf0",
     "--sf-surface-raised": "#ffffff",
     "--sf-text": "#0f1b2a",
     "--sf-muted": "#5a6b7a",
-    "--sf-border": "#dbe2e8",
-    "--sf-shadow": "0 1px 3px rgba(15,27,42,.07), 0 6px 20px rgba(15,27,42,.06)",
+    "--sf-border": "#cdd8e1",
+    "--sf-shadow": "0 1px 3px rgba(15,27,42,.09), 0 10px 30px rgba(15,27,42,.10)",
     "--sf-overlay": OVERLAY_LIGHT,
     "--sf-radius": "0.375rem",
     "--sf-heading-weight": "700",
@@ -182,8 +254,18 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-nav-case": "none",
     "--sf-nav-tracking": "0.02em",
     "--sf-hero-radius": "0.375rem",
-    "--sf-hero-frame": "none",
+    /* Подписът на Сигнал: „техническа плоча" — двоен кант с въздух (рамкиран
+       уред), в primary цвета на магазина. */
+    "--sf-hero-frame": "0 0 0 6px var(--sf-bg), 0 0 0 8px var(--sf-primary)",
     "--sf-title-accent-style": "normal",
+    /* Сигнал = A+C+D+E: „техническо стъкло" градиент + материален бутон-уред.
+       Без B: мъглата е мека, Сигнал е структурен. */
+    "--sf-photo-ring": "rgba(15,27,42,.07)",
+    "--sf-surface-wash": WASH,
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": CTA_GLOSS,
+    "--sf-cta-edge": CTA_EDGE,
+    "--sf-shadow-hover": "0 2px 6px rgba(15,27,42,.11), 0 16px 40px rgba(15,27,42,.14)",
   },
   /* Основа — светла индустриална, кондензиран: строителни, за дома */
   osnova: {
@@ -204,6 +286,13 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-hero-radius": "0",
     "--sf-hero-frame": "none",
     "--sf-title-accent-style": "normal",
+    /* Основа = D+E: индустриална твърдост — без мъгли/градиенти. */
+    "--sf-photo-ring": "rgba(33,29,24,.07)",
+    "--sf-surface-wash": "none",
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": "none",
+    "--sf-cta-edge": "none",
+    "--sf-shadow-hover": "0 2px 6px rgba(33,29,24,.11), 0 16px 40px rgba(33,29,24,.14)",
   },
   /* Гранит — ТЪМНА индустриална, кондензиран: строителни, инструменти */
   granit: {
@@ -222,8 +311,17 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-nav-case": "uppercase",
     "--sf-nav-tracking": "0.1em",
     "--sf-hero-radius": "0",
-    "--sf-hero-frame": "none",
+    /* Подписът на Гранит: офсетна „стоманена плоча" (surface-raised тон) +
+       тънък кант — индустриалният брат на офсетния блок на Пулс. */
+    "--sf-hero-frame": "0 0 0 1px #3a3e43, 0.875rem 0.875rem 0 0 #2f3338",
     "--sf-title-accent-style": "normal",
+    /* Гранит = само D (светъл ринг): стоманата си има подписа. */
+    "--sf-photo-ring": "rgba(255,255,255,.08)",
+    "--sf-surface-wash": "none",
+    "--sf-hero-mist": "none",
+    "--sf-cta-gloss": "none",
+    "--sf-cta-edge": "none",
+    "--sf-shadow-hover": "0 0 0 1px #3a3e43",
   },
 };
 

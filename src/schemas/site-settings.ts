@@ -41,6 +41,9 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("featured-products"),
     data: z.object({
+      /* Композиция: 1 = адаптивен grid с карти, 2 = editorial списък
+         (голяма снимка + редове, hover сменя снимката). */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
       title: shortText(80),
       mode: z.enum(["manual", "newest", "promo"]).default("newest"),
       productIds: z.array(z.uuid()).max(8).default([]),
@@ -50,6 +53,9 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("category-grid"),
     data: z.object({
+      /* Композиция: 1 = full-bleed мозайка със снимки, 2 = номериран
+         списък-меню (editorial, hover показва снимката). */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
       title: shortText(80),
       categoryIds: z.array(z.uuid()).max(8).default([]),
     }),
@@ -69,6 +75,9 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("image-text"),
     data: z.object({
+      /* Композиция: 1 = снимка до текста (разделени колони), 2 = текст-карта,
+         застъпваща голямата снимка (дълбочина). */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
       title: shortText(100),
       text: shortText(2000),
       imagePath: z.string().max(300).default(""),
@@ -78,12 +87,20 @@ export const sectionSchemas = {
   "rich-text": z.object({
     ...base,
     type: z.literal("rich-text"),
-    data: z.object({ title: shortText(100), text: shortText(5000) }),
+    data: z.object({
+      /* Композиция: 1 = центриран блок с drop cap, 2 = асиметричен spread
+         (заглавие вляво, текст вдясно). */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
+      title: shortText(100),
+      text: shortText(5000),
+    }),
   }),
   testimonials: z.object({
     ...base,
     type: z.literal("testimonials"),
     data: z.object({
+      /* Композиция: 1 = тъмна инверсия (брандов момент), 2 = светли карти. */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
       title: shortText(80),
       items: z
         .array(z.object({ name: shortText(60), text: shortText(400) }))
@@ -105,6 +122,9 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("gallery"),
     data: z.object({
+      /* Композиция: 1 = адаптивна мозайка (дует/masonry), 2 = филмова лента
+         (хоризонтално плъзгане), 3 = колаж с водеща снимка. */
+      variant: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
       title: shortText(80),
       imagePaths: z.array(z.string().max(300)).max(12).default([]),
     }),
@@ -113,6 +133,9 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("faq"),
     data: z.object({
+      /* Композиция: 1 = центриран акордеон с карти, 2 = spread (заглавие
+         вляво, hairline редове вдясно). */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
       title: shortText(80),
       items: z
         .array(z.object({ question: shortText(200), answer: shortText(1000) }))
@@ -123,12 +146,23 @@ export const sectionSchemas = {
   "contact-map": z.object({
     ...base,
     type: z.literal("contact-map"),
-    data: z.object({ title: shortText(80), showMap: z.boolean().default(true) }),
+    data: z.object({
+      /* Композиция: 1 = редове + карта, 2 = карта-фон с плаващ панел,
+         3 = типографска визитка (карта в свиваем блок). */
+      variant: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
+      title: shortText(80),
+      showMap: z.boolean().default(true),
+    }),
   }),
   socials: z.object({
     ...base,
     type: z.literal("socials"),
-    data: z.object({ title: shortText(80) }),
+    data: z.object({
+      /* Композиция: 1 = центрирани пилюли, 2 = плътна CTA лента,
+         3 = editorial hairline редове. */
+      variant: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
+      title: shortText(80),
+    }),
   }),
 } as const;
 
@@ -177,6 +211,8 @@ export const siteSettingsSchema = z.object({
     (v) => (v === "logo-left" ? 1 : v === "logo-center" ? 2 : v),
     z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
   ),
+  /* Footer композиция: 1 = богат тъмен (колони), 2 = минимален центриран. */
+  footerVariant: z.union([z.literal(1), z.literal(2)]).default(1),
   footerText: shortText(300),
   aboutText: shortText(5000),
   aboutImagePaths: z.array(z.string().max(300)).max(4).default([]),

@@ -165,6 +165,15 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Мрежа с карти (следва броя продукти)" },
+                { value: "2", label: "Списък до голяма снимка (editorial)" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <Select
               label="Кои продукти"
@@ -191,6 +200,15 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Мозайка със снимки (пълна ширина)" },
+                { value: "2", label: "Номериран списък (editorial)" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <p className="text-sm text-ink-500">Избери категории (празно = основните автоматично):</p>
             <CheckboxPicker
@@ -220,6 +238,15 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Снимка до текста (разделени)" },
+                { value: "2", label: "Текст-карта върху снимката (застъпване)" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <Textarea label="Текст" rows={5} value={d.text} onChange={(e) => patch({ text: e.target.value })} placeholder="Изберете нашето краве мляко, защото..." />
             <Select
@@ -239,6 +266,15 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Центриран (с голяма начална буква)" },
+                { value: "2", label: "Заглавие вляво, текст вдясно" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <Textarea label="Текст" rows={6} value={d.text} onChange={(e) => patch({ text: e.target.value })} hint="Празен ред = нов параграф." />
           </>
@@ -248,6 +284,15 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Тъмна лента (контрастен акцент)" },
+                { value: "2", label: "Светли карти с инициали" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <RowsEditor
               rows={d.items}
@@ -293,6 +338,16 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Мозайка (адаптивна)" },
+                { value: "2", label: "Филмова лента (плъзгане)" },
+                { value: "3", label: "Движеща се стена (авто-плъзгане)" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <ImageUploader kind="site" images={d.imagePaths} max={12} onChange={(imagePaths) => patch({ imagePaths })} />
           </>
@@ -302,6 +357,15 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Центриран акордеон (карти)" },
+                { value: "2", label: "Заглавие вляво, въпроси вдясно" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <RowsEditor
               rows={d.items}
@@ -323,6 +387,16 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Редове до картата" },
+                { value: "2", label: "Панел върху картата" },
+                { value: "3", label: "Визитка (едри телефон/имейл)" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <Checkbox label="Показвай карта" checked={d.showMap} onChange={(e) => patch({ showMap: e.target.checked })} />
             <p className="text-sm text-ink-500">Контактите идват от таб „Магазин“.</p>
@@ -333,6 +407,16 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Центрирани бутони" },
+                { value: "2", label: "Цветна лента (акцент)" },
+                { value: "3", label: "Списък с редове" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <p className="text-sm text-ink-500">Линковете идват от таб „Магазин“.</p>
           </>

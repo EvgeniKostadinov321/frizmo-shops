@@ -83,7 +83,7 @@ export function renderSection(
     case "category-grid":
       return <CategoryGridSection key={section.id} data={section.data} ctx={ctx} tone={tone} />;
     case "promo-banner":
-      return <PromoBannerSection key={section.id} data={section.data} />;
+      return <PromoBannerSection key={section.id} data={section.data} ctx={ctx} />;
     case "image-text":
       return <ImageTextSection key={section.id} data={section.data} />;
     case "rich-text":

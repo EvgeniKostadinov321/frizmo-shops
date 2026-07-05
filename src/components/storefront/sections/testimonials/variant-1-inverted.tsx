@@ -1,23 +1,10 @@
-import type { SectionOfType } from "@/schemas/site-settings";
-
-/** ★★★★★ в акцентния цвят — отзивите на търговеца са по природа 5/5. */
-function Stars() {
-  return (
-    <span aria-hidden className="tracking-[0.2em] text-(--sf-accent)">
-      ★★★★★
-    </span>
-  );
-}
+import { Stars, type TestimonialsVariantProps } from "./index";
 
 /**
- * Драматична инверсия: секцията е върху цвета на текста (тъмна при светли
- * теми, светла при тъмни) — брандов момент в средата на страницата.
+ * Вариант 1 — драматична инверсия: секцията е върху цвета на текста (тъмна
+ * при светли теми, светла при тъмни) — брандов момент в средата на страницата.
  */
-export function TestimonialsSection({
-  data,
-}: {
-  data: SectionOfType<"testimonials">["data"];
-}) {
+export function TestimonialsInverted({ data }: TestimonialsVariantProps) {
   const items = data.items.filter((i) => i.text.trim());
   if (items.length === 0) return null;
 

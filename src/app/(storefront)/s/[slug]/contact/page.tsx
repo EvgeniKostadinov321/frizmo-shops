@@ -31,7 +31,7 @@ export default async function ContactPage({ params }: PageProps) {
 
   return (
     <div className="py-2">
-      <ContactMapSection data={{ title: "Контакти", showMap: true }} ctx={ctx} />
+      <ContactMapSection data={{ variant: 1, title: "Контакти", showMap: true }} ctx={ctx} />
     </div>
   );
 }
