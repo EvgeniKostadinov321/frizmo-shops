@@ -339,6 +339,7 @@ const NICHES = [
       instagram: "https://instagram.com/granit.tools",
     },
     theme: { theme: "granit", primaryColor: "#f0a63c", accentColor: "#5eead4" },
+    heroLayout: "statement",
     heroImage: "1530124566582-a618bc2615dc",
     categories: [
       { name: "Машини", children: [] },
@@ -413,7 +414,8 @@ function buildAllSections(niche, paths, featuredIds) {
   return [
     section("announcement", { text: "Безплатна доставка за поръчки над 60 €", href: "" }),
     section("hero", {
-      layout: "split",
+      /* heroLayout per ниша (Гранит = statement — живият еталон на варианта). */
+      layout: niche.heroLayout ?? "split",
       title: niche.shop.name,
       subtitle: niche.shop.description.split(".")[0] + ".",
       ctaLabel: "Разгледай продуктите",

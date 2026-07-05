@@ -81,6 +81,18 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-06 (3)** — **Terms редизайн + statement еталон + втори пласт
+  подписи + 3 микро-фикса.** Terms: PageHeader + номерирани секции (display
+  цифри) + hairlines + пълноконтрастен текст (беше най-грубата страница точно
+  на checkout доверие-момента). Гранит демото → statement hero (жив еталон;
+  seed поддържа heroLayout per ниша). Нови подписи: Сигнал ъглови
+  скоба-маркери ⌐ (`--sf-photo-corners` → 8 фонови слоя в .sf-frame::after);
+  Ателие хартиено зърно (`--sf-surface-grain: 0.05`, Ефир 0.03) в SectionShell
+  surface. Микро: FAQ/details плавно отваряне (::details-content +
+  interpolate-size, прогресивно); темови radio бутони (appearance-none, --sf-*
+  цветове, focus-visible); footer контактната колона 1.4fr (имейлът на 1 ред).
+  Отложено съзнателно: визуални variant picker-и за секциите (следваща тема).
+
 - **2026-07-06 (2)** — **Всичките 8 отворени точки затворени.** (1) Mini-cart
   drawer: страничен панел (portal механиката на MobileMenu) с ПРЕИЗПОЛЗВАН
   CartView (`onNavigate` затваря при линк); CartButton отваря drawer-а

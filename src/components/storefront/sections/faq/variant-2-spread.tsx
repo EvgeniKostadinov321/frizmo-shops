@@ -24,7 +24,7 @@ export function FaqSpread({ data, tone }: FaqVariantProps) {
         </div>
         <div className="border-t border-(--sf-border)">
           {items.map((item, i) => (
-            <details key={i} className="group border-b border-(--sf-border)">
+            <details key={i} className="sf-details group border-b border-(--sf-border)">
               <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-lg font-medium text-(--sf-text)">
                 {item.question}
                 <span

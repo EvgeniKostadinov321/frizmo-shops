@@ -50,6 +50,13 @@ export interface ThemeVars {
   "--sf-cta-edge": string;
   /** По-дълбока сянка при hover на карти (тъмните теми: без промяна — ринг). */
   "--sf-shadow-hover": string;
+  /** Цвят на ъгловите скоба-маркери върху снимките (⌐ визьор) — подписът на
+   *  Сигнал; transparent = без скоби (всички останали). Рисува се в
+   *  .sf-frame::after (globals.css). */
+  "--sf-photo-corners": string;
+  /** Opacity на хартиеното зърно върху surface лентите — подписът на Ателие
+   *  („хартия, не екран" буквално); 0 = без зърно. */
+  "--sf-surface-grain": string;
 }
 
 /* Общи стойности за ефект-токените. */
@@ -96,6 +103,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": CTA_GLOSS,
     "--sf-cta-edge": CTA_EDGE,
     "--sf-shadow-hover": "0 2px 6px rgba(29,29,27,.10), 0 16px 40px rgba(29,29,27,.14)",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0",
   },
   /* Ателие — топла светла, сериф: занаяти, храни артизан, за дома */
   atelie: {
@@ -124,6 +133,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": "none",
     "--sf-cta-edge": "none",
     "--sf-shadow-hover": "0 2px 6px rgba(51,39,26,.12), 0 18px 44px rgba(51,39,26,.16)",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0.05",
   },
   /* Витрина — изчистена светла, image-first: мода премиум, обувки */
   vitrina: {
@@ -151,6 +162,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": "none",
     "--sf-cta-edge": "none",
     "--sf-shadow-hover": "0 1px 2px rgba(17,17,17,.05), 0 4px 14px rgba(17,17,17,.05)",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0",
   },
   /* Пулс — ТЪМНА смела: streetwear, младежки брандове, аксесоари */
   puls: {
@@ -178,6 +191,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": "none",
     "--sf-cta-edge": "none",
     "--sf-shadow-hover": "0 0 0 1px #2e2e2e",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0",
   },
   /* Ефир — светла wellness: козметика clean, натурална грижа, био.
      Контрастът вдигнат (одит 2026-07-05): розова мъгла в 3% диапазон +
@@ -209,6 +224,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": CTA_GLOSS,
     "--sf-cta-edge": CTA_EDGE,
     "--sf-shadow-hover": "0 2px 6px rgba(90,61,71,.12), 0 18px 44px rgba(90,61,71,.16)",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0.03",
   },
   /* Оникс — ТЪМНА premium, display сериф: луксозна козметика, бижута */
   oniks: {
@@ -240,6 +257,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": CTA_GLOSS,
     "--sf-cta-edge": CTA_EDGE,
     "--sf-shadow-hover": "0 0 0 1px #2e2519",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0",
   },
   /* Сигнал — студена структурирана, trust-focused: електроника, техника.
      Контраст + подпис (одит 2026-07-05): сиво-на-сиво без детайл = анонимна. */
@@ -271,6 +290,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": CTA_GLOSS,
     "--sf-cta-edge": CTA_EDGE,
     "--sf-shadow-hover": "0 2px 6px rgba(15,27,42,.11), 0 16px 40px rgba(15,27,42,.14)",
+    "--sf-photo-corners": "color-mix(in oklab, var(--sf-primary) 85%, transparent)",
+    "--sf-surface-grain": "0",
   },
   /* Основа — светла индустриална, кондензиран: строителни, за дома */
   osnova: {
@@ -300,6 +321,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": "none",
     "--sf-cta-edge": "none",
     "--sf-shadow-hover": "0 2px 6px rgba(33,29,24,.11), 0 16px 40px rgba(33,29,24,.14)",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0",
   },
   /* Гранит — ТЪМНА индустриална, кондензиран: строителни, инструменти */
   granit: {
@@ -329,6 +352,8 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-cta-gloss": "none",
     "--sf-cta-edge": "none",
     "--sf-shadow-hover": "0 0 0 1px #3a3e43",
+    "--sf-photo-corners": "transparent",
+    "--sf-surface-grain": "0",
   },
 };
 

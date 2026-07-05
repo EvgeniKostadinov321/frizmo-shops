@@ -36,7 +36,9 @@ export function SectionShell({
        темите с --sf-surface-wash ≠ none (меките). */
     <section
       className={
-        tone === "surface" ? "bg-(--sf-surface) [background-image:var(--sf-surface-wash)]" : ""
+        tone === "surface"
+          ? "sf-surface-grain bg-(--sf-surface) [background-image:var(--sf-surface-wash)]"
+          : ""
       }
     >
       <div className={`mx-auto w-full max-w-6xl px-4 py-16 sm:py-20 ${className}`}>

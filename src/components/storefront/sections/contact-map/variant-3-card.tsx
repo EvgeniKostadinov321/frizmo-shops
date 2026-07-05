@@ -68,7 +68,7 @@ export function ContactCard({ data, ctx, tone }: ContactVariantProps) {
 
         {/* Картата — по избор, в свиваем блок */}
         {showMap && (
-          <details className="group w-full">
+          <details className="sf-details group w-full">
             <summary className="mx-auto flex h-11 w-fit cursor-pointer list-none items-center gap-1.5 font-medium text-(--sf-primary) underline-offset-4 hover:underline">
               Покажи картата
               <span aria-hidden className="transition-transform duration-300 group-open:rotate-180">

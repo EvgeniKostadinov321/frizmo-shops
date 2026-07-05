@@ -22,7 +22,7 @@ export function FaqAccordion({ data, tone }: FaqVariantProps) {
           {items.map((item, i) => (
             <details
               key={i}
-              className="group rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) px-5 py-4 shadow-(--sf-shadow)"
+              className="sf-details group rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) px-5 py-4 shadow-(--sf-shadow)"
             >
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-medium text-(--sf-text)">
                 {item.question}

@@ -113,7 +113,9 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
   /* Вариант 1 — богат тъмен с колони */
   return (
     <footer className="mt-auto bg-(--sf-text) text-(--sf-bg)">
-      <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 sm:py-20 md:grid-cols-[2fr_1fr_1fr_1fr]">
+      {/* Контактната колона е по-широка (1.4fr) — имейлите са най-дългото
+          съдържание във footer-а и трябва да стоят на един ред на десктоп. */}
+      <div className="mx-auto grid w-full max-w-6xl gap-x-8 gap-y-12 px-4 py-16 sm:py-20 md:grid-cols-[2fr_1fr_1.4fr_1fr]">
         <div className="max-w-sm">
           <p
             className="font-(family-name:--sf-font-heading) text-2xl"
@@ -169,7 +171,7 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
             )}
             {shop.email && (
               <li>
-                <a href={`mailto:${shop.email}`} className="inline-flex min-h-10 items-center break-all opacity-80 transition-opacity hover:opacity-100">
+                <a href={`mailto:${shop.email}`} className="inline-flex min-h-10 items-center wrap-anywhere opacity-80 transition-opacity hover:opacity-100">
                   {shop.email}
                 </a>
               </li>
