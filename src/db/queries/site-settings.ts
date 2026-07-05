@@ -37,16 +37,11 @@ export async function getSiteSettings(shopId: string, shopName: string): Promise
   return parseSiteSettings(row?.settings ?? null, shopName);
 }
 
-export async function upsertSiteSettings(shopId: string, settings: SiteSettings) {
-  await db
-    .insert(siteSettings)
-    .values({ shopId, settings, draft: null, updatedAt: new Date() })
-    .onConflictDoUpdate({
-      target: siteSettings.shopId,
-      set: { settings, draft: null, updatedAt: new Date() },
-    });
-}
-
+/**
+ * Запазва промените като ЧЕРНОВА (само в `draft`) — клиентите продължават да
+ * виждат публикуваните `settings`. Собственикът вижда draft-а в preview-то.
+ * Използва се и за автоматичния live-preview запис, и за бутона „Запази“.
+ */
 export async function saveSiteSettingsDraft(shopId: string, draft: SiteSettings) {
   await db
     .insert(siteSettings)
@@ -54,5 +49,19 @@ export async function saveSiteSettingsDraft(shopId: string, draft: SiteSettings)
     .onConflictDoUpdate({
       target: siteSettings.shopId,
       set: { draft, updatedAt: new Date() },
+    });
+}
+
+/**
+ * ПУБЛИКУВА черновата: копира `draft` → `settings` и нулира `draft`.
+ * От този момент клиентите виждат промените.
+ */
+export async function publishSiteSettings(shopId: string, settings: SiteSettings) {
+  await db
+    .insert(siteSettings)
+    .values({ shopId, settings, draft: null, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: siteSettings.shopId,
+      set: { settings, draft: null, updatedAt: new Date() },
     });
 }

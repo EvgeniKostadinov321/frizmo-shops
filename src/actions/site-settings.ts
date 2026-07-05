@@ -6,8 +6,8 @@ import { z } from "zod";
 import { db, shops } from "@/db";
 import { countProducts } from "@/db/queries/products";
 import {
+  publishSiteSettings as publishSiteSettingsQuery,
   saveSiteSettingsDraft,
-  upsertSiteSettings,
 } from "@/db/queries/site-settings";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
@@ -50,18 +50,40 @@ function parseSettings(raw: unknown, shopId: string):
   return { ok: true, settings };
 }
 
+/**
+ * „Запази“ — записва промените като ЧЕРНОВА. Клиентите НЕ ги виждат още;
+ * само собственикът ги вижда в preview-то. За публикуване към клиентите се
+ * ползва `publishSiteSettings`.
+ */
 export async function saveSiteSettings(raw: unknown): Promise<ActionResult> {
   const { shop } = await requireShop();
   const result = parseSettings(raw, shop.id);
   if (!result.ok) return fail(result.error);
 
-  await upsertSiteSettings(shop.id, result.settings);
+  await saveSiteSettingsDraft(shop.id, result.settings);
   revalidatePath(`/s/${shop.slug}`, "layout");
   revalidatePath("/dashboard/website");
   return ok(null);
 }
 
-/** Лек запис за live preview — не пипа официалните настройки. */
+/**
+ * „Публикувай промените“ — прави черновата видима за клиентите
+ * (draft → settings). Отделно от `publishShop`, който сменя видимостта на
+ * целия магазин (status). Магазин може да е публикуван, но с чернова промени,
+ * които клиентите още не виждат — това ги пуска на живо.
+ */
+export async function publishSiteSettings(raw: unknown): Promise<ActionResult> {
+  const { shop } = await requireShop();
+  const result = parseSettings(raw, shop.id);
+  if (!result.ok) return fail(result.error);
+
+  await publishSiteSettingsQuery(shop.id, result.settings);
+  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidatePath("/dashboard/website");
+  return ok(null);
+}
+
+/** Лек запис за live preview между explicit save-ове — пише в черновата. */
 export async function savePreviewDraft(raw: unknown): Promise<ActionResult> {
   const { shop } = await requireShop();
   const result = parseSettings(raw, shop.id);

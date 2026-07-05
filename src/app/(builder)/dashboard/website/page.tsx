@@ -22,9 +22,10 @@ export default async function WebsitePage() {
     }),
   ]);
 
-  /* Продължаваме от draft-а, ако има незапазени промени от предишна сесия. */
+  /* Продължаваме от draft-а, ако има непубликувани промени от предишна сесия. */
   const raw = row?.draft ?? row?.settings;
   const initial = raw != null ? parseSiteSettings(raw, shop.name) : defaultSiteSettings(shop.name);
+  const hasUnpublishedInitial = row?.draft != null;
 
   const categoryOptions = tree.flatMap((root) => [
     { value: root.id, label: root.name },
@@ -42,6 +43,7 @@ export default async function WebsitePage() {
         logoPath: shop.logoPath,
       }}
       initial={initial}
+      hasUnpublishedInitial={hasUnpublishedInitial}
       productOptions={productOptions}
       categoryOptions={categoryOptions}
     />

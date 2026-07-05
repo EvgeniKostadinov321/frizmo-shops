@@ -240,6 +240,12 @@ const ICON_PATHS = {
     "M19 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
     "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12",
   ],
+  /* Външен линк — отваря в нов таб */
+  "external-link": [
+    "M15 3h6v6",
+    "M10 14 21 3",
+    "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
+  ],
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

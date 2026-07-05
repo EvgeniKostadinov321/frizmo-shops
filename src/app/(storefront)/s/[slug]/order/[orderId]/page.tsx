@@ -53,7 +53,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
               {item.productName}
               {item.variantLabel && ` (${item.variantLabel})`} ×{item.quantity}
               {item.appliedDeal && (
-                <span className="text-(--sf-accent)"> · 🏷 {item.appliedDeal}</span>
+                <span className="text-(--sf-accent)"> · {item.appliedDeal}</span>
               )}
             </span>
             <span className="shrink-0 text-(--sf-text)">{formatPrice(item.lineTotalCents)}</span>

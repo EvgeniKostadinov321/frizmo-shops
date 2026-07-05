@@ -49,17 +49,18 @@ test("персонализация → публикуване → публиче
   await page.getByRole("link", { name: "Уебсайт" }).click();
   await expect(page.getByRole("heading", { name: "Уебсайт" })).toBeVisible();
   const publicUrl = await page
-    .getByRole("link", { name: "Отвори сайта ↗" })
+    .getByRole("link", { name: "Отвори сайта" })
     .getAttribute("href");
   expect(publicUrl).toBeTruthy();
 
   await page.getByRole("button", { name: "Редактирай" }).first().click();
   await page.getByLabel("Заглавие", { exact: true }).fill("Добре дошли във витрината");
   await page.getByRole("button", { name: "Готово" }).click();
-  await page.getByRole("button", { name: "Запази промените" }).click();
-  await expect(page.getByText("Промените са публикувани по сайта.")).toBeVisible();
+  /* Публикуваме промените (draft → live за клиентите) */
+  await page.getByRole("button", { name: "Публикувай промените" }).click();
+  await expect(page.getByText(/Промените са запазени|на живо/)).toBeVisible();
 
-  /* Чернова: анонимен посетител вижда 404 */
+  /* Скрит магазин: анонимен посетител вижда 404 */
   const anonBefore = await browser.newContext();
   const anonPageBefore = await anonBefore.newPage();
   await anonPageBefore.goto(publicUrl!);
@@ -68,9 +69,9 @@ test("персонализация → публикуване → публиче
   ).toBeVisible();
   await anonBefore.close();
 
-  /* Публикуване */
-  await page.getByRole("button", { name: "Публикувай" }).click();
-  await expect(page.getByText("Магазинът е публикуван! 🎉")).toBeVisible();
+  /* Публикуване на магазина (видимост за клиенти) */
+  await page.getByRole("button", { name: "Публикувай магазина" }).click();
+  await expect(page.getByText("Магазинът е публикуван — вече е достъпен за клиенти.")).toBeVisible();
 
   /* Анонимен посетител: начало → продукт → variant picker → търсене */
   const anon = await browser.newContext();

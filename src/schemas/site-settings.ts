@@ -151,8 +151,10 @@ export const THEMES = [
 
 export const siteSettingsSchema = z.object({
   theme: z.enum(THEMES).default("classic"),
-  primaryColor: hexColor.default("#178150"),
-  accentColor: hexColor.default("#c98a1b"),
+  /* Неутрални тема-агностични дефолти — четими на всичките 9 теми (вкл. тъмните).
+     Изборът на цвят става съзнателно в onboarding wizard-а; това е само fallback. */
+  primaryColor: hexColor.default("#1f2937"),
+  accentColor: hexColor.default("#b45309"),
   headerLayout: z.enum(["logo-left", "logo-center"]).default("logo-left"),
   footerText: shortText(300),
   aboutText: shortText(5000),

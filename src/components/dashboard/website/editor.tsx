@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   publishShop,
+  publishSiteSettings,
   saveSiteSettings,
   savePreviewDraft,
   setShopLogo,
@@ -31,18 +32,30 @@ interface PickerOption {
 interface WebsiteEditorProps {
   shop: { id: string; name: string; slug: string; status: string; logoPath: string | null };
   initial: SiteSettings;
+  /** Има ли записана чернова с непубликувани промени при зареждане. */
+  hasUnpublishedInitial: boolean;
   productOptions: PickerOption[];
   categoryOptions: PickerOption[];
 }
 
-export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }: WebsiteEditorProps) {
+export function WebsiteEditor({
+  shop,
+  initial,
+  hasUnpublishedInitial,
+  productOptions,
+  categoryOptions,
+}: WebsiteEditorProps) {
   const router = useRouter();
   const [settings, setSettings] = useState<SiteSettings>(initial);
   const [dirty, setDirty] = useState(false);
+  /* Има непубликувани промени (чернова, която клиентите още не виждат):
+     или заредена такава, или направена/запазена в тази сесия. */
+  const [hasUnpublished, setHasUnpublished] = useState(hasUnpublishedInitial);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [publishing, setPublishing] = useState(false);
+  const [publishingChanges, setPublishingChanges] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [tab, setTab] = useState<PanelTab>("sections");
   const previewRef = useRef<WebsitePreviewHandle>(null);
   const isPublished = shop.status === "published";
@@ -50,6 +63,7 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
   function update(next: SiteSettings) {
     setSettings(next);
     setDirty(true);
+    setHasUnpublished(true);
   }
 
   /* Live preview: debounce → draft запис → сигнал към iframe-а */
@@ -62,7 +76,8 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
     return () => clearTimeout(timer);
   }, [settings, dirty]);
 
-  async function handleSave() {
+  /** „Запази“ — записва като чернова (само собственикът я вижда). */
+  async function handleSaveDraft() {
     setSaving(true);
     try {
       const result = await saveSiteSettings(settings);
@@ -71,7 +86,8 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
         return;
       }
       setDirty(false);
-      toast.success("Промените са публикувани по сайта.");
+      setHasUnpublished(true);
+      toast.success("Черновата е запазена — само ти я виждаш засега.");
       previewRef.current?.refresh();
       router.refresh();
     } finally {
@@ -79,18 +95,46 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
     }
   }
 
-  async function handlePublishToggle() {
-    setPublishing(true);
+  /** „Публикувай промените“ — прави черновата видима за клиентите. */
+  async function handlePublishChanges() {
+    setPublishingChanges(true);
+    try {
+      const result = await publishSiteSettings(settings);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setDirty(false);
+      setHasUnpublished(false);
+      toast.success(
+        isPublished
+          ? "Промените са на живо — клиентите вече ги виждат."
+          : "Промените са запазени. Публикувай магазина, за да ги видят клиентите.",
+      );
+      previewRef.current?.refresh();
+      router.refresh();
+    } finally {
+      setPublishingChanges(false);
+    }
+  }
+
+  /** Видимост на целия магазин (status draft ↔ published). */
+  async function handleVisibilityToggle() {
+    setTogglingVisibility(true);
     try {
       const result = isPublished ? await unpublishShop() : await publishShop();
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      toast.success(isPublished ? "Магазинът е скрит." : "Магазинът е публикуван! 🎉");
+      toast.success(
+        isPublished
+          ? "Магазинът е скрит от клиентите."
+          : "Магазинът е публикуван — вече е достъпен за клиенти.",
+      );
       router.refresh();
     } finally {
-      setPublishing(false);
+      setTogglingVisibility(false);
     }
   }
 
@@ -136,23 +180,43 @@ export function WebsiteEditor({ shop, initial, productOptions, categoryOptions }
           <div className="h-5 w-px bg-surface-200" />
           <h1 className="truncate text-sm font-bold text-ink-900">{shop.name}</h1>
           <Badge tone={isPublished ? "success" : "neutral"}>
-            {isPublished ? "Публикуван" : "Чернова"}
+            {isPublished ? "На живо" : "Скрит"}
           </Badge>
+          {hasUnpublished && (
+            <Badge tone="warning" title="Имаш промени, които клиентите още не виждат">
+              Непубликувани промени
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <a
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden text-sm text-brand-600 hover:underline sm:inline"
+            className="hidden items-center gap-1 text-sm text-brand-600 hover:underline sm:inline-flex"
           >
-            Отвори сайта ↗
+            Отвори сайта
+            <Icon name="external-link" size={14} />
           </a>
-          <Button variant="secondary" size="sm" onClick={handlePublishToggle} loading={publishing}>
-            {isPublished ? "Скрий" : "Публикувай"}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleVisibilityToggle}
+            loading={togglingVisibility}
+          >
+            {isPublished ? "Скрий магазина" : "Публикувай магазина"}
           </Button>
-          <Button size="sm" onClick={handleSave} loading={saving} disabled={!dirty}>
+          <div className="h-5 w-px bg-surface-200" />
+          <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={saving} disabled={!dirty}>
             Запази
+          </Button>
+          <Button
+            size="sm"
+            onClick={handlePublishChanges}
+            loading={publishingChanges}
+            disabled={!hasUnpublished}
+          >
+            Публикувай промените
           </Button>
         </div>
       </header>
