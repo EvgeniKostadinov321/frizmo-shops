@@ -49,6 +49,25 @@ function Field({
 const inputClass =
   "h-11 w-full rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3 text-(--sf-text) placeholder:text-(--sf-muted)";
 
+/* Контактните полета се помнят per-магазин: прекъснат checkout / следваща
+   поръчка = попълнена форма. Бележката и методите нарочно не се пазят. */
+const PERSISTED_FIELDS = ["customerName", "customerPhone", "customerEmail", "address", "city"] as const;
+const persistKey = (shopId: string) => `frizmo-checkout-${shopId}`;
+
+function readPersisted(shopId: string): Partial<Record<(typeof PERSISTED_FIELDS)[number], string>> {
+  try {
+    const raw = window.localStorage.getItem(persistKey(shopId));
+    const parsed = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    const out: Partial<Record<(typeof PERSISTED_FIELDS)[number], string>> = {};
+    for (const field of PERSISTED_FIELDS) {
+      if (typeof parsed[field] === "string") out[field] = parsed[field] as string;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export function CheckoutForm({
   shopId,
   slug,
@@ -78,6 +97,14 @@ export function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const [cart, setCart] = useState<PricedCart | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
+     синхронно в effect чупи react-compiler lint-а). */
+  useEffect(() => {
+    const saved = readPersisted(shopId);
+    if (Object.keys(saved).length === 0) return;
+    queueMicrotask(() => setForm((f) => ({ ...f, ...saved })));
+  }, [shopId]);
 
   const storedKey = JSON.stringify(stored);
   const shipping = shippingMethods.find((m) => m.id === form.shippingMethodId);
@@ -113,7 +140,18 @@ export function CheckoutForm({
   }
 
   function set(field: string, value: string) {
-    setForm((f) => ({ ...f, [field]: value }));
+    const next = { ...form, [field]: value };
+    setForm(next);
+    if ((PERSISTED_FIELDS as readonly string[]).includes(field)) {
+      try {
+        window.localStorage.setItem(
+          persistKey(shopId),
+          JSON.stringify(Object.fromEntries(PERSISTED_FIELDS.map((k) => [k, next[k]]))),
+        );
+      } catch {
+        /* localStorage пълен/недостъпен — формата работи и без запомняне */
+      }
+    }
   }
 
   async function submit(e: React.FormEvent) {

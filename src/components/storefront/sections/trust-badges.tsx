@@ -11,14 +11,40 @@ const ICONS: Record<string, IconName> = {
   star: "star",
 };
 
+/**
+ * Две композиции (малка секция → в един файл): 1 = плочки с икона в кръгче,
+ * 2 = тиха hairline лента (икона + текст на един ред, разделени с точки) —
+ * за магазини, които искат доверието дискретно, не като карти.
+ */
 export function TrustBadgesSection({ data }: { data: SectionOfType<"trust-badges">["data"] }) {
   const items = data.items.filter((i) => i.text.trim());
   if (items.length === 0) return null;
 
-  /* Плочки с икона в кръгче — присъствени, не плоска линия. Центрирани и
-     увиващи се: изглеждат завършено при 2, 4 или 6 badge-а. */
+  /* Вариант 2 — hairline лента */
+  if (data.variant === 2) {
+    return (
+      <section className="w-full border-y border-(--sf-border)">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-3 px-4 py-5">
+          {items.map((item, i) => (
+            <span key={i} className="flex items-center gap-x-2">
+              {i > 0 && (
+                <span aria-hidden className="mx-3 size-1 rounded-full bg-(--sf-border)" />
+              )}
+              <span aria-hidden className="text-(--sf-primary)">
+                <Icon name={ICONS[item.icon] ?? "check"} size={17} />
+              </span>
+              <span className="text-sm font-medium text-(--sf-text)">{item.text}</span>
+            </span>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  /* Вариант 1 — плочки с икона в кръгче: присъствени, не плоска линия.
+     Центрирани и увиващи се: изглеждат завършено при 2, 4 или 6 badge-а. */
   return (
-    <section className="w-full border-y border-(--sf-border) bg-(--sf-surface)">
+    <section className="w-full border-y border-(--sf-border) bg-(--sf-surface) [background-image:var(--sf-surface-wash)]">
       <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-3 px-4 py-8">
         {items.map((item, i) => (
           <div

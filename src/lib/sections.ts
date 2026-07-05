@@ -68,7 +68,7 @@ export const SECTION_DEFS: Record<SectionType, SectionDef> = {
     label: "Доверие (badges)",
     icon: "shield-check",
     planTier: "pro",
-    defaultData: { items: [] },
+    defaultData: { variant: 1, items: [] },
   },
   gallery: {
     label: "Галерия",

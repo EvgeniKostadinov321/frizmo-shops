@@ -81,6 +81,19 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-06 (2)** — **Всичките 8 отворени точки затворени.** (1) Mini-cart
+  drawer: страничен панел (portal механиката на MobileMenu) с ПРЕИЗПОЛЗВАН
+  CartView (`onNavigate` затваря при линк); CartButton отваря drawer-а
+  (custom event `frizmo-cart-open`), toast действието също. (2) „Последно
+  разглеждани" на продукта: id-та в localStorage (lib/recently-viewed) +
+  публичен `getProductsByIdsAction` (actions/storefront.ts, rate limit).
+  (3) Checkout полетата (име/телефон/имейл/адрес/град) се помнят per-магазин.
+  (4) Оникс: двоен златен кант (1px + hairline на 10px — 1px сам беше
+  невидим). (5) Основа: подпис „носеща греда" под hero кадъра. (6) Ефир:
+  органична blob „капка" (арката остана само на Ателие). (7) Seed фикс: Ателие
+  акцент → керемида #c2410c. (8) Trust badges: вариант 2 „тиха hairline
+  лента" → всички секции с варианти, 32 композиции. Гейт зелен.
+
 - **2026-07-06** — **Функционален одит на количката + умен UI пакет.** Одит на
   цялата верига (variant-picker → cart-storage → pricing → createOrder):
   backend-ът коректен (сървърно ценообразуване, FOR UPDATE транзакция), но UX

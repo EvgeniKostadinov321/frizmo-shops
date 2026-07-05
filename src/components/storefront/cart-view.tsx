@@ -32,6 +32,8 @@ interface CartViewProps {
   base: string;
   /** Най-ниският праг за безплатна доставка на магазина (null = няма такъв). */
   freeShippingOverCents: number | null;
+  /** В mini-cart drawer-а: затваря панела при навигация от линк. */
+  onNavigate?: () => void;
 }
 
 const lineKey = (l: { productId: string; variantKey: string | null }) =>
@@ -50,7 +52,7 @@ interface ServerLine {
  * Докато отговорът пътува, редовете без deal показват optimistic total
  * (единична × количество); сървърът потвърждава мигове по-късно.
  */
-export function CartView({ shopId, slug, base, freeShippingOverCents }: CartViewProps) {
+export function CartView({ shopId, slug, base, freeShippingOverCents, onNavigate }: CartViewProps) {
   const stored = useSyncExternalStore(
     (cb) => onCartChange(shopId, cb),
     () => getCartSnapshot(shopId),
@@ -99,6 +101,7 @@ export function CartView({ shopId, slug, base, freeShippingOverCents }: CartView
         action={
           <Link
             href={`${base}/products`}
+            onClick={onNavigate}
             className="sf-cta inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
           >
             Към продуктите
@@ -170,6 +173,7 @@ export function CartView({ shopId, slug, base, freeShippingOverCents }: CartView
             >
               <Link
                 href={known?.productSlug ? `${base}/p/${known.productSlug}` : base}
+                onClick={onNavigate}
                 className="relative size-20 shrink-0 overflow-hidden rounded-(--sf-radius) bg-(--sf-bg)"
               >
                 {known?.imagePath ? (
@@ -310,6 +314,7 @@ export function CartView({ shopId, slug, base, freeShippingOverCents }: CartView
         ) : (
           <Link
             href={`${base}/checkout`}
+            onClick={onNavigate}
             className="sf-cta inline-flex h-12 items-center justify-center rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
           >
             Завърши поръчката

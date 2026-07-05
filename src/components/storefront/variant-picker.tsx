@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import type { ProductOption, ProductVariant } from "@/db";
@@ -16,6 +15,7 @@ import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 import { variantKey } from "@/lib/variants";
 import { Icon } from "@/components/ui";
+import { openCartDrawer } from "@/components/storefront/cart-drawer";
 import { discountPercent } from "@/components/storefront/product-card";
 
 interface VariantPickerProps {
@@ -32,8 +32,6 @@ interface VariantPickerProps {
   deal: { quantity: number; totalPriceCents: number } | null;
   /** Категория за kicker-а над заглавието (линк към филтрирания каталог). */
   category: { name: string; href: string } | null;
-  /** Път до количката — за toast действието „Виж количката". */
-  cartHref: string;
 }
 
 /** Общо за qty бройки: deal групите по deal цена, остатъкът по единичната —
@@ -67,9 +65,7 @@ export function VariantPicker({
   variants,
   deal,
   category,
-  cartHref,
 }: VariantPickerProps) {
-  const router = useRouter();
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
@@ -147,7 +143,7 @@ export function VariantPicker({
     setQty(1);
     toast.success(
       effectiveQty > 1 ? `Добавени ${effectiveQty} бр в количката.` : "Добавено в количката.",
-      { action: { label: "Виж количката", onClick: () => router.push(cartHref) } },
+      { action: { label: "Виж количката", onClick: openCartDrawer } },
     );
   }
 

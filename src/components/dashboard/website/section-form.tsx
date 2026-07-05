@@ -313,25 +313,36 @@ export function SectionForm({
       case "trust-badges": {
         const d = section!.data;
         return (
-          <RowsEditor
-            rows={d.items}
-            max={6}
-            makeEmpty={() => ({ icon: "truck" as const, text: "" })}
-            addLabel="+ Добави"
-            onChange={(items) => patch({ items })}
-            renderRow={(row, update) => (
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Select
-                  label="Икона"
-                  hideLabel
-                  options={TRUST_BADGE_ICONS.map((icon) => ({ value: icon, label: BADGE_LABELS[icon] }))}
-                  value={row.icon}
-                  onChange={(e) => update({ icon: e.target.value as typeof row.icon })}
-                />
-                <Input label="Текст" hideLabel placeholder="Доставка до 2 дни" value={row.text} onChange={(e) => update({ text: e.target.value })} />
-              </div>
-            )}
-          />
+          <>
+            <Select
+              label="Изглед"
+              options={[
+                { value: "1", label: "Плочки с икони" },
+                { value: "2", label: "Тиха лента (един ред)" },
+              ]}
+              value={String(d.variant)}
+              onChange={(e) => patch({ variant: Number(e.target.value) })}
+            />
+            <RowsEditor
+              rows={d.items}
+              max={6}
+              makeEmpty={() => ({ icon: "truck" as const, text: "" })}
+              addLabel="+ Добави"
+              onChange={(items) => patch({ items })}
+              renderRow={(row, update) => (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Select
+                    label="Икона"
+                    hideLabel
+                    options={TRUST_BADGE_ICONS.map((icon) => ({ value: icon, label: BADGE_LABELS[icon] }))}
+                    value={row.icon}
+                    onChange={(e) => update({ icon: e.target.value as typeof row.icon })}
+                  />
+                  <Input label="Текст" hideLabel placeholder="Доставка до 2 дни" value={row.text} onChange={(e) => update({ text: e.target.value })} />
+                </div>
+              )}
+            />
+          </>
         );
       }
       case "gallery": {

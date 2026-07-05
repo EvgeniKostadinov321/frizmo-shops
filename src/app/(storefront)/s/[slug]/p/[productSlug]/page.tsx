@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
+import { RecentlyViewed } from "@/components/storefront/recently-viewed";
 import { Paragraphs } from "@/components/storefront/sections/shared";
 import { VariantPicker } from "@/components/storefront/variant-picker";
 import {
@@ -107,7 +108,6 @@ export default async function ProductPage({ params }: PageProps) {
         images={product.images}
         options={product.options}
         variants={product.variants}
-        cartHref={`${base}/cart`}
         category={
           category
             ? { name: category.name, href: `${base}/products?category=${category.id}` }
@@ -164,6 +164,13 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      <RecentlyViewed
+        shopId={shop.id}
+        slug={shop.slug}
+        base={base}
+        currentProductId={product.id}
+      />
 
       {/* Въздух под съдържанието на мобилно — sticky CTA лентата е 64px + safe area. */}
       <div aria-hidden className="h-20 md:hidden" />

@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { Icon } from "@/components/ui";
+import { openCartDrawer } from "@/components/storefront/cart-drawer";
 import { getCartSnapshot, getServerCartSnapshot, onCartChange } from "@/lib/cart-storage";
 
-export function CartButton({ shopId, base }: { shopId: string; base: string }) {
+/** Количката в header-а: отваря mini-cart drawer-а (страницата /cart остава
+ *  достъпна по директен линк). Баджът е жив през cart storage събитията. */
+export function CartButton({ shopId }: { shopId: string; base?: string }) {
   const lines = useSyncExternalStore(
     (cb) => onCartChange(shopId, cb),
     () => getCartSnapshot(shopId),
@@ -14,8 +16,9 @@ export function CartButton({ shopId, base }: { shopId: string; base: string }) {
   const count = lines.reduce((sum, l) => sum + l.qty, 0);
 
   return (
-    <Link
-      href={`${base}/cart`}
+    <button
+      type="button"
+      onClick={openCartDrawer}
       aria-label={`Количка (${count} артикула)`}
       className="relative flex size-11 shrink-0 items-center justify-center rounded-(--sf-radius) text-current transition-opacity hover:opacity-70"
     >
@@ -26,6 +29,6 @@ export function CartButton({ shopId, base }: { shopId: string; base: string }) {
           {count > 99 ? "99+" : count}
         </span>
       )}
-    </Link>
+    </button>
   );
 }

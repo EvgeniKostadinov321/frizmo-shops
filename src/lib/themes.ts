@@ -197,7 +197,9 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-font-body": "var(--font-inter), ui-sans-serif, sans-serif",
     "--sf-nav-case": "none",
     "--sf-nav-tracking": "0.02em",
-    "--sf-hero-radius": "18rem 18rem 0.75rem 0.75rem",
+    /* Подписът на Ефир: мека органична „капка" (blob) вместо арката — арката
+       остава само на Ателие (одит 2026-07-06: двете я споделяха). */
+    "--sf-hero-radius": "54% 46% 44% 56% / 48% 56% 44% 52%",
     "--sf-hero-frame": "none",
     "--sf-title-accent-style": "italic",
     /* Ефир = A+B+C+D+E (пълния сет): най-бледата тема — wellness дълбочина. */
@@ -225,7 +227,10 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-nav-case": "uppercase",
     "--sf-nav-tracking": "0.18em",
     "--sf-hero-radius": "0.25rem",
-    "--sf-hero-frame": "0 0 0 1px var(--sf-accent)",
+    /* Подписът на Оникс: двоен златен кант — 1px до кадъра + втора златна
+       hairline на 10px отстъп (бижутерска рамка; 1px сам беше невидим). */
+    "--sf-hero-frame":
+      "0 0 0 1px var(--sf-accent), 0 0 0 10px var(--sf-bg), 0 0 0 11px var(--sf-accent)",
     "--sf-title-accent-style": "italic",
     /* Оникс = C+D: златото никога не е плоско (материален CTA); светъл ринг
        пази тъмните кадри. Нищо друго — темата е добра. */
@@ -284,7 +289,9 @@ export const THEME_PRESETS: Record<ThemeId, ThemeVars> = {
     "--sf-nav-case": "uppercase",
     "--sf-nav-tracking": "0.1em",
     "--sf-hero-radius": "0",
-    "--sf-hero-frame": "none",
+    /* Подписът на Основа: плътна „носеща греда" в primary точно под кадъра —
+       снимката стои върху основа (индустриално, буквално името на темата). */
+    "--sf-hero-frame": "0 0.875rem 0 0 var(--sf-primary)",
     "--sf-title-accent-style": "normal",
     /* Основа = D+E: индустриална твърдост — без мъгли/градиенти. */
     "--sf-photo-ring": "rgba(33,29,24,.07)",

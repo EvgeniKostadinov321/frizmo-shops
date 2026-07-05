@@ -2,10 +2,12 @@ import type { Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
+import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { StorefrontFooter } from "@/components/storefront/footer";
 import { StorefrontHeader } from "@/components/storefront/header";
 import { PreviewListener } from "@/components/storefront/preview-listener";
 import { AnnouncementSection } from "@/components/storefront/sections/announcement";
+import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicCategories, getPublicShop } from "@/db/queries/storefront";
 import { THEME_PRESETS, themeStyle } from "@/lib/themes";
 
@@ -31,10 +33,17 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
   const result = await getPublicShop(slug);
   if (!result) notFound();
   const { shop, settings, viewerIsOwner, viewingDraft } = result;
-  /* Основните категории влизат в навигацията на header-а (ако са до 4). */
-  const rootCategories = (await getPublicCategories(shop.id)).filter(
-    (c) => c.parentId === null,
-  );
+  /* Основните категории влизат в навигацията на header-а (ако са до 4);
+     прагът за безплатна доставка — за прогреса в mini-cart drawer-а. */
+  const [categories, shippingMethods] = await Promise.all([
+    getPublicCategories(shop.id),
+    getShippingMethods(shop.id),
+  ]);
+  const rootCategories = categories.filter((c) => c.parentId === null);
+  const freeThresholds = shippingMethods
+    .filter((m) => m.active && m.freeOverCents !== null)
+    .map((m) => m.freeOverCents!);
+  const freeShippingOverCents = freeThresholds.length > 0 ? Math.min(...freeThresholds) : null;
 
   /* Announcement е topbar НАД header-а (site-wide), не секция в потока. */
   const announcement = settings.sections.find(
@@ -111,6 +120,13 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
       />
       <main className="flex-1">{children}</main>
       <StorefrontFooter shop={shop} settings={settings} />
+      <CartDrawer
+        shopId={shop.id}
+        slug={shop.slug}
+        base={`/s/${shop.slug}`}
+        settings={settings}
+        freeShippingOverCents={freeShippingOverCents}
+      />
       </div>
     </>
   );

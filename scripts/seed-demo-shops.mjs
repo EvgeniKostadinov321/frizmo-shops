@@ -64,7 +64,7 @@ const NICHES = [
       facebook: "https://facebook.com/atelieglina",
       instagram: "https://instagram.com/atelieglina",
     },
-    theme: { theme: "atelie", primaryColor: "#a9642e", accentColor: "#7a5c2e", headerVariant: 2 },
+    theme: { theme: "atelie", primaryColor: "#a9642e", accentColor: "#c2410c", headerVariant: 2 },
     heroImage: "1565193566173-7a0ee3dbe261",
     categories: [
       { name: "Керамика", children: ["Чаши", "Купи"] },

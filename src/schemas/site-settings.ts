@@ -112,6 +112,8 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("trust-badges"),
     data: z.object({
+      /* Композиция: 1 = плочки с икона в кръгче, 2 = тиха hairline лента. */
+      variant: z.union([z.literal(1), z.literal(2)]).default(1),
       items: z
         .array(z.object({ icon: z.enum(TRUST_BADGE_ICONS), text: shortText(60) }))
         .max(6)
