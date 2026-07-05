@@ -102,6 +102,87 @@ html:has([data-storefront])::-webkit-scrollbar-thumb:hover {
 }
 
 /*
+ * Storefront toast-ове (sonner): темови през --sf-toast-* (инжектирани на
+ * <html> от storefront layout-а, защото Toaster-ът е в root body).
+ * Микро-ефекти: акцентна лента, която израства отляво + икона с пружинен pop.
+ * Sonner-овите transform анимации (слайд/стак/суайп) НЕ се пипат.
+ */
+html:has([data-storefront]) [data-sonner-toast] {
+  background: var(--sf-toast-bg) !important;
+  color: var(--sf-toast-text) !important;
+  border: 1px solid var(--sf-toast-border) !important;
+  border-radius: var(--sf-toast-radius) !important;
+  box-shadow: var(--sf-toast-shadow) !important;
+  font-family: var(--sf-toast-font) !important;
+  padding-left: 18px;
+}
+html:has([data-storefront]) [data-sonner-toast]::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    var(--sf-toast-primary),
+    color-mix(in oklab, var(--sf-toast-primary), var(--sf-toast-bg) 45%)
+  );
+  transform-origin: top;
+  animation: sf-toast-bar 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html:has([data-storefront]) [data-sonner-toast] [data-title] {
+  font-weight: 600;
+}
+html:has([data-storefront]) [data-sonner-toast] [data-description] {
+  color: var(--sf-toast-muted) !important;
+}
+html:has([data-storefront]) [data-sonner-toast] [data-icon] {
+  color: var(--sf-toast-primary) !important;
+  animation: sf-toast-icon 0.5s 0.08s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+html:has([data-storefront]) [data-sonner-toast] [data-button] {
+  background: var(--sf-toast-primary) !important;
+  color: var(--sf-toast-on-primary) !important;
+  border-radius: 999px !important;
+  height: 30px !important;
+  padding-inline: 14px !important;
+  font-weight: 600 !important;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+html:has([data-storefront]) [data-sonner-toast] [data-button]:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
+}
+@keyframes sf-toast-bar {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes sf-toast-icon {
+  from {
+    transform: scale(0) rotate(-14deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has([data-storefront]) [data-sonner-toast]::before,
+  html:has([data-storefront]) [data-sonner-toast] [data-icon] {
+    animation: none;
+  }
+}
+
+/*
  * Hero slideshow crossfade (CSS-only, 5 слота × 6s = 30s цикъл).
  * Всеки слайд е видим ~1/5 от цикъла; reduced-motion → само първият, статичен.
  */

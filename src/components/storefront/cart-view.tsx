@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/ui";
 import { MascotState } from "@/components/storefront/mascot";
-import { priceCartAction, type CartLineView } from "@/actions/cart";
+import { priceCartAction } from "@/actions/cart";
 import { formatPrice } from "@/lib/money";
 import {
   getCartSnapshot,
@@ -14,7 +14,7 @@ import {
   removeFromCart,
   setCartQty,
 } from "@/lib/cart-storage";
-import type { PricedCart } from "@/lib/pricing";
+import type { PricedLine } from "@/lib/pricing";
 import { publicImageUrl } from "@/lib/storage";
 
 const LINE_ERROR_LABELS: Record<string, string> = {
@@ -30,37 +30,62 @@ interface CartViewProps {
   shopId: string;
   slug: string;
   base: string;
+  /** Най-ниският праг за безплатна доставка на магазина (null = няма такъв). */
+  freeShippingOverCents: number | null;
 }
 
-interface PricedState {
-  forKey: string;
-  cart: PricedCart | null;
-  views: CartLineView[];
-  error: string | null;
+const lineKey = (l: { productId: string; variantKey: string | null }) =>
+  `${l.productId}|${l.variantKey ?? ""}`;
+
+/** Сървърните данни за ред, закачени по ключ (не по индекс). */
+interface ServerLine {
+  priced: PricedLine;
+  imagePath: string | null;
+  productSlug: string;
 }
 
-export function CartView({ shopId, slug, base }: CartViewProps) {
+/**
+ * Количка със stale-while-revalidate: количествата и структурата идват ЖИВО
+ * от localStorage (нула премигване при +/−), а цените — от сървъра с debounce.
+ * Докато отговорът пътува, редовете без deal показват optimistic total
+ * (единична × количество); сървърът потвърждава мигове по-късно.
+ */
+export function CartView({ shopId, slug, base, freeShippingOverCents }: CartViewProps) {
   const stored = useSyncExternalStore(
     (cb) => onCartChange(shopId, cb),
     () => getCartSnapshot(shopId),
     getServerCartSnapshot,
   );
   const storedKey = JSON.stringify(stored);
-  const [priced, setPriced] = useState<PricedState | null>(null);
+  const [server, setServer] = useState<Map<string, ServerLine> | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     if (stored.length === 0) return;
+    /* Debounce: серия от +/− кликове = една заявка; и щадим rate limit-а.
+       При нова промяна cleanup-ът отменя и таймера, и висящия отговор. */
     let cancelled = false;
-    priceCartAction(slug, stored).then((result) => {
+    const lines = stored;
+    const timer = setTimeout(async () => {
+      const result = await priceCartAction(slug, lines);
       if (cancelled) return;
-      setPriced(
-        result.ok
-          ? { forKey: storedKey, cart: result.data.cart, views: result.data.views, error: null }
-          : { forKey: storedKey, cart: null, views: [], error: result.error },
+      if (!result.ok) {
+        setFailure(result.error);
+        return;
+      }
+      setFailure(null);
+      setServer(
+        new Map(
+          result.data.cart.lines.map((priced, i) => [
+            lineKey(priced),
+            { priced, imagePath: result.data.views[i]?.imagePath ?? null, productSlug: result.data.views[i]?.productSlug ?? "" },
+          ]),
+        ),
       );
-    });
+    }, 250);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, storedKey]);
@@ -83,8 +108,12 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
     );
   }
 
-  if (!priced || priced.forKey !== storedKey) {
-    /* Skeleton: по един ред на артикул + summary карта — без layout скок. */
+  if (failure && !server) {
+    return <p className="py-16 text-center text-(--sf-muted)">{failure}</p>;
+  }
+
+  if (!server) {
+    /* Skeleton САМО при първото зареждане — после старите данни остават видими. */
     return (
       <div className="flex animate-pulse flex-col gap-6" aria-label="Зареждане на количката" role="status">
         <div className="flex flex-col gap-3">
@@ -102,38 +131,51 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
             </div>
           ))}
         </div>
-        <div className="h-32 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface)" />
+        <div className="h-40 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface)" />
       </div>
     );
   }
 
-  if (priced.error || !priced.cart) {
-    return <p className="py-16 text-center text-(--sf-muted)">{priced.error ?? "Грешка."}</p>;
-  }
-
-  const { cart, views } = priced;
+  /* Optimistic редове: количество от localStorage, цени от последния сървърен
+     отговор. Deal редовете пазят сървърния total (deal-ът се смята на сървъра). */
+  const rows = stored.map((line) => {
+    const known = server.get(lineKey(line)) ?? null;
+    const priced = known?.priced ?? null;
+    const upToDate = priced?.qty === line.qty;
+    const lineTotalCents =
+      priced && !priced.error
+        ? upToDate || priced.appliedDeal
+          ? priced.lineTotalCents
+          : priced.unitPriceCents * line.qty
+        : null;
+    return { line, known, priced, lineTotalCents };
+  });
+  const hasErrors = rows.some((r) => r.priced?.error);
+  const subtotalCents = rows.reduce((sum, r) => sum + (r.lineTotalCents ?? 0), 0);
+  const freeRemaining =
+    freeShippingOverCents !== null ? Math.max(0, freeShippingOverCents - subtotalCents) : null;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        {cart.lines.map((line, i) => {
-          const storedLine = stored[i]!;
-          const view = views[i];
+        {rows.map(({ line, known, priced, lineTotalCents }) => {
+          const stockLeft = priced?.stockLeft ?? null;
+          const atStockCap = stockLeft !== null && line.qty >= stockLeft;
           return (
             <div
-              key={`${line.productId}-${line.variantKey ?? ""}`}
+              key={lineKey(line)}
               className={`flex gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-3 ${
-                line.error ? "opacity-80" : ""
+                priced?.error ? "opacity-80" : ""
               }`}
             >
               <Link
-                href={view?.productSlug ? `${base}/p/${view.productSlug}` : base}
+                href={known?.productSlug ? `${base}/p/${known.productSlug}` : base}
                 className="relative size-20 shrink-0 overflow-hidden rounded-(--sf-radius) bg-(--sf-bg)"
               >
-                {view?.imagePath ? (
+                {known?.imagePath ? (
                   <Image
-                    src={publicImageUrl(view.imagePath)}
-                    alt={line.productName}
+                    src={publicImageUrl(known.imagePath)}
+                    alt={priced?.productName ?? ""}
                     fill
                     sizes="80px"
                     className="object-cover"
@@ -147,17 +189,25 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <p className="truncate font-medium text-(--sf-text)">
-                  {line.productName || "Недостъпен продукт"}
+                  {priced?.productName || "Недостъпен продукт"}
                 </p>
-                {line.variantLabel && (
-                  <p className="text-xs text-(--sf-muted)">{line.variantLabel}</p>
+                <p className="flex flex-wrap gap-x-2 text-xs text-(--sf-muted)">
+                  {priced && !priced.error && (
+                    <span>{formatPrice(priced.unitPriceCents)} / бр</span>
+                  )}
+                  {priced?.variantLabel && <span>{priced.variantLabel}</span>}
+                </p>
+                {priced?.appliedDeal && (
+                  <p className="text-xs font-medium text-(--sf-accent)">{priced.appliedDeal}</p>
                 )}
-                {line.appliedDeal && (
-                  <p className="text-xs font-medium text-(--sf-accent)">{line.appliedDeal}</p>
-                )}
-                {line.error && (
+                {priced?.error && (
                   <p className="text-xs font-medium text-(--sf-accent)">
-                    {LINE_ERROR_LABELS[line.error]}
+                    {LINE_ERROR_LABELS[priced.error]}
+                  </p>
+                )}
+                {!priced?.error && atStockCap && (
+                  <p className="text-xs text-(--sf-accent)" aria-live="polite">
+                    Това е цялата наличност ({stockLeft} бр).
                   </p>
                 )}
 
@@ -166,34 +216,35 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
                     <button
                       type="button"
                       aria-label="Намали"
-                      onClick={() => setCartQty(shopId, storedLine, storedLine.qty - 1)}
+                      onClick={() => setCartQty(shopId, line, line.qty - 1)}
                       className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
                     >
                       −
                     </button>
-                    <span className="w-7 text-center text-sm font-medium text-(--sf-text)">
-                      {storedLine.qty}
+                    <span aria-live="polite" className="w-7 text-center text-sm font-medium text-(--sf-text)">
+                      {line.qty}
                     </span>
                     <button
                       type="button"
                       aria-label="Увеличи"
-                      onClick={() => setCartQty(shopId, storedLine, storedLine.qty + 1)}
-                      className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
+                      disabled={atStockCap}
+                      onClick={() => setCartQty(shopId, line, line.qty + 1)}
+                      className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       +
                     </button>
                   </div>
                   <div className="flex items-center gap-3">
-                    {!line.error && (
+                    {lineTotalCents !== null && (
                       <span className="font-bold text-(--sf-text)">
-                        {formatPrice(line.lineTotalCents)}
+                        {formatPrice(lineTotalCents)}
                       </span>
                     )}
                     <button
                       type="button"
                       aria-label="Премахни от количката"
-                      onClick={() => removeFromCart(shopId, storedLine)}
-                      className="flex items-center text-(--sf-muted) hover:opacity-70"
+                      onClick={() => removeFromCart(shopId, line)}
+                      className="flex size-11 items-center justify-center text-(--sf-muted) hover:opacity-70"
                     >
                       <Icon name="x" size={16} />
                     </button>
@@ -206,9 +257,38 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
       </div>
 
       <div className="flex flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) p-4 shadow-(--sf-shadow)">
+        {freeRemaining !== null && freeShippingOverCents !== null && !hasErrors && (
+          <div className="flex flex-col gap-1.5 border-b border-(--sf-border) pb-3">
+            {freeRemaining > 0 ? (
+              <p className="text-sm text-(--sf-text)">
+                Още <strong>{formatPrice(freeRemaining)}</strong> до безплатна доставка
+              </p>
+            ) : (
+              <p className="flex items-center gap-1.5 text-sm font-medium text-(--sf-text)">
+                <Icon name="check" size={16} className="text-(--sf-primary)" />
+                Поръчката ти пътува безплатно
+              </p>
+            )}
+            <div
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={freeShippingOverCents}
+              aria-valuenow={Math.min(subtotalCents, freeShippingOverCents)}
+              aria-label="Прогрес до безплатна доставка"
+              className="h-1.5 overflow-hidden rounded-full bg-(--sf-border)"
+            >
+              <div
+                className="h-full rounded-full bg-(--sf-primary) transition-[width] duration-500"
+                style={{
+                  width: `${Math.min(100, (subtotalCents / freeShippingOverCents) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
         <div className="flex justify-between text-sm text-(--sf-muted)">
           <span>Междинна сума</span>
-          <span>{formatPrice(cart.subtotalCents)}</span>
+          <span>{formatPrice(subtotalCents)}</span>
         </div>
         <div className="flex justify-between text-sm text-(--sf-muted)">
           <span>Доставка</span>
@@ -217,9 +297,13 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
         <hr className="border-(--sf-border)" />
         <div className="flex justify-between text-lg font-bold text-(--sf-text)">
           <span>Общо без доставка</span>
-          <span>{formatPrice(cart.subtotalCents)}</span>
+          <span>{formatPrice(subtotalCents)}</span>
         </div>
-        {cart.hasErrors ? (
+        <p className="text-xs text-(--sf-muted)">
+          Доставката се избира при завършване на поръчката.
+        </p>
+        {failure && <p className="text-sm font-medium text-(--sf-accent)">{failure}</p>}
+        {hasErrors ? (
           <p className="text-sm font-medium text-(--sf-accent)">
             Премахни недостъпните продукти, за да продължиш.
           </p>

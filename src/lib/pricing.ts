@@ -48,6 +48,9 @@ export interface PricedLine {
   lineTotalCents: number;
   /** Напр. "2 бр за 30,00 €" — празно, ако няма приложен deal. */
   appliedDeal: string;
+  /** Ефективната наличност на реда (вариантна или продуктова; null = не се следи).
+   *  UI-ят ползва това за горна граница на количествения степер. */
+  stockLeft: number | null;
   error?: LineError;
 }
 
@@ -80,6 +83,7 @@ export function priceCart(
       unitPriceCents: 0,
       lineTotalCents: 0,
       appliedDeal: "",
+      stockLeft: null,
     };
 
     if (!Number.isInteger(line.qty) || line.qty < 1 || line.qty > 999) {
@@ -101,6 +105,7 @@ export function priceCart(
 
     /* Наличност: вариантната, ако вариантът я следи; иначе продуктовата. */
     const stock = variant ? variant.stock : product.stock;
+    base.stockLeft = stock;
     if (stock !== null) {
       if (stock <= 0) return { ...base, error: "out_of_stock" };
       if (line.qty > stock) return { ...base, error: "insufficient_stock" };

@@ -107,6 +107,7 @@ export default async function ProductPage({ params }: PageProps) {
         images={product.images}
         options={product.options}
         variants={product.variants}
+        cartHref={`${base}/cart`}
         category={
           category
             ? { name: category.name, href: `${base}/products?category=${category.id}` }

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import type { ProductOption, ProductVariant } from "@/db";
@@ -27,10 +28,26 @@ interface VariantPickerProps {
   images: string[];
   options: ProductOption[];
   variants: ProductVariant[];
-  /** Промоция „купи N за X" — показва се като бадж. */
+  /** Промоция „купи N за X" — показва се като бадж и влиза в живото „Общо". */
   deal: { quantity: number; totalPriceCents: number } | null;
   /** Категория за kicker-а над заглавието (линк към филтрирания каталог). */
   category: { name: string; href: string } | null;
+  /** Път до количката — за toast действието „Виж количката". */
+  cartHref: string;
+}
+
+/** Общо за qty бройки: deal групите по deal цена, остатъкът по единичната —
+ *  СЪЩАТА формула като pricing engine-а (сървърът винаги преизчислява). */
+function lineTotal(
+  unitCents: number,
+  qty: number,
+  deal: { quantity: number; totalPriceCents: number } | null,
+): number {
+  if (deal && deal.quantity >= 2 && qty >= deal.quantity) {
+    const groups = Math.floor(qty / deal.quantity);
+    return groups * deal.totalPriceCents + (qty % deal.quantity) * unitCents;
+  }
+  return unitCents * qty;
 }
 
 /**
@@ -50,7 +67,9 @@ export function VariantPicker({
   variants,
   deal,
   category,
+  cartHref,
 }: VariantPickerProps) {
+  const router = useRouter();
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
@@ -118,10 +137,18 @@ export function VariantPicker({
     setActiveImage(0);
   }
 
+  /* Живото „Общо": qty × ефективната цена, с приложен deal (същата формула
+     като сървърния pricing engine). */
+  const totalCents = lineTotal(effectivePriceCents, effectiveQty, deal);
+  const savedCents = effectivePriceCents * effectiveQty - totalCents;
+
   function add() {
     addToCart(shopId, { productId, variantKey: currentVariantKey, qty: effectiveQty });
     setQty(1);
-    toast.success("Добавено в количката.");
+    toast.success(
+      effectiveQty > 1 ? `Добавени ${effectiveQty} бр в количката.` : "Добавено в количката.",
+      { action: { label: "Виж количката", onClick: () => router.push(cartHref) } },
+    );
   }
 
   return (
@@ -271,6 +298,20 @@ export function VariantPicker({
           </p>
         )}
 
+        {canBuy && (effectiveQty > 1 || savedCents > 0) && (
+          <div className="flex items-baseline justify-between gap-3 rounded-(--sf-radius) bg-(--sf-surface) px-3 py-2.5">
+            <span className="text-sm text-(--sf-muted)">Общо за {effectiveQty} бр</span>
+            <span className="text-right">
+              <span className="text-xl font-bold text-(--sf-text)">{formatPrice(totalCents)}</span>
+              {savedCents > 0 && (
+                <span className="block text-xs font-medium text-(--sf-accent)">
+                  Спестяваш {formatPrice(savedCents)}
+                </span>
+              )}
+            </span>
+          </div>
+        )}
+
         {canBuy && (
           <div className="flex items-center gap-3">
             <div className="flex items-center rounded-(--sf-radius) border border-(--sf-border)">
@@ -315,9 +356,11 @@ export function VariantPicker({
           <div className="fixed inset-x-0 bottom-0 z-40 border-t border-(--sf-border) bg-(--sf-surface-raised)/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden">
             <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4">
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs text-(--sf-muted)">{productName}</span>
+                <span className="block truncate text-xs text-(--sf-muted)">
+                  {effectiveQty > 1 ? `${effectiveQty} бр · ${productName}` : productName}
+                </span>
                 <span className="text-lg font-bold text-(--sf-primary)">
-                  {formatPrice(effectivePriceCents)}
+                  {formatPrice(totalCents)}
                 </span>
               </span>
               <button

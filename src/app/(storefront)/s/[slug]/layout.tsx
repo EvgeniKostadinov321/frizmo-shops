@@ -61,7 +61,17 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
      --sf-* (те живеят на вложения div). Затова инжектираме темовите тон-цветове
      директно на <html> с малък scoped <style>. Стойностите идват от темата. */
   const theme = themeStyle(settings) as Record<string, string>;
-  const scrollbarCss = `html:has([data-storefront]){--sf-sb-thumb:${theme["--sf-muted"]};--sf-sb-thumb-hover:${settings.primaryColor}}`;
+  /* Toast-овете (sonner) живеят в root body — извън storefront div-а с --sf-*
+     променливите. Затова темовите им стойности се инжектират на <html> заедно
+     със скролбарните (стилът е в globals.css под --sf-toast-*). */
+  const scrollbarCss =
+    `html:has([data-storefront]){` +
+    `--sf-sb-thumb:${theme["--sf-muted"]};--sf-sb-thumb-hover:${settings.primaryColor};` +
+    `--sf-toast-bg:${theme["--sf-surface-raised"]};--sf-toast-text:${theme["--sf-text"]};` +
+    `--sf-toast-muted:${theme["--sf-muted"]};--sf-toast-border:${theme["--sf-border"]};` +
+    `--sf-toast-radius:${theme["--sf-radius"]};--sf-toast-shadow:${theme["--sf-shadow"]},0 16px 40px rgba(0,0,0,.14);` +
+    `--sf-toast-primary:${settings.primaryColor};--sf-toast-on-primary:${theme["--sf-on-primary"]};` +
+    `--sf-toast-font:${theme["--sf-font-body"]}}`;
 
   return (
     <>

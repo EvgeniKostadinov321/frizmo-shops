@@ -130,6 +130,32 @@ describe("priceCart — грешки и наличности", () => {
     const cart = priceCart([{ productId: "p1", variantKey: null, qty: 0 }], productsMap(product()));
     expect(cart.hasErrors).toBe(true);
   });
+
+  it("stockLeft носи ефективната наличност (продуктова)", () => {
+    const cart = priceCart(
+      [{ productId: "p1", variantKey: null, qty: 2 }],
+      productsMap(product({ stock: 7 })),
+    );
+    expect(cart.lines[0]!.stockLeft).toBe(7);
+  });
+
+  it("stockLeft носи вариантната наличност при вариант", () => {
+    const cart = priceCart(
+      [{ productId: "p1", variantKey: "Размер:M", qty: 1 }],
+      productsMap(
+        product({
+          stock: 99,
+          variants: [{ key: "Размер:M", label: "M", priceCents: null, stock: 4 }],
+        }),
+      ),
+    );
+    expect(cart.lines[0]!.stockLeft).toBe(4);
+  });
+
+  it("stockLeft е null при неследена наличност", () => {
+    const cart = priceCart([{ productId: "p1", variantKey: null, qty: 3 }], productsMap(product()));
+    expect(cart.lines[0]!.stockLeft).toBeNull();
+  });
 });
 
 describe("priceCart — доставка", () => {
