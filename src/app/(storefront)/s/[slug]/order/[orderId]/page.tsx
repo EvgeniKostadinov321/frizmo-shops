@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
+import { Icon } from "@/components/ui";
 import { db, orderItems, orders } from "@/db";
 import { getPublicShop } from "@/db/queries/storefront";
 import { formatPrice } from "@/lib/money";
@@ -31,13 +32,14 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-12">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <span aria-hidden className="text-6xl">
-          ✅
-        </span>
-        <h1
-          className="text-3xl text-(--sf-text)"
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span
+          aria-hidden
+          className="flex size-16 items-center justify-center rounded-full bg-(--sf-primary) text-(--sf-on-primary) shadow-(--sf-shadow)"
         >
+          <Icon name="check" size={34} />
+        </span>
+        <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] text-(--sf-text)">
           Поръчката е приета!
         </h1>
         <p className="text-(--sf-muted)">

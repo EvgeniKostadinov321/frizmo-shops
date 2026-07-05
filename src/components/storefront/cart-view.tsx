@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/ui";
+import { MascotState } from "@/components/storefront/mascot";
 import { priceCartAction, type CartLineView } from "@/actions/cart";
 import { formatPrice } from "@/lib/money";
 import {
@@ -66,21 +67,44 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
 
   if (stored.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <Icon name="shopping-cart" size={44} className="text-(--sf-muted) opacity-50" />
-        <p className="text-(--sf-muted)">Количката ти е празна.</p>
-        <Link
-          href={`${base}/products`}
-          className="sf-cta inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
-        >
-          Към продуктите
-        </Link>
-      </div>
+      <MascotState
+        pose="basket"
+        title="Тук е празничко"
+        text="Количката ти чака първото си съкровище — разгледай продуктите."
+        action={
+          <Link
+            href={`${base}/products`}
+            className="sf-cta inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
+          >
+            Към продуктите
+          </Link>
+        }
+      />
     );
   }
 
   if (!priced || priced.forKey !== storedKey) {
-    return <p className="py-16 text-center text-(--sf-muted)">Зареждане на количката...</p>;
+    /* Skeleton: по един ред на артикул + summary карта — без layout скок. */
+    return (
+      <div className="flex animate-pulse flex-col gap-6" aria-label="Зареждане на количката" role="status">
+        <div className="flex flex-col gap-3">
+          {stored.map((_, i) => (
+            <div
+              key={i}
+              className="flex gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-3"
+            >
+              <div className="size-20 shrink-0 rounded-(--sf-radius) bg-(--sf-border)" />
+              <div className="flex flex-1 flex-col gap-2 py-1">
+                <div className="h-4 w-2/3 rounded bg-(--sf-border)" />
+                <div className="h-3 w-1/3 rounded bg-(--sf-border)" />
+                <div className="mt-auto h-8 w-24 rounded bg-(--sf-border)" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="h-32 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface)" />
+      </div>
+    );
   }
 
   if (priced.error || !priced.cart) {
@@ -143,7 +167,7 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
                       type="button"
                       aria-label="Намали"
                       onClick={() => setCartQty(shopId, storedLine, storedLine.qty - 1)}
-                      className="flex size-9 items-center justify-center text-(--sf-text) hover:opacity-70"
+                      className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
                     >
                       −
                     </button>
@@ -154,7 +178,7 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
                       type="button"
                       aria-label="Увеличи"
                       onClick={() => setCartQty(shopId, storedLine, storedLine.qty + 1)}
-                      className="flex size-9 items-center justify-center text-(--sf-text) hover:opacity-70"
+                      className="flex size-11 items-center justify-center text-(--sf-text) hover:opacity-70"
                     >
                       +
                     </button>
@@ -181,14 +205,20 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
         })}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4">
-        <div className="flex justify-between text-(--sf-text)">
+      <div className="flex flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) p-4 shadow-(--sf-shadow)">
+        <div className="flex justify-between text-sm text-(--sf-muted)">
           <span>Междинна сума</span>
-          <span className="font-bold">{formatPrice(cart.subtotalCents)}</span>
+          <span>{formatPrice(cart.subtotalCents)}</span>
         </div>
-        <p className="text-xs text-(--sf-muted)">
-          Доставката се избира при завършване на поръчката.
-        </p>
+        <div className="flex justify-between text-sm text-(--sf-muted)">
+          <span>Доставка</span>
+          <span>избира се при поръчката</span>
+        </div>
+        <hr className="border-(--sf-border)" />
+        <div className="flex justify-between text-lg font-bold text-(--sf-text)">
+          <span>Общо без доставка</span>
+          <span>{formatPrice(cart.subtotalCents)}</span>
+        </div>
         {cart.hasErrors ? (
           <p className="text-sm font-medium text-(--sf-accent)">
             Премахни недостъпните продукти, за да продължиш.

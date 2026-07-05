@@ -97,12 +97,6 @@ export default async function ProductPage({ params }: PageProps) {
         <span className="text-(--sf-text)">{product.name}</span>
       </nav>
 
-      <h1
-        className="mb-6 text-3xl text-(--sf-text)"
-      >
-        {product.name}
-      </h1>
-
       <VariantPicker
         shopId={shop.id}
         productId={product.id}
@@ -113,6 +107,11 @@ export default async function ProductPage({ params }: PageProps) {
         images={product.images}
         options={product.options}
         variants={product.variants}
+        category={
+          category
+            ? { name: category.name, href: `${base}/products?category=${category.id}` }
+            : null
+        }
         deal={
           product.promotion
             ? {
@@ -123,42 +122,40 @@ export default async function ProductPage({ params }: PageProps) {
         }
       />
 
-      {product.description && (
-        <div className="mt-10 flex max-w-prose flex-col gap-3 text-(--sf-muted)">
-          <h2
-            className="text-xl text-(--sf-text)"
-          >
-            Описание
-          </h2>
-          <Paragraphs text={product.description} />
-        </div>
-      )}
-
-      {product.attributes.length > 0 && (
-        <div className="mt-8 max-w-prose">
-          <h2
-            className="mb-3 text-xl text-(--sf-text)"
-          >
-            Характеристики
-          </h2>
-          <dl className="divide-y divide-(--sf-border) rounded-(--sf-radius) border border-(--sf-border)">
-            {product.attributes.map((attr) => (
-              <div key={attr.id} className="flex justify-between gap-4 px-4 py-2.5 text-sm">
-                <dt className="text-(--sf-muted)">{attr.name}</dt>
-                <dd className="font-medium text-(--sf-text)">{attr.value}</dd>
+      {(product.description || product.attributes.length > 0) && (
+        <div className="mt-14 grid gap-10 border-t border-(--sf-border) pt-10 md:grid-cols-2 md:gap-10">
+          {product.description && (
+            <div className="flex max-w-prose flex-col gap-3">
+              <h2 className="text-2xl text-(--sf-text)">Описание</h2>
+              <div className="flex flex-col gap-3 leading-relaxed text-(--sf-muted)">
+                <Paragraphs text={product.description} />
               </div>
-            ))}
-          </dl>
+            </div>
+          )}
+          {product.attributes.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-2xl text-(--sf-text)">Характеристики</h2>
+              <dl className="divide-y divide-(--sf-border) rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised)">
+                {product.attributes.map((attr) => (
+                  <div key={attr.id} className="flex justify-between gap-4 px-4 py-3 text-sm">
+                    <dt className="text-(--sf-muted)">{attr.name}</dt>
+                    <dd className="text-right font-medium text-(--sf-text)">{attr.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
         </div>
       )}
 
       {related.length > 0 && (
-        <div className="mt-12">
-          <h2
-            className="mb-4 text-xl text-(--sf-text)"
-          >
-            Още от магазина
-          </h2>
+        <div className="mt-14">
+          <div className="mb-6">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-(--sf-primary)">
+              Разгледай още
+            </p>
+            <h2 className="text-2xl text-(--sf-text)">Още от магазина</h2>
+          </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {related.map((p) => (
               <ProductCard key={p.id} product={p} base={base} />
@@ -166,6 +163,9 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      {/* Въздух под съдържанието на мобилно — sticky CTA лентата е 64px + safe area. */}
+      <div aria-hidden className="h-20 md:hidden" />
     </div>
   );
 }

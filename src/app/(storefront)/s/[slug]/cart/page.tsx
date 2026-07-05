@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { CartView } from "@/components/storefront/cart-view";
+import { PageHeader } from "@/components/storefront/page-header";
 import { getPublicShop } from "@/db/queries/storefront";
 
 interface PageProps {
@@ -21,12 +23,19 @@ export default async function CartPage({ params }: PageProps) {
   const { shop } = result;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8">
-      <h1
-        className="mb-6 text-3xl text-(--sf-text)"
-      >
-        Количка
-      </h1>
+    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-10">
+      <PageHeader
+        kicker="Поръчка"
+        title="Количка"
+        action={
+          <Link
+            href={`/s/${shop.slug}/products`}
+            className="text-sm font-medium text-(--sf-primary) hover:underline"
+          >
+            ← Продължи пазаруването
+          </Link>
+        }
+      />
       <CartView shopId={shop.id} slug={shop.slug} base={`/s/${shop.slug}`} />
     </div>
   );

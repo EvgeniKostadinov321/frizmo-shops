@@ -19,7 +19,7 @@ export default async function ContactPage({ params }: PageProps) {
   const { slug } = await params;
   const result = await getPublicShop(slug);
   if (!result) notFound();
-  const { shop } = result;
+  const { shop, settings } = result;
 
   const ctx: SectionContext = {
     shop,
@@ -29,9 +29,17 @@ export default async function ContactPage({ params }: PageProps) {
     categoryCovers: {},
   };
 
+  /* Търговецът е избрал композиция на секцията на началната страница —
+     страницата „Контакти" я уважава (иначе дефолт). */
+  const homeSection = settings.sections.find((s) => s.type === "contact-map");
+  const data =
+    homeSection?.type === "contact-map"
+      ? { ...homeSection.data, title: homeSection.data.title || "Контакти" }
+      : { variant: 1 as const, title: "Контакти", showMap: true };
+
   return (
     <div className="py-2">
-      <ContactMapSection data={{ variant: 1, title: "Контакти", showMap: true }} ctx={ctx} />
+      <ContactMapSection data={data} ctx={ctx} />
     </div>
   );
 }

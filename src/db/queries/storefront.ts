@@ -43,25 +43,40 @@ export const getPublicShop = cache(async (slug: string) => {
   return { shop, settings, viewerIsOwner, viewingDraft: useDraft };
 });
 
+export type ProductSort = "new" | "price-asc" | "price-desc";
+
 export async function getActiveProducts(
   shopId: string,
-  filters: { search?: string; categoryId?: string; page?: number } = {},
+  filters: { search?: string; categoryId?: string; page?: number; sort?: ProductSort } = {},
 ) {
   const page = Math.max(1, filters.page ?? 1);
   const conditions: SQL[] = [eq(products.shopId, shopId), eq(products.status, "active")];
   if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));
   if (filters.categoryId) conditions.push(eq(products.categoryId, filters.categoryId));
+  const where = and(...conditions);
 
-  const items = await db.query.products.findMany({
-    where: and(...conditions),
-    orderBy: [desc(products.createdAt)],
-    limit: STOREFRONT_PAGE_SIZE + 1, // +1 → има ли следваща страница
-    offset: (page - 1) * STOREFRONT_PAGE_SIZE,
-  });
+  /* Сортиране по обявената цена (промо не участва — колонна заявка, без CASE). */
+  const orderBy =
+    filters.sort === "price-asc"
+      ? [asc(products.priceCents), desc(products.createdAt)]
+      : filters.sort === "price-desc"
+        ? [desc(products.priceCents), desc(products.createdAt)]
+        : [desc(products.createdAt)];
+
+  const [items, total] = await Promise.all([
+    db.query.products.findMany({
+      where,
+      orderBy,
+      limit: STOREFRONT_PAGE_SIZE + 1, // +1 → има ли следваща страница
+      offset: (page - 1) * STOREFRONT_PAGE_SIZE,
+    }),
+    db.$count(products, where),
+  ]);
 
   return {
     items: items.slice(0, STOREFRONT_PAGE_SIZE),
     hasMore: items.length > STOREFRONT_PAGE_SIZE,
+    total,
     page,
   };
 }
