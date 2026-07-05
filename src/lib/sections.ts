@@ -20,7 +20,7 @@ export const SECTION_DEFS: Record<SectionType, SectionDef> = {
     label: "Hero (голямо заглавие)",
     icon: "layout-panel",
     planTier: "starter",
-    defaultData: { layout: "full", title: "", subtitle: "", ctaLabel: "", ctaHref: "", imagePaths: [] },
+    defaultData: { layout: "split", title: "", subtitle: "", ctaLabel: "", ctaHref: "", imagePaths: [] },
   },
   announcement: {
     label: "Лента-съобщение",

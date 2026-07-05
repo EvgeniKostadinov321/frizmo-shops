@@ -1,59 +1,66 @@
-import { Icon } from "@/components/ui";
 import { formatWorkingHours, parseWorkingHours } from "@/lib/working-hours";
 import type { SectionOfType } from "@/schemas/site-settings";
-import { SectionShell } from "./shared";
+import { SectionShell, type SectionTone } from "./shared";
 import type { SectionContext } from "./index";
 
 interface ContactMapProps {
   data: SectionOfType<"contact-map">["data"];
   ctx: SectionContext;
+  tone?: SectionTone;
 }
 
-export function ContactMapSection({ data, ctx }: ContactMapProps) {
+/** Editorial label/value ред с hairline отдолу. */
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-6 border-b border-(--sf-border) py-3.5">
+      <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.18em] text-(--sf-muted)">
+        {label}
+      </span>
+      <span className="text-right text-(--sf-text)">{children}</span>
+    </div>
+  );
+}
+
+export function ContactMapSection({ data, ctx, tone }: ContactMapProps) {
   const { shop } = ctx;
   const fullAddress = [shop.address, shop.city].filter(Boolean).join(", ");
   const hours = formatWorkingHours(parseWorkingHours(shop.workingHours));
+  const showMap = data.showMap && fullAddress;
 
   return (
-    <SectionShell title={data.title || "Къде да ни намериш"}>
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-2 text-(--sf-muted)">
-          {fullAddress && (
-            <p className="flex items-center gap-2 text-(--sf-text)">
-              <Icon name="map-pin" size={18} className="shrink-0 text-(--sf-primary)" />
-              {fullAddress}
-            </p>
-          )}
+    <SectionShell kicker="Контакти" title={data.title || "Къде да ни намериш"} tone={tone}>
+      <div className={`grid gap-10 ${showMap ? "md:grid-cols-[2fr_3fr]" : "md:max-w-xl"}`}>
+        <div className="flex flex-col">
+          {fullAddress && <InfoRow label="Адрес">{fullAddress}</InfoRow>}
           {shop.phone && (
-            <p className="flex items-center gap-2">
-              <Icon name="phone" size={18} className="shrink-0 text-(--sf-primary)" />
+            <InfoRow label="Телефон">
               <a href={`tel:${shop.phone}`} className="hover:opacity-70">
                 {shop.phone}
               </a>
-            </p>
+            </InfoRow>
           )}
           {shop.email && (
-            <p className="flex items-center gap-2">
-              <Icon name="mail" size={18} className="shrink-0 text-(--sf-primary)" />
-              <a href={`mailto:${shop.email}`} className="hover:opacity-70">
+            <InfoRow label="Имейл">
+              <a href={`mailto:${shop.email}`} className="break-all hover:opacity-70">
                 {shop.email}
               </a>
-            </p>
+            </InfoRow>
           )}
           {hours.length > 0 && (
-            <div className="mt-2">
-              <p className="font-medium text-(--sf-text)">Работно време</p>
-              {hours.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
+            <InfoRow label="Работно време">
+              <span className="flex flex-col gap-0.5">
+                {hours.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </span>
+            </InfoRow>
           )}
         </div>
-        {data.showMap && fullAddress && (
+        {showMap && (
           <iframe
             title={`Карта: ${fullAddress}`}
             src={`https://maps.google.com/maps?q=${encodeURIComponent(fullAddress)}&output=embed&hl=bg`}
-            className="h-64 w-full rounded-(--sf-radius) border border-(--sf-border)"
+            className="h-72 w-full rounded-(--sf-radius) border border-(--sf-border) shadow-(--sf-shadow) md:h-full md:min-h-96"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />

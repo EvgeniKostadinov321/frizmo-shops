@@ -5,53 +5,73 @@ import type { Product } from "@/db";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 
+/** Процент отстъпка за промо badge-а (закръглен). */
+function discountPercent(priceCents: number, promoCents: number): number {
+  return Math.round((1 - promoCents / priceCents) * 100);
+}
+
 export function ProductCard({ product, base }: { product: Product; base: string }) {
   const cover = product.images[0];
+  const hoverImage = product.images[1];
   const outOfStock = product.stock !== null && product.stock <= 0;
+  const promo = product.promoPriceCents;
 
   return (
     <Link
       href={`${base}/p/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) shadow-(--sf-shadow) transition-transform duration-300 hover:-translate-y-0.5"
     >
-      <span className="relative aspect-square w-full bg-(--sf-bg)">
+      {/* Image-first: 4:5 формат, hover zoom + втора снимка при наличие */}
+      <span className="relative aspect-4/5 w-full overflow-hidden bg-(--sf-surface)">
         {cover ? (
-          <Image
-            src={publicImageUrl(cover)}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 25vw"
-            className="object-cover transition-transform group-hover:scale-105"
-          />
+          <>
+            <Image
+              src={publicImageUrl(cover)}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, 25vw"
+              className={`object-cover transition-all duration-500 group-hover:scale-[1.04] ${
+                hoverImage ? "group-hover:opacity-0" : ""
+              }`}
+            />
+            {hoverImage && (
+              <Image
+                src={publicImageUrl(hoverImage)}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 50vw, 25vw"
+                className="object-cover opacity-0 transition-all duration-500 group-hover:scale-[1.04] group-hover:opacity-100"
+              />
+            )}
+          </>
         ) : (
-          <span className="flex size-full items-center justify-center bg-(--sf-surface)" aria-hidden>
+          <span className="flex size-full items-center justify-center" aria-hidden>
             <Icon name="image" size={40} className="text-(--sf-muted) opacity-40" />
           </span>
         )}
-        {product.promoPriceCents !== null && (
-          <span className="absolute left-2 top-2 rounded-full bg-(--sf-accent) px-2 py-0.5 text-xs font-bold text-white">
-            Промо
+        {promo !== null && (
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-(--sf-accent) px-2.5 py-1 text-xs font-bold text-(--sf-on-accent)">
+            −{discountPercent(product.priceCents, promo)}%
           </span>
         )}
         {outOfStock && (
-          <span className="absolute right-2 top-2 rounded-full bg-(--sf-text) px-2 py-0.5 text-xs font-medium text-(--sf-bg)">
+          <span className="absolute inset-x-0 bottom-0 bg-(--sf-text)/85 py-1.5 text-center text-xs font-medium text-(--sf-bg)">
             Изчерпано
           </span>
         )}
       </span>
-      <span className="flex flex-1 flex-col gap-1 p-3">
-        <span className="line-clamp-2 text-sm font-medium text-(--sf-text)">{product.name}</span>
-        <span className="mt-auto text-base font-bold text-(--sf-primary)">
-          {product.promoPriceCents !== null ? (
-            <>
-              {formatPrice(product.promoPriceCents)}{" "}
-              <s className="text-xs font-normal text-(--sf-muted)">
-                {formatPrice(product.priceCents)}
-              </s>
-            </>
-          ) : (
-            formatPrice(product.priceCents)
+      {/* Editorial ред: име вляво · цена вдясно */}
+      <span className="flex flex-1 items-baseline justify-between gap-3 p-4">
+        <span className="line-clamp-2 font-medium leading-snug text-(--sf-text)">
+          {product.name}
+        </span>
+        <span className="flex shrink-0 items-baseline gap-2">
+          {promo !== null && (
+            <s className="text-sm text-(--sf-muted)">{formatPrice(product.priceCents)}</s>
           )}
+          <span className="text-lg font-bold text-(--sf-text)">
+            {formatPrice(promo ?? product.priceCents)}
+          </span>
         </span>
       </span>
     </Link>

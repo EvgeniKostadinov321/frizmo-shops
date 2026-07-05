@@ -64,7 +64,7 @@ const NICHES = [
       facebook: "https://facebook.com/atelieglina",
       instagram: "https://instagram.com/atelieglina",
     },
-    theme: { theme: "atelie", primaryColor: "#a9642e", accentColor: "#3d6b8a" },
+    theme: { theme: "atelie", primaryColor: "#a9642e", accentColor: "#7a5c2e", headerVariant: 2 },
     heroImage: "1565193566173-7a0ee3dbe261",
     categories: [
       { name: "Керамика", children: ["Чаши", "Купи"] },
@@ -103,7 +103,7 @@ const NICHES = [
       facebook: "https://facebook.com/vitrina",
       instagram: "https://instagram.com/vitrina",
     },
-    theme: { theme: "vitrina", primaryColor: "#111111", accentColor: "#b4532a" },
+    theme: { theme: "vitrina", primaryColor: "#111111", accentColor: "#b4532a", headerVariant: 3 },
     heroImage: "1483985988355-763728e1935b",
     categories: [
       { name: "Жени", children: ["Рокли", "Палта"] },
@@ -221,7 +221,7 @@ const NICHES = [
       facebook: "https://facebook.com/maisononyx",
       instagram: "https://instagram.com/maisononyx",
     },
-    theme: { theme: "oniks", primaryColor: "#c9a25a", accentColor: "#b3a488" },
+    theme: { theme: "oniks", primaryColor: "#c9a25a", accentColor: "#c9a25a", headerVariant: 2 },
     heroImage: "1592945403244-b3fbafd7f539",
     categories: [
       { name: "Серуми", children: [] },
@@ -549,7 +549,9 @@ for (const niche of NICHES) {
   /* Уебсайт настройки — ВСИЧКИ 13 секции */
   const settings = {
     ...niche.theme,
-    headerLayout: "logo-left",
+    /* headerVariant демонстрира трите композиции: default 1 (inline), но
+       Оникс/Ателие → 2 (центриран, лукс/editorial), Витрина → 3 (минимал). */
+    headerVariant: niche.theme.headerVariant ?? 1,
     footerText: niche.shop.description.split(".")[0] + ".",
     aboutText: niche.imageText.text,
     aboutImagePaths: paths.imageText ? [paths.imageText] : [],

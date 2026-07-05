@@ -301,7 +301,7 @@ export function CheckoutForm({
         <button
           type="submit"
           disabled={submitting || !cart || cart.hasErrors}
-          className="h-12 rounded-(--sf-radius) bg-(--sf-primary) font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-12 rounded-(--sf-radius) bg-(--sf-primary) font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Изпращане..." : "Потвърди поръчката"}
         </button>

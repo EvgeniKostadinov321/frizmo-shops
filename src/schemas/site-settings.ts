@@ -13,7 +13,18 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("hero"),
     data: z.object({
-      layout: z.enum(["full", "split", "slideshow"]).default("full"),
+      /* Три композиции + legacy: split (текст|снимка с рамка), poster (текст
+         върху цяла снимка, editorial), statement (плътен цветен блок, чиста
+         типография + marquee). Старите стойности се пренасочват без миграция. */
+      layout: z.preprocess(
+        (v) =>
+          v === "full" || v === "slideshow" || v === "duo"
+            ? "poster"
+            : v === "frame"
+              ? "statement"
+              : v,
+        z.enum(["split", "poster", "statement"]).default("split"),
+      ),
       title: shortText(120),
       subtitle: shortText(200),
       ctaLabel: shortText(40),
@@ -149,13 +160,23 @@ export const THEMES = [
   "granit",
 ] as const;
 
+/** Варианти на header-а — композиции (глас идва от темата). 1=inline,
+ *  2=центрирано лого, 3=минимал (nav в бургер и на десктоп). */
+export const HEADER_VARIANTS = [1, 2, 3] as const;
+
 export const siteSettingsSchema = z.object({
   theme: z.enum(THEMES).default("classic"),
   /* Неутрални тема-агностични дефолти — четими на всичките 9 теми (вкл. тъмните).
      Изборът на цвят става съзнателно в onboarding wizard-а; това е само fallback. */
   primaryColor: hexColor.default("#1f2937"),
   accentColor: hexColor.default("#b45309"),
-  headerLayout: z.enum(["logo-left", "logo-center"]).default("logo-left"),
+  /* headerVariant поглъща стария headerLayout: 1=лого вляво (беше logo-left),
+     2=центрирано лого (беше logo-center), 3=минимал. Coerce от legacy стрингове
+     през preprocess → старите записи без миграция стават валидни. */
+  headerVariant: z.preprocess(
+    (v) => (v === "logo-left" ? 1 : v === "logo-center" ? 2 : v),
+    z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
+  ),
   footerText: shortText(300),
   aboutText: shortText(5000),
   aboutImagePaths: z.array(z.string().max(300)).max(4).default([]),

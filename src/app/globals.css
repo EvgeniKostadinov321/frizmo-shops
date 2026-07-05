@@ -22,6 +22,184 @@ body {
   letter-spacing: -0.01em;
 }
 
+/*
+ * Тънък скролбар за storefront-а — цветовете идват от темата, така че всяка от
+ * 9-те теми автоматично получава скролбар в своя тон. Само публичните
+ * магазини; платформата пази системния си скролбар.
+ *
+ * Документният скролбар е на <html>, а --sf-* живеят на вложения div → затова
+ * storefront layout-ът инжектира --sf-sb-thumb на html:has([data-storefront]).
+ * Вложените скролиращи зони (drawer) четат --sf-muted директно.
+ * Firefox: scrollbar-color/width. Chrome/Edge/Safari: ::-webkit-scrollbar.
+ */
+html:has([data-storefront]) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sf-sb-thumb) transparent;
+}
+[data-storefront] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sf-muted) transparent;
+}
+html:has([data-storefront])::-webkit-scrollbar,
+[data-storefront] ::-webkit-scrollbar,
+[data-storefront]::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html:has([data-storefront])::-webkit-scrollbar-track,
+[data-storefront] ::-webkit-scrollbar-track,
+[data-storefront]::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has([data-storefront])::-webkit-scrollbar-thumb {
+  background: var(--sf-sb-thumb);
+  border-radius: 9999px;
+  /* Прозрачен борд → thumb-ът изглежда по-тънък и „плава" в улея. */
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+html:has([data-storefront])::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-sb-thumb-hover);
+  background-clip: padding-box;
+}
+[data-storefront] ::-webkit-scrollbar-thumb,
+[data-storefront]::-webkit-scrollbar-thumb {
+  background: var(--sf-muted);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+[data-storefront] ::-webkit-scrollbar-thumb:hover,
+[data-storefront]::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-primary);
+  background-clip: padding-box;
+}
+
+/*
+ * Hero slideshow crossfade (CSS-only, 5 слота × 6s = 30s цикъл).
+ * Всеки слайд е видим ~1/5 от цикъла; reduced-motion → само първият, статичен.
+ */
+@keyframes sf-hero-slide {
+  0% {
+    opacity: 0;
+  }
+  4%,
+  20% {
+    opacity: 1;
+  }
+  26%,
+  100% {
+    opacity: 0;
+  }
+}
+.sf-hero-slide {
+  opacity: 0;
+  animation: sf-hero-slide 30s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sf-hero-slide {
+    animation: none;
+  }
+  .sf-hero-slide:first-child {
+    opacity: 1;
+  }
+}
+
+/*
+ * Навигация в storefront header-а: регистър/letterspacing идват от темата
+ * (--sf-nav-case/--sf-nav-tracking); активният/hover линк получава underline,
+ * който израства отляво. currentColor — работи и върху прозрачния header.
+ */
+.sf-nav-link {
+  position: relative;
+  text-transform: var(--sf-nav-case, none);
+  letter-spacing: var(--sf-nav-tracking, 0.01em);
+}
+.sf-nav-link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0.75rem;
+  bottom: 0.4rem;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+.sf-nav-link:hover::after,
+.sf-nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/*
+ * Оркестрирано зареждане на hero: kicker → заглавие → подзаглавие → CTA
+ * се появяват стъпаловидно (--sf-stagger = пореден номер, стъпка 120ms).
+ */
+@keyframes sf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.sf-rise {
+  animation: sf-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--sf-stagger, 0) * 120ms);
+}
+
+/*
+ * Marquee за hero „statement" — безкраен хоризонтален ход (съдържанието е
+ * дублирано, -50% = точно един цикъл). reduced-motion → статично.
+ */
+@keyframes sf-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.sf-marquee {
+  animation: sf-marquee 40s linear infinite;
+}
+
+/* Едва доловим Ken Burns върху hero снимката — снимката „диша". */
+@keyframes sf-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.07);
+  }
+}
+.sf-kenburns {
+  animation: sf-kenburns 16s ease-out both;
+}
+
+/*
+ * Фино фотографско зърно (inline SVG turbulence, без външни асети) —
+ * дълбочина върху плоските тонални зони на hero-то.
+ */
+.sf-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-rise,
+  .sf-kenburns,
+  .sf-marquee {
+    animation: none;
+  }
+}
+
 /* Tailwind 4 маха pointer курсора от бутоните по подразбиране — връщаме го глобално. */
 @layer base {
   button:not(:disabled),

@@ -30,7 +30,7 @@
 
 ---
 
-## Текущо състояние (към commit `ced7e55`, 2026-07-04)
+## Текущо състояние (2026-07-05 късна вечер — storefront редизайн + вариантна система комитнати; dev и main синхронизирани)
 
 - **Клонове:** `dev` = preview · `main` = production (двата синхронизирани на `ced7e55`). Push към `main` само при изрична заявка от потребителя.
 - **Deploy:** Vercel. ⚠️ В repo-то няма `vercel.json`/линкнат `.vercel` проект — трябва да се потвърди в Vercel dashboard, че production сочи `main`.
@@ -80,6 +80,85 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-05 (късна вечер)** — **Вариантна система: Header ×3 + Hero ×3
+  (одобрени от собственика).** По `docs/design-final-guide/variants-architecture.md`:
+  (а) **Header**: папка `header/` с dispatcher; `headerVariant 1|2|3`
+  (inline / split bar — лого център, nav отдвете / минимал с drawer);
+  поглъща `headerLayout` през preprocess; визуален picker в theme панела;
+  мобилното меню = страничен drawer с плавна анимация през ПОРТАЛ
+  (body-контейнер) — fixed в sticky+blur header се чупи, а
+  overflow:hidden на <html> чупи sticky (заключване с компенсиран скролбар).
+  (б) **Hero**: папка `sections/hero/` с dispatcher; `layout:
+  split|poster|statement` (legacy full/slideshow/duo/frame → preprocess);
+  split = еталонът Пулс (непокътнат); poster = editorial корица (текст
+  долу-ляво, двоен scrim — четим и на светла снимка); statement = surface
+  блок + накривена снимка-картичка с primary офсетна сянка + тонални
+  кръгове + marquee. Височина: `--sf-chrome` в layout-а (topbar + header
+  според overlay) → точно 100dvh при всяка комбинация. Гоча: px-calc
+  подравняване НИКОГА вътре в max-w кутия (текстът колабира дума по дума).
+  (в) Custom скролбари за storefront (тънки, темови цветове; html:has() +
+  инжектирани --sf-sb-* от layout-а). (г) Демо разпределение: split =
+  Пулс/Ателие/Витрина…, poster = Оникс/Витрина/Гранит/Основа, statement =
+  Ефир/Сигнал/Дом и Уют; header 2 = Оникс/Ателие, 3 = Витрина. Ателие
+  акцентът сменен на топъл #7a5c2e (одит дисонанс).
+
+- **2026-07-05 (вечер)** — **Header + Hero редизайн v2 +
+  `docs/design-final-guide/`.** (а) Header: sticky прозрачен→плаващ (overlay
+  върху full/slideshow hero на началото), wordmark с `--sf-font-heading`,
+  активен линк + underline анимация, мобилен бургер → fullscreen меню,
+  announcement = topbar НАД header-а (фикс. h-9 → `--sf-topbar`); (б) Hero:
+  истински 100svh (вади topbar/header през calc), split 7/5 с вписан „арков
+  прозорец" (`--sf-hero-radius` пълен border-radius) + темова рамка
+  (`--sf-hero-frame`: Пулс офсетен блок, Оникс злат. кант), staggered reveal
+  (`sf-rise`), Ken Burns, акцентна дума (`--sf-accent-ink*` изчислени),
+  водна буква + зърно; 5 нови темови токена + `accentInk()` в contrast.ts.
+  (в) **НОВА ПАПКА `docs/design-final-guide/`** — задължителният дизайн
+  контекст: README (работен ред), двата skill дока (ПРЕМЕСТЕНИ от
+  docs/design/), variants-architecture (3 варианта/секция — план, БЕЗ код
+  още), theme-signatures (подпис per тема), hero-header-audit (защо Пулс ★★★,
+  Гранит ★). CLAUDE-frontend.md сочи новата папка. `pnpm check` зелен.
+
+- **2026-07-05 (следобед)** — **Тотален редизайн на storefront
+  секциите (Фази 0–5 + дизайн адаптации).** Спец:
+  `docs/superpowers/specs/2026-07-05-storefront-sections-redesign.md`.
+  (0) 6 нови `--sf-*` токена: `on-primary`/`on-accent` (ИЗЧИСЛЕНИ от
+  потребителския цвят — WCAG, `src/lib/contrast.ts`), `surface-raised`,
+  `shadow` (тъмните теми: бордер вместо сянка), `overlay`; SectionShell с
+  kicker + clamp заглавия + автоматично редуване bg/surface (`renderSections`);
+  продуктова карта 4:5 + hover втора снимка + −% badge + име·цена на един ред.
+  (1) Hero 80–88svh edge-to-edge + kicker „категория · град" + CSS slideshow.
+  (2) Featured адаптивен: 1→spotlight, 5→асиметрия (голяма+2×2), 2/3/4/6→равни
+  редове, 7+→карусел (`carousel.tsx`, scroll-snap без библиотека).
+  (3) Категории: пълноширинна мозайка със снимки от продуктите
+  (`getCategoryCovers` — брои и подкатегориите към родителя), 5 layout-а по брой.
+  (4) Промо: плътен primary + огромно заглавие + dashed „купон" CTA; отзиви:
+  тъмна инверсия (`bg---sf-text`) + златни кавички + звезди; trust: плочки.
+  (5) Image-text edge-to-edge; галерия masonry + lightbox (`<dialog>`);
+  контакти label/value таблица; footer тъмен богат; header: категориите в
+  навигацията (при ≤4). Дизайн еталон: Claude design HTML
+  (`claude-design/…standalone.html`) — одобрен от собственика; решение:
+  асиметрия до 6, карусел за 7+. `pnpm check` зелен (128 теста).
+  ⚠️ Некомитнато — чака визуален тест на собственика. Гоча ×2 тази сесия:
+  EMAXCONN от dev hot-reload → рестарт на dev преди build.
+
+- **2026-07-05 (следобед)** — **Дизайн skills одит + инсталация.** Ресърч
+  (skills.sh + Snyk + Superdesign ревюта 07.2026): №1 = Anthropic
+  `frontend-design` (626K инсталации, вече като плъгин), №1 по данни =
+  `ui-ux-pro-max` (250K; 161 палитри, 99 UX правила, 31 CSV). Инсталиран
+  ui-ux-pro-max в `~/.claude/skills/`; изтрити всички други дизайнерски
+  skills (3d-web-experience, threejs, interior-design, fal-tryon + 6-те
+  странични от пакета). **НОВО ПРАВИЛО** (в CLAUDE-frontend.md): преди
+  всяка дизайн промяна се четат `docs/design/skill-frontend-design.md` +
+  `docs/design/skill-ui-ux-pro-max.md`.
+
+- **2026-07-05 (обед) · `8c2df58`** — **Уебсайт билдър: истинска чернова.**
+  „Запази" пише само в draft (само собственикът вижда); нов бутон
+  „Публикувай промените" (draft→settings, клиентите виждат); „Публикувай/
+  Скрий магазина" преименувани; badges „На живо/Скрит/Непубликувани промени".
+  Попътно: 🎉/↗/🏷 → икони (+`external-link` в icon.tsx); дефолтните
+  storefront цветове зелено `#178150` → неутрален графит `#1f2937`/`#b45309`
+  (fallback до wizard-а). e2e обновен.
 
 - **2026-07-05 · `f9c3b2d`** — **9 storefront теми (вкл. 3 тъмни).** Разширени от 3 на 9,
   всяка с вертикално предназначение: Класическа, Ателие (топла/занаяти), Витрина

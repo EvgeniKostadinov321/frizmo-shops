@@ -71,7 +71,7 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
           />
           <button
             type="submit"
-            className="h-11 rounded-(--sf-radius) bg-(--sf-primary) px-4 font-medium text-white transition-opacity hover:opacity-90"
+            className="h-11 rounded-(--sf-radius) bg-(--sf-primary) px-4 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
           >
             Търси
           </button>
@@ -83,7 +83,7 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
               href={pageUrl({ category: undefined, page: undefined })}
               className={`flex h-9 items-center rounded-full border px-3 text-sm transition-colors ${
                 !sp.category
-                  ? "border-(--sf-primary) bg-(--sf-primary) text-white"
+                  ? "border-(--sf-primary) bg-(--sf-primary) text-(--sf-on-primary)"
                   : "border-(--sf-border) text-(--sf-text) hover:border-(--sf-primary)"
               }`}
             >
@@ -95,7 +95,7 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
                 href={pageUrl({ category: category.id, page: undefined })}
                 className={`flex h-9 items-center rounded-full border px-3 text-sm transition-colors ${
                   sp.category === category.id
-                    ? "border-(--sf-primary) bg-(--sf-primary) text-white"
+                    ? "border-(--sf-primary) bg-(--sf-primary) text-(--sf-on-primary)"
                     : "border-(--sf-border) text-(--sf-text) hover:border-(--sf-primary)"
                 }`}
               >

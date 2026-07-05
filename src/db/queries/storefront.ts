@@ -116,3 +116,48 @@ export async function getPublicCategories(shopId: string) {
     orderBy: [asc(categories.sortOrder), asc(categories.createdAt)],
   });
 }
+
+export interface CategoryCover {
+  /** Снимка от най-новия активен продукт със снимка в категорията (или null). */
+  imagePath: string | null;
+  /** Брой активни продукти в категорията. */
+  productCount: number;
+}
+
+/**
+ * Корици за категорийните карти: две леки заявки (по 2–3 колони),
+ * агрегирани в JS — без N+1 per категория. Продукт в подкатегория се брои
+ * и към родителската категория (родителят се показва в category-grid).
+ */
+export async function getCategoryCovers(
+  shopId: string,
+): Promise<Record<string, CategoryCover>> {
+  const [rows, cats] = await Promise.all([
+    db.query.products.findMany({
+      where: and(eq(products.shopId, shopId), eq(products.status, "active")),
+      orderBy: [desc(products.createdAt)],
+      columns: { categoryId: true, images: true },
+    }),
+    db.query.categories.findMany({
+      where: eq(categories.shopId, shopId),
+      columns: { id: true, parentId: true },
+    }),
+  ]);
+  const parentOf = new Map(cats.map((c) => [c.id, c.parentId]));
+
+  const covers: Record<string, CategoryCover> = {};
+  function add(categoryId: string, imagePath: string | undefined) {
+    const entry = (covers[categoryId] ??= { imagePath: null, productCount: 0 });
+    entry.productCount += 1;
+    /* редовете са от най-нов към най-стар → първата намерена снимка печели */
+    if (!entry.imagePath && imagePath) entry.imagePath = imagePath;
+  }
+
+  for (const row of rows) {
+    if (!row.categoryId) continue;
+    add(row.categoryId, row.images[0]);
+    const parent = parentOf.get(row.categoryId);
+    if (parent) add(parent, row.images[0]);
+  }
+  return covers;
+}

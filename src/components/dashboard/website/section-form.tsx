@@ -135,9 +135,9 @@ export function SectionForm({
             <Select
               label="Оформление"
               options={[
-                { value: "full", label: "Голяма снимка с текст върху нея" },
-                { value: "split", label: "Текст вляво, снимка вдясно" },
-                { value: "slideshow", label: "Текст + лента със снимки" },
+                { value: "split", label: "Текст вляво, снимка вдясно (с рамка)" },
+                { value: "poster", label: "Текст върху голяма снимка (плакат)" },
+                { value: "statement", label: "Плътен цветен блок (типографски)" },
               ]}
               value={d.layout}
               onChange={(e) => patch({ layout: e.target.value })}

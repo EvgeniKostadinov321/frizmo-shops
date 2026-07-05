@@ -152,7 +152,7 @@ export function VariantPicker({
                     onClick={() => select(option.name, value)}
                     className={`flex h-10 items-center rounded-(--sf-radius) border px-4 text-sm transition-colors ${
                       active
-                        ? "border-(--sf-primary) bg-(--sf-primary) text-white"
+                        ? "border-(--sf-primary) bg-(--sf-primary) text-(--sf-on-primary)"
                         : "border-(--sf-border) text-(--sf-text) hover:border-(--sf-primary)"
                     }`}
                   >
@@ -222,7 +222,7 @@ export function VariantPicker({
                 setQty(1);
                 toast.success("Добавено в количката.");
               }}
-              className="h-12 flex-1 rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-12 flex-1 rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Добави в количката
             </button>

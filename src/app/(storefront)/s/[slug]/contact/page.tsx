@@ -26,6 +26,7 @@ export default async function ContactPage({ params }: PageProps) {
     base: `/s/${shop.slug}`,
     productsBySection: {},
     categories: [],
+    categoryCovers: {},
   };
 
   return (

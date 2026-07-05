@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db, products, type Product } from "@/db";
 import {
+  getCategoryCovers,
   getPublicCategories,
   getPublicShop,
 } from "@/db/queries/storefront";
-import { renderSection, type SectionContext } from "@/components/storefront/sections";
+import { renderSections, type SectionContext } from "@/components/storefront/sections";
 import { publicImageUrl } from "@/lib/storage";
 import type { Section } from "@/schemas/site-settings";
 
@@ -72,9 +73,14 @@ export default async function StorefrontHomePage({ params }: PageProps) {
   if (!result) notFound();
   const { shop, settings } = result;
 
-  const [productsBySection, categories] = await Promise.all([
+  /* Кориците трябват само ако има активна category-grid секция. */
+  const needsCovers = settings.sections.some(
+    (s) => s.type === "category-grid" && s.enabled,
+  );
+  const [productsBySection, categories, categoryCovers] = await Promise.all([
     loadSectionProducts(shop.id, settings.sections),
     getPublicCategories(shop.id),
+    needsCovers ? getCategoryCovers(shop.id) : Promise.resolve({}),
   ]);
 
   const ctx: SectionContext = {
@@ -82,6 +88,7 @@ export default async function StorefrontHomePage({ params }: PageProps) {
     base: `/s/${shop.slug}`,
     productsBySection,
     categories,
+    categoryCovers,
   };
 
   return (
@@ -101,7 +108,7 @@ export default async function StorefrontHomePage({ params }: PageProps) {
           }),
         }}
       />
-      {settings.sections.map((section) => renderSection(section, ctx))}
+      {renderSections(settings.sections, ctx)}
     </>
   );
 }

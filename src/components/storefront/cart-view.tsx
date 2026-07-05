@@ -71,7 +71,7 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
         <p className="text-(--sf-muted)">Количката ти е празна.</p>
         <Link
           href={`${base}/products`}
-          className="inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-white transition-opacity hover:opacity-90"
+          className="inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
         >
           Към продуктите
         </Link>
@@ -196,7 +196,7 @@ export function CartView({ shopId, slug, base }: CartViewProps) {
         ) : (
           <Link
             href={`${base}/checkout`}
-            className="inline-flex h-12 items-center justify-center rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-white transition-opacity hover:opacity-90"
+            className="inline-flex h-12 items-center justify-center rounded-(--sf-radius) bg-(--sf-primary) px-6 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
           >
             Завърши поръчката
           </Link>

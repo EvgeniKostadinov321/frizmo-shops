@@ -1,9 +1,67 @@
 "use client";
 
 import { useId } from "react";
-import { Select } from "@/components/ui";
 import { PALETTE_PRESETS, THEME_LABELS, THEME_META, THEME_PRESETS } from "@/lib/themes";
-import { THEMES, type SiteSettings, type ThemeId } from "@/schemas/site-settings";
+import {
+  HEADER_VARIANTS,
+  THEMES,
+  type SiteSettings,
+  type ThemeId,
+} from "@/schemas/site-settings";
+
+type HeaderVariant = (typeof HEADER_VARIANTS)[number];
+
+/** Мета за header variant picker-а: етикет + кратко описание + мини-скица. */
+const HEADER_VARIANT_META: Record<
+  HeaderVariant,
+  { label: string; hint: string; sketch: React.ReactNode }
+> = {
+  1: {
+    label: "Класически",
+    hint: "Лого вляво, меню вдясно",
+    sketch: (
+      <span className="flex items-center justify-between px-1.5">
+        <span className="h-1.5 w-4 rounded-full bg-current opacity-80" />
+        <span className="flex gap-0.5">
+          <span className="h-1 w-2.5 rounded-full bg-current opacity-40" />
+          <span className="h-1 w-2.5 rounded-full bg-current opacity-40" />
+          <span className="h-1 w-2.5 rounded-full bg-current opacity-40" />
+        </span>
+      </span>
+    ),
+  },
+  2: {
+    label: "Разделен",
+    hint: "Лого в центъра, меню отдвете страни",
+    sketch: (
+      <span className="flex items-center justify-center gap-1.5 px-1.5">
+        <span className="flex gap-0.5">
+          <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+          <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+        </span>
+        <span className="h-1.5 w-4 rounded-full bg-current opacity-80" />
+        <span className="flex gap-0.5">
+          <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+          <span className="h-1 w-2 rounded-full bg-current opacity-40" />
+        </span>
+      </span>
+    ),
+  },
+  3: {
+    label: "Минимал",
+    hint: "Лого + меню-бутон",
+    sketch: (
+      <span className="flex items-center justify-between px-1.5">
+        <span className="h-1.5 w-4 rounded-full bg-current opacity-80" />
+        <span className="flex flex-col gap-0.5">
+          <span className="h-0.5 w-2.5 rounded-full bg-current opacity-60" />
+          <span className="h-0.5 w-2.5 rounded-full bg-current opacity-60" />
+          <span className="h-0.5 w-2.5 rounded-full bg-current opacity-60" />
+        </span>
+      </span>
+    ),
+  },
+};
 
 interface ThemePanelProps {
   settings: SiteSettings;
@@ -150,17 +208,32 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
         </div>
       </details>
 
-      <Select
-        label="Подредба на header-а"
-        options={[
-          { value: "logo-left", label: "Лого вляво" },
-          { value: "logo-center", label: "Лого в центъра" },
-        ]}
-        value={settings.headerLayout}
-        onChange={(e) =>
-          onChange({ headerLayout: e.target.value as SiteSettings["headerLayout"] })
-        }
-      />
+      <div>
+        <p className="mb-2 text-sm font-medium text-ink-900">Оформление на header-а</p>
+        <div className="grid grid-cols-3 gap-2">
+          {HEADER_VARIANTS.map((variant) => {
+            const meta = HEADER_VARIANT_META[variant];
+            const active = settings.headerVariant === variant;
+            return (
+              <button
+                key={variant}
+                type="button"
+                aria-pressed={active}
+                title={meta.hint}
+                onClick={() => onChange({ headerVariant: variant })}
+                className={`flex flex-col items-center gap-1.5 rounded-control border-2 p-2 text-center transition-colors ${
+                  active ? "border-brand-600" : "border-surface-200 hover:border-surface-300"
+                }`}
+              >
+                <span className="flex h-8 w-full items-center justify-center rounded bg-surface-100 text-ink-700">
+                  {meta.sketch}
+                </span>
+                <span className="text-xs font-medium text-ink-900">{meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
