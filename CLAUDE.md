@@ -44,7 +44,7 @@ node scripts/cleanup-e2e.mjs      # чисти e2e акаунтите/магаз
 
 * **Inline изпълнение** — без паралелни субагенти/workflow-и (пазим usage лимита). Последователно, с checkpoint-и.
 * Качество: строг TypeScript (без `as any`), edge cases, performance и security се проверяват при всяко писане на код.
-* Git: работа по `dev` → preview; `main` = production (създаден и push-нат 2026-07-04, идентичен на dev към 9e3af97). Никога commit на `.env*`. Push само след `pnpm check`. Push към `main` става само при изрична заявка от потребителя (иначе е блокиран за агента).
+* Git: работа по `dev` → preview; `main` = production. Никога commit на `.env*`. Push само след `pnpm check`. **Push към `main` (prod): агентът ПИТА преди качване и качва САМО при изрично разрешение от потребителя** — не е блокиран, но и не се прави без питане. Merge е `--ff-only` (dev изпреварва main), после обратно на `dev`.
 * Отклонение от спеца → първо се обновява спецификацията (+ ADR в `docs/decisions/`), после кодът.
 * UI текстовете са на български; кавичките са типографски „…“ — прав `"` в BG текст чупи JS стрингове/lint. Валутата е EUR.
 
@@ -54,6 +54,6 @@ node scripts/cleanup-e2e.mjs      # чисти e2e акаунтите/магаз
 * Блог frontmatter (YAML): типографската двойка „…“ вътре в `"..."` стойност е ОК, но „…" (с прав закриващ `"`) чупи YAML-а (прав `"` затваря стринга рано → билдът гърми с YAMLException). В BG текст в YAML използвай пълната двойка „…“ или преформулирай без кавички.
 * Windows: PowerShell е основният shell; multiline commit съобщение → временен файл + `git commit -F` (here-string с кавички се чупи).
 * PWA видео на iOS: генерираните видеа (Seedance/Magnific) имат `moov` atom в КРАЯ → iOS standalone PWA показва само първия кадър (статично). Фикс: ffmpeg `-movflags +faststart` (moov отпред). Провери с `moov` позицията спрямо `mdat` — работещият `bee-wave.mp4` има moov отпред. Ръчен Node faststart чупи decode-а; ползвай ffmpeg. На тази Windows машина няма ffmpeg — свали `ffmpeg-static` временно (binary в pnpm store), ползвай, после `pnpm remove`.
-* Push към `main`/`master` е блокиран за агента — финалния merge прави потребителят.
+* Push към `main`/`master` (prod): агентът пита за разрешение и качва при „да" — не е блокиран, но не се прави без изрично разрешение.
 * E2e: само `@gmail.com` алиас имейли (Supabase отхвърля други); cookie банерът се маркира като видян с `addInitScript` → `localStorage frizmo-cookie-notice=1`.
 * `.env.local` ключове: Supabase URL/publishable/secret, `DATABASE_URL` (:6543, transaction pooler) / `DATABASE_URL_MIGRATIONS` (:5432, session), `NEXT_PUBLIC_HERE_API_KEY`, `RESEND_API_KEY`, VAPID двойка + subject, `PLATFORM_ADMIN_EMAILS` (comma-separated; дава достъп до /admin).
