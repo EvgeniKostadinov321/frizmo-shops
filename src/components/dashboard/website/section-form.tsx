@@ -2,6 +2,7 @@
 
 import { Button, Checkbox, Drawer, Icon, Input, Select, Textarea } from "@/components/ui";
 import { ImageUploader } from "@/components/dashboard/image-uploader";
+import { VideoUploader } from "@/components/dashboard/video-uploader";
 import { SECTION_DEFS } from "@/lib/sections";
 import { TRUST_BADGE_ICONS, type Section } from "@/schemas/site-settings";
 
@@ -149,6 +150,20 @@ export function SectionForm({
               <Input label="Линк на бутона" value={d.ctaHref} onChange={(e) => patch({ ctaHref: e.target.value })} hint="Празно = към продуктите" />
             </div>
             <ImageUploader kind="site" images={d.imagePaths} max={5} onChange={(imagePaths) => patch({ imagePaths })} />
+            {d.layout === "poster" && (
+              <div className="flex flex-col gap-2 border-t border-surface-200 pt-3">
+                <p className="text-sm font-medium text-ink-900">Видео фон (по желание)</p>
+                <p className="text-xs text-ink-500">
+                  Замества снимката като фон. Първата снимка отгоре е постер —
+                  показва се на телефони с пестене на батерия и докато видеото
+                  зарежда. За най-добра съвместимост ползвай MP4.
+                </p>
+                <VideoUploader
+                  value={d.videoPath}
+                  onChange={(videoPath) => patch({ videoPath })}
+                />
+              </div>
+            )}
             <div className="flex flex-col gap-2 border-t border-surface-200 pt-3">
               <Checkbox
                 label="Оцвети последната дума от заглавието"
@@ -455,6 +470,24 @@ export function SectionForm({
             />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <p className="text-sm text-ink-500">Линковете идват от таб „Магазин“.</p>
+          </>
+        );
+      }
+      case "newsletter": {
+        const d = section!.data;
+        return (
+          <>
+            <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
+            <Textarea
+              label="Текст"
+              rows={2}
+              value={d.text}
+              onChange={(e) => patch({ text: e.target.value })}
+              placeholder="Първи научавай за нови продукти и оферти."
+            />
+            <p className="text-sm text-ink-500">
+              Абонатите потвърждават по имейл и се виждат в таб „Абонати“.
+            </p>
           </>
         );
       }

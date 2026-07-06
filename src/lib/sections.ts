@@ -94,6 +94,15 @@ export const SECTION_DEFS: Record<SectionType, SectionDef> = {
     planTier: "starter",
     defaultData: { variant: 1, title: "Последвай ни" },
   },
+  newsletter: {
+    label: "Бюлетин (имейл)",
+    icon: "megaphone",
+    planTier: "pro",
+    defaultData: {
+      title: "Абонирай се за новини",
+      text: "Първи научавай за нови продукти и оферти.",
+    },
+  },
 };
 
 /** Фабрика за нова секция от даден тип (валидирана през схемата). */

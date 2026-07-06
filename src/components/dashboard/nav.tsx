@@ -12,6 +12,8 @@ const items: { href: string; label: string; icon: IconName; exact?: boolean }[] 
   { href: "/dashboard/orders", label: "Поръчки", icon: "receipt" },
   { href: "/dashboard/categories", label: "Категории", icon: "palette" },
   { href: "/dashboard/website", label: "Уебсайт", icon: "image" },
+  { href: "/dashboard/subscribers", label: "Абонати", icon: "megaphone" },
+  { href: "/dashboard/coupons", label: "Промо кодове", icon: "tag" },
   { href: "/dashboard/fulfillment", label: "Плащане и доставка", icon: "trending-up" },
 ];
 

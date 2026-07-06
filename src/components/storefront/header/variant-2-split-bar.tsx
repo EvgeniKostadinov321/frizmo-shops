@@ -9,9 +9,11 @@ import {
   MenuButton,
   MobileMenu,
   NavLink,
+  splitNav,
   useHeaderState,
   useIsCurrent,
 } from "./shared";
+import { NavOverflow } from "./nav-overflow";
 
 /**
  * Вариант 2 — Split Bar: единичен ред, логото центрирано, навигацията
@@ -22,15 +24,17 @@ import {
  */
 export function HeaderVariant2({ shop, settings, rootCategories = [] }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
-  const nav = buildNav(base, rootCategories);
+  const nav = buildNav(base, rootCategories, settings.navLinks);
+  const { inline, overflow } = splitNav(nav);
   const isCurrent = useIsCurrent();
   const { scrolled } = useHeaderState(base, false, true);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  /* Разделяме навигацията на две равни крила около логото. */
-  const mid = Math.ceil(nav.length / 2);
-  const leftNav = nav.slice(0, mid);
-  const rightNav = nav.slice(mid);
+  /* Разделяме инлайн частта на две равни крила около логото; излишъкът (ако
+     има) отива в „Още" dropdown вдясно. */
+  const mid = Math.ceil(inline.length / 2);
+  const leftNav = inline.slice(0, mid);
+  const rightNav = inline.slice(mid);
 
   return (
     <header
@@ -68,6 +72,7 @@ export function HeaderVariant2({ shop, settings, rootCategories = [] }: HeaderVa
             {rightNav.map((item) => (
               <NavLink key={item.href} item={item} current={isCurrent(item.href)} />
             ))}
+            <NavOverflow items={overflow} />
           </nav>
           <CartButton shopId={shop.id} base={base} />
         </div>

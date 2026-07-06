@@ -5,11 +5,30 @@ const admin = createClient(
   process.env.SUPABASE_SECRET_KEY,
 );
 
-const { error } = await admin.storage.createBucket("shop-media", {
+/* Лимитът е 15MB (hero видео); MIME включва и MP4/WebM за video hero.
+   Снимките се валидират отделно на app ниво (5MB, само image/*). */
+const config = {
   public: true,
-  fileSizeLimit: "5MB",
-  allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/avif"],
-});
+  fileSizeLimit: "15MB",
+  allowedMimeTypes: [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+    "video/mp4",
+    "video/webm",
+  ],
+};
 
-if (error && !error.message.toLowerCase().includes("already exists")) throw error;
-console.log("bucket shop-media OK");
+const { error } = await admin.storage.createBucket("shop-media", config);
+
+if (error && error.message.toLowerCase().includes("already exists")) {
+  /* Съществува → обновяваме лимита/MIME (video hero изисква по-голям лимит). */
+  const { error: updateError } = await admin.storage.updateBucket("shop-media", config);
+  if (updateError) throw updateError;
+  console.log("bucket shop-media обновен (15MB + видео MIME)");
+} else if (error) {
+  throw error;
+} else {
+  console.log("bucket shop-media създаден");
+}

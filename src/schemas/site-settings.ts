@@ -30,6 +30,9 @@ export const sectionSchemas = {
       ctaLabel: shortText(40),
       ctaHref: shortText(300),
       imagePaths: z.array(z.string().max(300)).max(5).default([]),
+      /* Видео фон (само за poster вариант). Празно = снимков hero. Първата
+         снимка от imagePaths е постер (reduced-motion + докато зарежда). */
+      videoPath: z.string().max(300).default(""),
       /* Акцентната дума (последната в заглавието) получава цвят — вкл. по
          подразбиране (текущото поведение). Изключваемо при нежелан ефект. */
       accentLastWord: z.boolean().default(true),
@@ -177,6 +180,14 @@ export const sectionSchemas = {
       title: shortText(80),
     }),
   }),
+  newsletter: z.object({
+    ...base,
+    type: z.literal("newsletter"),
+    data: z.object({
+      title: shortText(80),
+      text: shortText(200),
+    }),
+  }),
 } as const;
 
 export const sectionSchema = z.discriminatedUnion("type", [
@@ -193,6 +204,7 @@ export const sectionSchema = z.discriminatedUnion("type", [
   sectionSchemas.faq,
   sectionSchemas["contact-map"],
   sectionSchemas.socials,
+  sectionSchemas.newsletter,
 ]);
 
 export const THEMES = [
@@ -233,6 +245,26 @@ export const siteSettingsSchema = z.object({
   aboutText: shortText(5000),
   aboutImagePaths: z.array(z.string().max(300)).max(4).default([]),
   sections: z.array(sectionSchema).max(20).default([]),
+  /* Правни текстове: override по секция (ключ = section id: general/payment/
+     delivery/returns/privacy). Празно/липсващо → шаблонът от legal-template. */
+  legalOverrides: z.record(z.string(), shortText(5000)).default({}),
+  /* Ръчни навигационни линкове — ДОБАВЯТ се към авто-базата (категории/страници).
+     Празно = само авто менюто. Href = вътрешен път или външен URL. */
+  navLinks: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        label: shortText(40),
+        href: z.string().trim().max(300).default(""),
+      }),
+    )
+    .max(8)
+    .default([]),
+  /* Типография: "theme" = шрифтът на избраната тема (дефолт); иначе курирана
+     двойка (lib/font-pairs.ts) override-ва --sf-font-heading/-body. */
+  fontPair: z
+    .enum(["theme", "editorial", "modern", "warm", "industrial", "clean"])
+    .default("theme"),
 });
 
 export type Section = z.infer<typeof sectionSchema>;

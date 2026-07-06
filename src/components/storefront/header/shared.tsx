@@ -28,10 +28,32 @@ export interface HeaderVariantProps {
 export interface NavItem {
   href: string;
   label: string;
+  /** Външен линк (target=_blank). Вътрешните пътища минават през next/link. */
+  external?: boolean;
 }
 
-/** Общата навигация: категориите заместват „Продукти", когато са малко. */
-export function buildNav(base: string, rootCategories: Category[]): NavItem[] {
+/** Ръчните линкове от настройките (settings.navLinks). */
+export interface ManualNavLink {
+  id: string;
+  label: string;
+  href: string;
+}
+
+/** Външен ли е href-ът (пълен URL / протокол) — иначе вътрешен път. */
+function isExternal(href: string): boolean {
+  return /^(https?:)?\/\//.test(href) || href.startsWith("mailto:") || href.startsWith("tel:");
+}
+
+/**
+ * Общата навигация: авто база (категориите заместват „Продукти", когато са
+ * малко) + ръчните линкове на търговеца, ДОБАВЕНИ накрая (settings.navLinks).
+ * Ръчните с празен етикет/href се изпускат.
+ */
+export function buildNav(
+  base: string,
+  rootCategories: Category[],
+  navLinks: ManualNavLink[] = [],
+): NavItem[] {
   const categoryNav =
     rootCategories.length >= 1 && rootCategories.length <= 4
       ? rootCategories.map((c) => ({
@@ -39,10 +61,14 @@ export function buildNav(base: string, rootCategories: Category[]): NavItem[] {
           label: c.name,
         }))
       : [{ href: `${base}/products`, label: "Продукти" }];
+  const manual: NavItem[] = navLinks
+    .filter((l) => l.label.trim() && l.href.trim())
+    .map((l) => ({ label: l.label, href: l.href, external: isExternal(l.href) }));
   return [
     ...categoryNav,
     { href: `${base}/about`, label: "За нас" },
     { href: `${base}/contact`, label: "Контакти" },
+    ...manual,
   ];
 }
 
@@ -95,17 +121,32 @@ export function Brand({
   );
 }
 
-/** Десктоп навигационен линк с активно състояние + underline анимация. */
+/** Десктоп навигационен линк с активно състояние + underline анимация.
+ *  Външните линкове минават през <a target=_blank>. */
 export function NavLink({ item, current }: { item: NavItem; current: boolean }) {
+  const className =
+    "sf-nav-link flex h-11 shrink-0 items-center px-3 text-sm font-medium text-current";
+  if (item.external) {
+    return (
+      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {item.label}
+      </a>
+    );
+  }
   return (
-    <Link
-      href={item.href}
-      aria-current={current ? "page" : undefined}
-      className="sf-nav-link flex h-11 shrink-0 items-center px-3 text-sm font-medium text-current"
-    >
+    <Link href={item.href} aria-current={current ? "page" : undefined} className={className}>
       {item.label}
     </Link>
   );
+}
+
+/** Праг за инлайн линкове преди „Още" dropdown-а (десктоп варианти 1 и 2). */
+export const NAV_INLINE_MAX = 5;
+
+/** Разделя навигацията на инлайн (първите NAV_INLINE_MAX) + overflow (остатъка). */
+export function splitNav(nav: NavItem[]): { inline: NavItem[]; overflow: NavItem[] } {
+  if (nav.length <= NAV_INLINE_MAX) return { inline: nav, overflow: [] };
+  return { inline: nav.slice(0, NAV_INLINE_MAX), overflow: nav.slice(NAV_INLINE_MAX) };
 }
 
 /** Активна страница: само за линкове без query (категориите споделят път). */
@@ -258,17 +299,28 @@ export function MobileMenu({
           aria-label="Навигация"
           className="flex flex-1 flex-col gap-1 overflow-y-auto px-5 py-6"
         >
-          {nav.map((item, i) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className="sf-rise flex min-h-13 items-center border-b border-(--sf-border) text-2xl tracking-tight [font-family:var(--sf-font-heading)] font-(--sf-heading-weight)"
-              style={{ "--sf-stagger": i } as CSSProperties}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {nav.map((item, i) => {
+            const cls =
+              "sf-rise flex min-h-13 items-center border-b border-(--sf-border) text-2xl tracking-tight [font-family:var(--sf-font-heading)] font-(--sf-heading-weight)";
+            const style = { "--sf-stagger": i } as CSSProperties;
+            return item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onClose}
+                className={cls}
+                style={style}
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.href} href={item.href} onClick={onClose} className={cls} style={style}>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         {shop.city && (
           <p className="shrink-0 px-5 pb-6 text-sm uppercase tracking-[0.2em] text-(--sf-muted)">

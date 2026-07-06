@@ -10,6 +10,14 @@ import type { PricedLine } from "@/lib/pricing";
  */
 const FROM = "Frizmo Shops <shops@frizmo.bg>";
 
+/** Базов публичен URL — за линкове в имейлите (потвърждение, отписване).
+ *  Dev fallback към localhost, за да работят линковете при локално тестване. */
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV !== "production"
+    ? "http://localhost:3000"
+    : "https://frizmo-shops.vercel.app");
+
 interface OrderEmailData {
   orderNumber: number;
   customerName: string;
@@ -113,5 +121,80 @@ export async function sendOrderEmails(shop: Shop, order: OrderEmailData): Promis
   const results = await Promise.allSettled(sends);
   for (const r of results) {
     if (r.status === "rejected") console.error("Имейл за поръчка се провали:", r.reason);
+  }
+}
+
+/**
+ * Потвърждаващ имейл за нюзлетър абонамент (double opt-in). Липсващ ключ →
+ * логва warning (абонатът остава pending, потвърждава се при следващ опит).
+ */
+export async function sendNewsletterConfirmEmail(input: {
+  toEmail: string;
+  shopName: string;
+  shopSlug: string;
+  token: string;
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — потвърждаващият имейл е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const confirmUrl = `${BASE_URL}/s/${input.shopSlug}/newsletter/confirm?token=${input.token}`;
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.toEmail,
+      subject: `Потвърди абонамента си за ${input.shopName}`,
+      html: shell(
+        `Потвърди абонамента си`,
+        `<p style="font-size:14px;line-height:1.6;">Заяви абонамент за новини от <strong>${esc(input.shopName)}</strong>. Потвърди с бутона отдолу:</p>
+        <p style="margin:24px 0;">
+          <a href="${confirmUrl}" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Потвърди абонамента</a>
+        </p>
+        <p style="font-size:12px;color:#9ca3af;">Ако не си заявявал абонамент, просто игнорирай този имейл.</p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Потвърждаващ нюзлетър имейл се провали:", e);
+  }
+}
+
+/**
+ * Съобщение от контактната форма на магазина → имейл до търговеца.
+ * reply-to = имейла на клиента, за да отговори директно от пощата си.
+ * Връща false при липсващ ключ / грешка (извикващият показва обща грешка).
+ */
+export async function sendContactEmail(input: {
+  toShopEmail: string;
+  shopName: string;
+  fromName: string;
+  fromEmail: string;
+  message: string;
+}): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — контактното съобщение е пропуснато.");
+    return false;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.toShopEmail,
+      replyTo: input.fromEmail,
+      subject: `Ново съобщение от сайта — ${input.fromName}`,
+      html: shell(
+        "Ново съобщение от сайта",
+        `<p style="font-size:14px;line-height:1.6;">
+          <strong>От:</strong> ${esc(input.fromName)} &lt;${esc(input.fromEmail)}&gt;<br/>
+          <strong>Магазин:</strong> ${esc(input.shopName)}
+        </p>
+        <div style="margin-top:16px;padding:16px;background:#f5f5f4;border-radius:8px;font-size:14px;line-height:1.6;white-space:pre-wrap;">${esc(input.message)}</div>
+        <p style="margin-top:16px;font-size:13px;color:#6b7280;">Отговори направо на този имейл, за да пишеш на клиента.</p>`,
+      ),
+    });
+    return true;
+  } catch (e) {
+    console.error("Контактно съобщение се провали:", e);
+    return false;
   }
 }

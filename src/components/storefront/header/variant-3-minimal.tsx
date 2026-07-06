@@ -24,7 +24,7 @@ export function HeaderVariant3({
   heroOverlay = false,
 }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
-  const nav = buildNav(base, rootCategories);
+  const nav = buildNav(base, rootCategories, settings.navLinks);
   const { overlayPage, scrolled } = useHeaderState(base, heroOverlay, false);
   const [menuOpen, setMenuOpen] = useState(false);
   const transparent = overlayPage && !scrolled && !menuOpen;

@@ -3,7 +3,9 @@
 import { useId } from "react";
 import { Icon } from "@/components/ui";
 import { THEME_PALETTES } from "@/lib/site-recipes";
+import { FONT_PAIRS } from "@/lib/font-pairs";
 import { THEME_LABELS, THEME_META, THEME_PRESETS } from "@/lib/themes";
+import { NavLinksEditor } from "./nav-links-editor";
 import {
   HEADER_VARIANTS,
   THEMES,
@@ -216,6 +218,36 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
       </details>
 
       <div>
+        <p className="mb-2 text-sm font-medium text-ink-900">Шрифт</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {FONT_PAIRS.map((pair) => {
+            const active = settings.fontPair === pair.id;
+            return (
+              <button
+                key={pair.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onChange({ fontPair: pair.id })}
+                className={`flex flex-col items-start gap-1 rounded-control border-2 p-2.5 text-left transition-colors ${
+                  active ? "border-brand-600" : "border-surface-200 hover:border-surface-300"
+                }`}
+              >
+                {/* „Аа" в реалния шрифт на двойката; „По темата" няма override
+                    → ползва платформения шрифт (неутрален sample). */}
+                <span
+                  className="text-2xl leading-none text-ink-900"
+                  style={pair.heading ? { fontFamily: pair.heading } : undefined}
+                >
+                  Аа
+                </span>
+                <span className="text-xs font-medium text-ink-600">{pair.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
         <p className="mb-2 text-sm font-medium text-ink-900">Оформление на header-а</p>
         <div className="grid grid-cols-3 gap-2">
           {HEADER_VARIANTS.map((variant) => {
@@ -292,6 +324,14 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
             );
           })}
         </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-medium text-ink-900">Меню (навигация)</p>
+        <NavLinksEditor
+          links={settings.navLinks}
+          onChange={(navLinks) => onChange({ navLinks })}
+        />
       </div>
 
       {/* Рестарт на onboarding wizard-а: новата рецепта презаписва ЧЕРНОВАТА

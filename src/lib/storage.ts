@@ -5,6 +5,11 @@ export const MAX_PRODUCT_IMAGES = 8;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_IMAGE_EXT = ["jpg", "jpeg", "png", "webp", "avif"] as const;
 
+/* Hero видео фон: MP4/WebM, до 15MB (по-голям лимит от снимките). */
+export const MAX_VIDEO_BYTES = 15 * 1024 * 1024;
+export const ALLOWED_VIDEO_EXT = ["mp4", "webm"] as const;
+
+/** Публичен URL — важи и за снимки, и за видео (същият bucket). */
 export function publicImageUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${SHOP_MEDIA_BUCKET}/${path}`;
 }

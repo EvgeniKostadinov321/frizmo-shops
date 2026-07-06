@@ -13,6 +13,8 @@ export const orderSchema = z.object({
   note: z.string().trim().max(500).default(""),
   shippingMethodId: z.uuid("Избери доставка"),
   paymentMethodId: z.uuid("Избери плащане"),
+  /** Приложен промо код (празно = без). Препотвърждава се на сървъра. */
+  couponCode: z.string().trim().max(40).default(""),
   lines: z
     .array(
       z.object({

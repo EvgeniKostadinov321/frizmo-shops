@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { priceCartAction } from "@/actions/cart";
+import { validateCoupon } from "@/actions/coupons";
 import { createOrder } from "@/actions/orders";
 import type { PaymentMethod, ShippingMethod } from "@/db";
 import {
@@ -97,6 +98,11 @@ export function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const [cart, setCart] = useState<PricedCart | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  /* Промо код: въведен текст, приложен код (потвърден от сървъра) + състояние. */
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCode, setAppliedCode] = useState("");
+  const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
      синхронно в effect чупи react-compiler lint-а). */
@@ -110,26 +116,44 @@ export function CheckoutForm({
   const shipping = shippingMethods.find((m) => m.id === form.shippingMethodId);
   const isPickup = shipping?.type === "pickup";
 
-  /* Сървърно преизчисление при промяна на количката (без доставка — тя долу). */
+  /* Сървърно преизчисление при промяна на количката (без доставка — тя долу).
+     Ако има приложен купон, преизчисляваме с него (validateCoupon), за да не
+     изчезне отстъпката при смяна на количеството. */
   useEffect(() => {
     if (stored.length === 0) return;
     let cancelled = false;
-    priceCartAction(slug, stored).then((result) => {
-      if (!cancelled && result.ok) setCart(result.data.cart);
+    const load = appliedCode
+      ? validateCoupon(slug, appliedCode, stored).then((r) =>
+          r.ok ? r.data.cart : null,
+        )
+      : priceCartAction(slug, stored).then((r) => (r.ok ? r.data.cart : null));
+    load.then((c) => {
+      if (!cancelled && c) setCart(c);
     });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, storedKey]);
+  }, [slug, storedKey, appliedCode]);
+
+  /* Отстъпката идва от cart.discountCents, но само ако приложеният код още
+     съвпада с cart-а (при смяна на количката cart се презарежда без купон). */
+  const discountCents = appliedCode && cart?.appliedCouponCode === appliedCode
+    ? cart.discountCents
+    : 0;
 
   const totals = useMemo(() => {
     if (!cart || !shipping) return null;
+    /* Безплатна доставка по ОРИГИНАЛНИЯ subtotal (купонът не я отнема). */
     const free =
       shipping.freeOverCents !== null && cart.subtotalCents >= shipping.freeOverCents;
     const shippingCents = free ? 0 : shipping.priceCents;
-    return { free, shippingCents, totalCents: cart.subtotalCents + shippingCents };
-  }, [cart, shipping]);
+    return {
+      free,
+      shippingCents,
+      totalCents: cart.subtotalCents - discountCents + shippingCents,
+    };
+  }, [cart, shipping, discountCents]);
 
   if (stored.length === 0) {
     return (
@@ -154,13 +178,43 @@ export function CheckoutForm({
     }
   }
 
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponBusy(true);
+    setCouponMsg(null);
+    try {
+      const result = await validateCoupon(slug, code, stored);
+      if (!result.ok) {
+        setCouponMsg({ ok: false, text: result.error });
+        return;
+      }
+      setCart(result.data.cart);
+      setAppliedCode(result.data.cart.appliedCouponCode);
+      setCouponMsg({ ok: true, text: "Промо кодът е приложен!" });
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedCode("");
+    setCouponInput("");
+    setCouponMsg(null);
+    /* effect-ът презарежда cart-а без купон при промяна на appliedCode. */
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     setFieldErrors({});
     try {
-      const result = await createOrder(slug, { ...form, lines: stored });
+      const result = await createOrder(slug, {
+        ...form,
+        lines: stored,
+        couponCode: appliedCode,
+      });
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});
         setError(result.error);
@@ -323,6 +377,50 @@ export function CheckoutForm({
             <span>{formatPrice(cart.subtotalCents)}</span>
           </div>
         )}
+
+        {/* Промо код */}
+        {appliedCode && discountCents > 0 ? (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-(--sf-text)">
+              Отстъпка (<span className="font-medium">{appliedCode}</span>)
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="text-(--sf-text)">−{formatPrice(discountCents)}</span>
+              <button
+                type="button"
+                onClick={removeCoupon}
+                className="text-xs text-(--sf-muted) underline underline-offset-2 hover:text-(--sf-text)"
+              >
+                махни
+              </button>
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex gap-2">
+              <input
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                placeholder="Промо код"
+                className="h-10 flex-1 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-bg) px-3 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={applyCoupon}
+                disabled={couponBusy || !couponInput.trim()}
+                className="h-10 shrink-0 rounded-(--sf-radius) border border-(--sf-border) px-4 text-sm font-medium text-(--sf-text) transition-colors hover:bg-(--sf-bg) disabled:opacity-50"
+              >
+                {couponBusy ? "…" : "Приложи"}
+              </button>
+            </div>
+            {couponMsg && (
+              <span className={`text-xs ${couponMsg.ok ? "text-(--sf-primary)" : "text-(--sf-accent)"}`}>
+                {couponMsg.text}
+              </span>
+            )}
+          </div>
+        )}
+
         {totals && (
           <div className="flex justify-between text-sm text-(--sf-muted)">
             <span>Доставка</span>

@@ -4,13 +4,27 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
-import { ALLOWED_IMAGE_EXT, SHOP_MEDIA_BUCKET } from "@/lib/storage";
+import {
+  ALLOWED_IMAGE_EXT,
+  ALLOWED_VIDEO_EXT,
+  SHOP_MEDIA_BUCKET,
+} from "@/lib/storage";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 
-const requestSchema = z.object({
-  ext: z.enum(ALLOWED_IMAGE_EXT),
-  kind: z.enum(["product", "branding", "site"]).default("product"),
-});
+/* Разрешените разширения зависят от kind: video приема mp4/webm, останалите —
+   снимкови формати. */
+const requestSchema = z
+  .object({
+    ext: z.string(),
+    kind: z.enum(["product", "branding", "site", "video"]).default("product"),
+  })
+  .refine(
+    (v) =>
+      v.kind === "video"
+        ? (ALLOWED_VIDEO_EXT as readonly string[]).includes(v.ext)
+        : (ALLOWED_IMAGE_EXT as readonly string[]).includes(v.ext),
+    { message: "Неподдържан формат на файла." },
+  );
 
 /** Подписан upload URL след ownership проверка. kind определя папката. */
 export async function requestImageUpload(input: {
@@ -21,7 +35,12 @@ export async function requestImageUpload(input: {
   if (!parsed.success) return fail("Неподдържан формат на файла.");
 
   const { shop } = await requireShop();
-  const folder = { product: "products", branding: "branding", site: "site" }[parsed.data.kind];
+  const folder = {
+    product: "products",
+    branding: "branding",
+    site: "site",
+    video: "video",
+  }[parsed.data.kind];
   const path = `shops/${shop.id}/${folder}/${randomUUID()}.${parsed.data.ext}`;
 
   const admin = createSupabaseAdmin();

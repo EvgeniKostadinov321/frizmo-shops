@@ -81,6 +81,31 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-07** — **Website builder Вълни 1–3Б (функционалните фийчъри от одита).**
+  Пътна карта: `docs/superpowers/plans/2026-07-06-builder-roadmap.md`; спецове в
+  `docs/superpowers/specs/2026-07-0{6-wizard,7-builder-wave-2,7-builder-wave-3a,7-builder-wave-3b}`.
+  **Вълна 1** (commit `c78c543`): още соц мрежи (TikTok/YouTube/Viber, общ
+  `lib/socials.ts`), магически поведения → toggle-и (hero accentLastWord/showStoryLink,
+  promo kicker поле), countdown таймер на promo-banner, announcement dismiss, empty-state
+  предупреждения в редактора (`lib/section-warnings.ts`), preview продукт+количка табове.
+  **Вълна 2**: правни текстове override по секция (нов таб „Правно", `legal-template.ts`
+  рефактор с id-та), избор на шрифт (`lib/font-pairs.ts`, 6 курирани двойки, themeStyle
+  override), навигационно меню (ръчни navLinks + „Още" dropdown `header/nav-overflow.tsx`
+  за варианти 1/2), video hero (нов storage тип video 15MB, `video-uploader.tsx`,
+  `hero-video.tsx` само poster вариант, reduced-motion→постер, autoplay подсилен с JS).
+  **Вълна 3А** (комуникация): контактна форма на /contact (само имейл до търговеца,
+  reply-to клиента), newsletter double opt-in (нова таблица `subscribers`, секция
+  „Бюлетин", `/newsletter/confirm` route, dashboard таб „Абонати" + CSV експорт, БЕЗ
+  изпращане на бюлетин). **Вълна 3Б** (промо кодове): нова таблица `coupons` (percent/fixed,
+  мин. сума, лимит, срок), `pricing.ts` разширен с купон (отстъпка върху subtotal, +6 unit
+  теста), dashboard таб „Промо кодове" (CRUD), checkout поле + **race-safe** декремент на
+  usedCount в транзакцията (`FOR UPDATE`, като наличностите). `pnpm check` зелен (137 теста).
+  ⚠️ **НЕ тествано още** — качено на dev за тестване утре. `db:push` изпълнен (subscribers +
+  coupons таблици). Bucket обновен на 15MB + видео MIME (`setup-storage.mjs`). Известно
+  ограничение: hero видео autoplay е по-строг в Opera → без постер = черно (документирано в
+  спец 2, реализиран градиент fallback). Остава: Вълна 4 (undo/redo версии, custom домейн,
+  i18n — всяко отделен голям проект).
+
 - **2026-07-06 (6)** — **Полиране на редактора + responsive одит + функционален одит →
   пътна карта.** Няколко UX кръга по website редактора след live тестване от потребителя:
   (1) **Tooltip примитив** (`ui/tooltip.tsx`, CSS-only, 300ms delay, работи на disabled и

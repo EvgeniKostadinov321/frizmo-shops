@@ -16,13 +16,14 @@ import { ImageUploader } from "@/components/dashboard/image-uploader";
 import { Badge, Button, Card, Checkbox, Drawer, Icon, Input, Textarea, Tooltip } from "@/components/ui";
 import { newSection, SECTION_DEFS } from "@/lib/sections";
 import type { SectionType, SiteSettings } from "@/schemas/site-settings";
+import { LegalPanel } from "./legal-panel";
 import { SectionForm } from "./section-form";
 import { SectionsList } from "./sections-list";
 import { ThemePanel } from "./theme-panel";
 import { WebsiteIntroModal } from "./website-intro-modal";
 import { WebsitePreview, type WebsitePreviewHandle } from "./preview";
 
-type PanelTab = "theme" | "sections" | "about" | "preview";
+type PanelTab = "theme" | "sections" | "about" | "legal" | "preview";
 
 interface PickerOption {
   value: string;
@@ -170,6 +171,7 @@ export function WebsiteEditor({
     { key: "theme", label: "Тема" },
     { key: "sections", label: "Секции" },
     { key: "about", label: "За нас" },
+    { key: "legal", label: "Правно" },
     { key: "preview", label: "Преглед", mobileOnly: true },
   ];
 
@@ -371,6 +373,13 @@ export function WebsiteEditor({
                   onChange={(aboutImagePaths) => update({ ...settings, aboutImagePaths })}
                 />
               </Card>
+            )}
+
+            {tab === "legal" && (
+              <LegalPanel
+                overrides={settings.legalOverrides}
+                onChange={(legalOverrides) => update({ ...settings, legalOverrides })}
+              />
             )}
           </div>
         </aside>

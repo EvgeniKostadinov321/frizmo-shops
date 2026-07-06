@@ -60,18 +60,52 @@ export interface ShippingOption {
   freeOverCents: number | null;
 }
 
+/** Вече валидиран купон (срок/лимит/активност се проверяват на сървъра). */
+export interface AppliedCoupon {
+  code: string;
+  discountType: "percent" | "fixed";
+  /** Процент 1–100 (percent) ИЛИ центове (fixed). */
+  discountValue: number;
+  minSubtotalCents: number;
+}
+
+export type CouponError = "min_not_met";
+
 export interface PricedCart {
   lines: PricedLine[];
   subtotalCents: number;
+  /** Отстъпка от купон (0 = няма). */
+  discountCents: number;
+  /** Приложеният код (празно = няма купон или не се прилага). */
+  appliedCouponCode: string;
+  /** Причина купонът да НЕ се приложи (за UI съобщение). */
+  couponError?: CouponError;
   shipping: { name: string; priceCents: number; freeApplied: boolean } | null;
   totalCents: number;
   hasErrors: boolean;
+}
+
+/** Смята отстъпката от купон върху subtotal-а. Чиста функция. */
+function computeDiscount(
+  subtotalCents: number,
+  coupon: AppliedCoupon,
+): { discountCents: number; error?: CouponError } {
+  if (subtotalCents < coupon.minSubtotalCents) {
+    return { discountCents: 0, error: "min_not_met" };
+  }
+  if (coupon.discountType === "percent") {
+    const pct = Math.max(0, Math.min(100, coupon.discountValue));
+    return { discountCents: Math.round((subtotalCents * pct) / 100) };
+  }
+  /* fixed: не сваля под 0. */
+  return { discountCents: Math.min(coupon.discountValue, subtotalCents) };
 }
 
 export function priceCart(
   lines: CartLine[],
   products: Map<string, PricingProduct>,
   shipping?: ShippingOption,
+  coupon?: AppliedCoupon,
 ): PricedCart {
   const priced: PricedLine[] = lines.map((line) => {
     const base: PricedLine = {
@@ -133,6 +167,20 @@ export function priceCart(
   const hasErrors = priced.some((l) => l.error);
   const subtotalCents = priced.reduce((sum, l) => (l.error ? sum : sum + l.lineTotalCents), 0);
 
+  /* Купон: отстъпка върху subtotal-а (след deals/промо цени), преди доставка. */
+  let discountCents = 0;
+  let appliedCouponCode = "";
+  let couponError: CouponError | undefined;
+  if (coupon && subtotalCents > 0) {
+    const result = computeDiscount(subtotalCents, coupon);
+    discountCents = result.discountCents;
+    couponError = result.error;
+    if (discountCents > 0) appliedCouponCode = coupon.code;
+  }
+  const discountedSubtotal = subtotalCents - discountCents;
+
+  /* Безплатна доставка се преценява по ОРИГИНАЛНИЯ subtotal (не намаления) —
+     купонът не бива да отнема безплатната доставка, която клиентът вижда. */
   let shippingResult: PricedCart["shipping"] = null;
   if (shipping) {
     const freeApplied =
@@ -147,8 +195,11 @@ export function priceCart(
   return {
     lines: priced,
     subtotalCents,
+    discountCents,
+    appliedCouponCode,
+    couponError,
     shipping: shippingResult,
-    totalCents: subtotalCents + (shippingResult?.priceCents ?? 0),
+    totalCents: discountedSubtotal + (shippingResult?.priceCents ?? 0),
     hasErrors,
   };
 }

@@ -82,6 +82,9 @@ export const WebsitePreview = forwardRef<WebsitePreviewHandle, PreviewProps>(
             ref={iframeRef}
             src={`/s/${slug}${pagePath}`}
             title="Преглед на магазина"
+            /* allow=autoplay: без него браузърът блокира autoplay на hero
+               видеото в iframe → в preview-то се вижда само постер/черно. */
+            allow="autoplay; fullscreen"
             className={`h-full rounded-control border border-surface-300 bg-surface-0 transition-all ${
               device === "mobile" ? "w-97.5 max-w-full" : "w-full"
             }`}

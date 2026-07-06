@@ -10,6 +10,7 @@ import { FeaturedProductsSection } from "./featured-products";
 import { GallerySection } from "./gallery";
 import { HeroSection } from "./hero";
 import { ImageTextSection } from "./image-text";
+import { NewsletterSection } from "./newsletter";
 import { PromoBannerSection } from "./promo-banner";
 import { RichTextSection } from "./rich-text";
 import { SocialsSection } from "./socials";
@@ -37,6 +38,7 @@ const RHYTHM_SECTIONS: ReadonlySet<SectionType> = new Set([
   "faq",
   "contact-map",
   "socials",
+  "newsletter",
 ] satisfies SectionType[]);
 
 /**
@@ -101,5 +103,7 @@ export function renderSection(
       return <ContactMapSection key={section.id} data={section.data} ctx={ctx} tone={tone} />;
     case "socials":
       return <SocialsSection key={section.id} data={section.data} ctx={ctx} tone={tone} />;
+    case "newsletter":
+      return <NewsletterSection key={section.id} data={section.data} ctx={ctx} tone={tone} />;
   }
 }

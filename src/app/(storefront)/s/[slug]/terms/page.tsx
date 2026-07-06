@@ -27,9 +27,9 @@ export default async function TermsPage({ params }: PageProps) {
   const { slug } = await params;
   const result = await getPublicShop(slug);
   if (!result) notFound();
-  const { shop } = result;
+  const { shop, settings } = result;
 
-  const sections = legalSections(shop);
+  const sections = legalSections(shop, settings.legalOverrides);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-10">
@@ -42,7 +42,7 @@ export default async function TermsPage({ params }: PageProps) {
       <div className="flex flex-col">
         {sections.map((section, i) => (
           <section
-            key={section.title}
+            key={section.id}
             className="grid gap-x-6 gap-y-2 border-b border-(--sf-border) py-7 last:border-b-0 sm:grid-cols-[3rem_1fr]"
           >
             <span

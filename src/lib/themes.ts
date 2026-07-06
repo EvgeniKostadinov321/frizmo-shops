@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { accentInk, onColor } from "@/lib/contrast";
+import { fontPairVars } from "@/lib/font-pairs";
 import type { BusinessCategory } from "@/schemas/shop";
 import type { SiteSettings, ThemeId } from "@/schemas/site-settings";
 
@@ -419,11 +420,19 @@ export function recommendedThemesFor(category: string): ThemeId[] {
 }
 
 export function themeStyle(
-  settings: Pick<SiteSettings, "theme" | "primaryColor" | "accentColor">,
+  settings: Pick<SiteSettings, "theme" | "primaryColor" | "accentColor"> &
+    Partial<Pick<SiteSettings, "fontPair">>,
 ): CSSProperties {
   const preset = THEME_PRESETS[settings.theme];
+  /* Избраната шрифт-двойка override-ва шрифтовете на темата; "theme"/undefined
+     → null → остават стойностите от preset-а. */
+  const fonts = settings.fontPair ? fontPairVars(settings.fontPair) : null;
   return {
     ...preset,
+    ...(fonts && {
+      "--sf-font-heading": fonts.heading,
+      "--sf-font-body": fonts.body,
+    }),
     "--sf-primary": settings.primaryColor,
     "--sf-accent": settings.accentColor,
     /* Изчислени, не гадани: текстът върху primary/accent остава четим при

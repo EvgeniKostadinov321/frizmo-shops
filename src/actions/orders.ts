@@ -5,6 +5,7 @@ import { and, eq, inArray, sql as rawSql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
+  coupons,
   db,
   orderItems,
   orders,
@@ -16,11 +17,12 @@ import {
 } from "@/db";
 import { clientIp } from "@/actions/cart";
 import { getPricingProducts } from "@/db/queries/cart";
+import { normalizeCouponCode } from "@/db/queries/coupons";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sendOrderEmails } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
-import { priceCart, type PricedCart } from "@/lib/pricing";
+import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
 import { sendNewOrderPush } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
@@ -110,13 +112,61 @@ export async function createOrder(
       await tx.select({ id: products.id }).from(products).where(inArray(products.id, ids)).for("update");
 
       const pricingProducts = await getPricingProducts(shop.id, ids);
-      const cart = priceCart(input.lines, pricingProducts, {
-        name: shipping.name,
-        priceCents: shipping.priceCents,
-        freeOverCents: shipping.freeOverCents,
-      });
+
+      /* Промо код: препотвърждаваме на сървъра (клиентът може да е манипулирал).
+         SELECT ... FOR UPDATE заключва реда → лимитът на употреби е race-safe.
+         Невалиден купон между checkout и submit → поръчката пада с ясна грешка,
+         вместо тиха промяна на сумата. */
+      let appliedCoupon: AppliedCoupon | undefined;
+      let couponRowId: string | null = null;
+      const code = normalizeCouponCode(input.couponCode);
+      if (code) {
+        const [row] = await tx
+          .select()
+          .from(coupons)
+          .where(and(eq(coupons.shopId, shop.id), eq(coupons.code, code)))
+          .for("update");
+        const now = Date.now();
+        const invalid =
+          !row ||
+          !row.active ||
+          (row.expiresAt && row.expiresAt.getTime() < now) ||
+          (row.maxUses !== null && row.usedCount >= row.maxUses);
+        if (invalid) throw new Error("COUPON_INVALID");
+        appliedCoupon = {
+          code: row!.code,
+          discountType: row!.discountType,
+          discountValue: row!.discountValue,
+          minSubtotalCents: row!.minSubtotalCents,
+        };
+        couponRowId = row!.id;
+      }
+
+      const cart = priceCart(
+        input.lines,
+        pricingProducts,
+        {
+          name: shipping.name,
+          priceCents: shipping.priceCents,
+          freeOverCents: shipping.freeOverCents,
+        },
+        appliedCoupon,
+      );
       if (cart.hasErrors || cart.lines.length === 0) {
         throw new Error("CART_ERRORS");
+      }
+      /* Купонът е валиден, но мин. сумата не е достигната → отказваме поръчката
+         (клиентът трябва да махне кода или добави продукти). */
+      if (appliedCoupon && cart.couponError === "min_not_met") {
+        throw new Error("COUPON_MIN");
+      }
+
+      /* Инкрементираме употребите в същата транзакция (атомарно с поръчката). */
+      if (couponRowId && cart.discountCents > 0) {
+        await tx
+          .update(coupons)
+          .set({ usedCount: rawSql`${coupons.usedCount} + 1`, updatedAt: new Date() })
+          .where(eq(coupons.id, couponRowId));
       }
 
       await decrementStock(tx, input);
@@ -145,6 +195,8 @@ export async function createOrder(
               paymentName: payment.name,
               paymentType: payment.type,
               subtotalCents: cart.subtotalCents,
+              couponCode: cart.appliedCouponCode,
+              discountCents: cart.discountCents,
               totalCents: cart.totalCents,
             })
             .returning({ id: orders.id });
@@ -170,7 +222,14 @@ export async function createOrder(
       }
     });
   } catch (error) {
-    if ((error as Error).message === "CART_ERRORS") return fail(LINE_ERROR_MESSAGE);
+    const msg = (error as Error).message;
+    if (msg === "CART_ERRORS") return fail(LINE_ERROR_MESSAGE);
+    if (msg === "COUPON_INVALID") {
+      return fail("Промо кодът вече не е валиден. Премахни го и опитай пак.");
+    }
+    if (msg === "COUPON_MIN") {
+      return fail("Промо кодът не важи за тази сума. Премахни го или добави продукти.");
+    }
     console.error("createOrder се провали:", error);
     return fail("Поръчката не можа да бъде създадена. Опитай отново.");
   }

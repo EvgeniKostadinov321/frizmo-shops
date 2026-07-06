@@ -193,3 +193,78 @@ describe("priceCart — доставка", () => {
     expect(cart.lines).toHaveLength(0);
   });
 });
+
+describe("priceCart — промо кодове", () => {
+  const line = [{ productId: "p1", variantKey: null, qty: 1 }]; // subtotal 2000
+
+  it("процентна отстъпка върху subtotal-а", () => {
+    const cart = priceCart(line, productsMap(product()), undefined, {
+      code: "MINUS10",
+      discountType: "percent",
+      discountValue: 10,
+      minSubtotalCents: 0,
+    });
+    expect(cart.discountCents).toBe(200); // 10% от 2000
+    expect(cart.appliedCouponCode).toBe("MINUS10");
+    expect(cart.totalCents).toBe(1800);
+  });
+
+  it("фиксирана отстъпка", () => {
+    const cart = priceCart(line, productsMap(product()), undefined, {
+      code: "MINUS5",
+      discountType: "fixed",
+      discountValue: 500,
+      minSubtotalCents: 0,
+    });
+    expect(cart.discountCents).toBe(500);
+    expect(cart.totalCents).toBe(1500);
+  });
+
+  it("фиксирана отстъпка не сваля под 0", () => {
+    const cart = priceCart(line, productsMap(product()), undefined, {
+      code: "BIG",
+      discountType: "fixed",
+      discountValue: 9999,
+      minSubtotalCents: 0,
+    });
+    expect(cart.discountCents).toBe(2000); // само до subtotal-а
+    expect(cart.totalCents).toBe(0);
+  });
+
+  it("минимална сума не е достигната → без отстъпка", () => {
+    const cart = priceCart(line, productsMap(product()), undefined, {
+      code: "MIN50",
+      discountType: "percent",
+      discountValue: 10,
+      minSubtotalCents: 5000,
+    });
+    expect(cart.discountCents).toBe(0);
+    expect(cart.appliedCouponCode).toBe("");
+    expect(cart.couponError).toBe("min_not_met");
+    expect(cart.totalCents).toBe(2000);
+  });
+
+  it("купон + доставка: отстъпка преди доставка", () => {
+    const cart = priceCart(
+      line,
+      productsMap(product()),
+      { name: "Куриер", priceCents: 500, freeOverCents: null },
+      { code: "MINUS10", discountType: "percent", discountValue: 10, minSubtotalCents: 0 },
+    );
+    expect(cart.discountCents).toBe(200);
+    expect(cart.totalCents).toBe(2300); // 2000 - 200 + 500
+  });
+
+  it("безплатна доставка се смята по оригиналния subtotal (не намаления)", () => {
+    /* subtotal 2000, купон -50%, праг за безплатна = 2000. Купонът НЕ бива да
+       отнема безплатната доставка. */
+    const cart = priceCart(
+      line,
+      productsMap(product()),
+      { name: "Куриер", priceCents: 500, freeOverCents: 2000 },
+      { code: "HALF", discountType: "percent", discountValue: 50, minSubtotalCents: 0 },
+    );
+    expect(cart.shipping).toMatchObject({ priceCents: 0, freeApplied: true });
+    expect(cart.totalCents).toBe(1000); // 2000 - 1000 + 0
+  });
+});

@@ -9,9 +9,11 @@ import {
   MenuButton,
   MobileMenu,
   NavLink,
+  splitNav,
   useHeaderState,
   useIsCurrent,
 } from "./shared";
+import { NavOverflow } from "./nav-overflow";
 
 /**
  * Вариант 1 — Inline: лого вляво, навигация вдясно. Прозрачен върху hero
@@ -25,7 +27,8 @@ export function HeaderVariant1({
   heroOverlay = false,
 }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
-  const nav = buildNav(base, rootCategories);
+  const nav = buildNav(base, rootCategories, settings.navLinks);
+  const { inline, overflow } = splitNav(nav);
   const isCurrent = useIsCurrent();
   const { overlayPage, scrolled } = useHeaderState(base, heroOverlay, false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,9 +51,10 @@ export function HeaderVariant1({
           aria-label="Навигация на магазина"
           className="hidden items-center gap-1 md:flex"
         >
-          {nav.map((item) => (
+          {inline.map((item) => (
             <NavLink key={item.href} item={item} current={isCurrent(item.href)} />
           ))}
+          <NavOverflow items={overflow} />
           <CartButton shopId={shop.id} base={base} />
         </nav>
 

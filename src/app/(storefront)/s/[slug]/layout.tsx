@@ -53,11 +53,12 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
   const firstSection = settings.sections.find(
     (s) => s.enabled && s.type !== "announcement",
   );
-  /* Overlay header важи само за poster (текст върху пълноекранна снимка). */
+  /* Overlay header важи само за poster (текст върху пълноекранен фон —
+     снимка ИЛИ видео). */
   const heroOverlay =
     firstSection?.type === "hero" &&
     firstSection.data.layout === "poster" &&
-    firstSection.data.imagePaths.length > 0;
+    (firstSection.data.imagePaths.length > 0 || Boolean(firstSection.data.videoPath));
   /* Header вариант 2 (split bar) никога не ляга върху hero-то — той е винаги
      плътен в потока. 1 и 3 стават прозрачни върху poster снимката. */
   const headerOverlays = heroOverlay && settings.headerVariant !== 2;

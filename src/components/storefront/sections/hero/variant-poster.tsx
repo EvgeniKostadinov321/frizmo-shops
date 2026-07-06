@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { publicImageUrl } from "@/lib/storage";
+import { HeroVideo } from "./hero-video";
 import {
   AccentTitle,
   HeroCta,
@@ -21,21 +22,28 @@ import {
  */
 export function HeroPoster({ data, ctx }: HeroVariantProps) {
   const image = data.imagePaths[0];
+  const video = data.videoPath;
+  /* Има фон = снимка ИЛИ видео → scrim + бял текст. */
+  const hasBackground = Boolean(image || video);
   const title = data.title || ctx.shop.name;
   const initial = ctx.shop.name.slice(0, 1).toUpperCase();
 
   return (
     <section className="relative flex min-h-[calc(100dvh-var(--sf-chrome,0rem))] w-full overflow-hidden">
-      {image ? (
+      {hasBackground ? (
         <>
-          <Image
-            src={publicImageUrl(image)}
-            alt=""
-            fill
-            sizes="100vw"
-            className="sf-kenburns object-cover"
-            priority
-          />
+          {video ? (
+            <HeroVideo videoPath={video} posterPath={image} />
+          ) : (
+            <Image
+              src={publicImageUrl(image!)}
+              alt=""
+              fill
+              sizes="100vw"
+              className="sf-kenburns object-cover"
+              priority
+            />
+          )}
           {/* Двоен scrim: диагонален (плътен долу-ляво под текста) + долен
               вертикален — гарантира четимост дори върху СВЕТЛА снимка, докато
               горе-дясно снимката диша. */}
@@ -71,28 +79,28 @@ export function HeroPoster({ data, ctx }: HeroVariantProps) {
       <div className="relative z-10 mt-auto w-full px-4 pb-14 pt-24 md:px-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] md:pb-16">
         <div
           className={`flex max-w-2xl flex-col items-start gap-5 ${
-            image ? "text-white" : "text-(--sf-text)"
+            hasBackground ? "text-white" : "text-(--sf-text)"
           }`}
         >
           <div className="sf-rise" style={stagger(0)}>
             <HeroKicker
               category={ctx.shop.businessCategory}
               city={ctx.shop.city}
-              light={Boolean(image)}
+              light={hasBackground}
             />
           </div>
           <div className="sf-rise" style={stagger(1)}>
             <AccentTitle
               title={title}
-              dark={Boolean(image)}
+              dark={hasBackground}
               accent={data.accentLastWord}
-              className={`text-balance text-[clamp(2.75rem,8vw,6rem)] leading-[0.98] ${image ? "drop-shadow-md" : ""}`}
+              className={`text-balance text-[clamp(2.75rem,8vw,6rem)] leading-[0.98] ${hasBackground ? "drop-shadow-md" : ""}`}
             />
           </div>
           {data.subtitle && (
             <p
               className={`sf-rise max-w-xl text-pretty text-lg leading-relaxed md:text-xl ${
-                image ? "text-white/90" : "text-(--sf-muted)"
+                hasBackground ? "text-white/90" : "text-(--sf-muted)"
               }`}
               style={stagger(2)}
             >
@@ -101,13 +109,13 @@ export function HeroPoster({ data, ctx }: HeroVariantProps) {
           )}
           <div className="sf-rise mt-1 flex flex-wrap items-center gap-x-6 gap-y-2" style={stagger(3)}>
             <HeroCta label={data.ctaLabel} href={data.ctaHref} base={ctx.base} large />
-            <HeroSecondary base={ctx.base} light={Boolean(image)} show={data.showStoryLink} />
+            <HeroSecondary base={ctx.base} light={hasBackground} show={data.showStoryLink} />
           </div>
         </div>
       </div>
 
       <ScrollCue
-        className={`bottom-6 right-6 hidden md:block ${image ? "text-white" : "text-(--sf-text)"}`}
+        className={`bottom-6 right-6 hidden md:block ${hasBackground ? "text-white" : "text-(--sf-text)"}`}
       />
     </section>
   );

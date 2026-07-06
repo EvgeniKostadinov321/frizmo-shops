@@ -265,6 +265,9 @@ export const orders = pgTable(
     paymentName: text("payment_name").notNull(),
     paymentType: paymentTypeEnum("payment_type").notNull(),
     subtotalCents: integer("subtotal_cents").notNull(),
+    /* Приложен промо код (snapshot) + спестена сума; празно/0 = без купон. */
+    couponCode: text("coupon_code").notNull().default(""),
+    discountCents: integer("discount_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull(),
     status: orderStatusEnum("status").notNull().default("new"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -320,6 +323,68 @@ export const rateLimits = pgTable("rate_limits", {
   count: integer("count").notNull().default(0),
 }).enableRLS();
 
+/** Промо кодове за отстъпка на количката (per shop). */
+export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
+
+export const coupons = pgTable(
+  "coupons",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    /** Код (uppercase). Unique per магазин. */
+    code: text("code").notNull(),
+    discountType: couponTypeEnum("discount_type").notNull(),
+    /** Процент 1–100 (percent) ИЛИ центове (fixed). */
+    discountValue: integer("discount_value").notNull(),
+    /** Минимална междинна сума за прилагане (0 = без минимум). */
+    minSubtotalCents: integer("min_subtotal_cents").notNull().default(0),
+    /** Макс общ брой употреби (null = без лимит). */
+    maxUses: integer("max_uses"),
+    usedCount: integer("used_count").notNull().default(0),
+    /** Валиден до (null = безсрочен). */
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("coupons_shop_code_idx").on(t.shopId, t.code),
+    index("coupons_shop_idx").on(t.shopId),
+  ],
+).enableRLS();
+
+/** Newsletter абонати (double opt-in). pending → confirmed → unsubscribed. */
+export const subscriberStatusEnum = pgEnum("subscriber_status", [
+  "pending",
+  "confirmed",
+  "unsubscribed",
+]);
+
+export const subscribers = pgTable(
+  "subscribers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    status: subscriberStatusEnum("status").notNull().default("pending"),
+    /** Уникален token за потвърждение/отписване по имейл линк. */
+    token: text("token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  },
+  (t) => [
+    /* Един имейл веднъж per магазин (повторен абонамент → onConflictDoUpdate). */
+    uniqueIndex("subscribers_shop_email_idx").on(t.shopId, t.email),
+    index("subscribers_shop_status_idx").on(t.shopId, t.status),
+    index("subscribers_token_idx").on(t.token),
+  ],
+).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
@@ -334,3 +399,5 @@ export type Product = typeof products.$inferSelect;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
 export type ProductOption = typeof productOptions.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
+export type Subscriber = typeof subscribers.$inferSelect;
+export type Coupon = typeof coupons.$inferSelect;
