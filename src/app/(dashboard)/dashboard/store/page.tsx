@@ -15,7 +15,14 @@ const statusLabels: Record<string, { label: string; tone: "neutral" | "success" 
 
 export default async function StorePage() {
   const { shop } = await requireShop();
-  const socialLinks = (shop.socialLinks as { facebook?: string; instagram?: string } | null) ?? {};
+  const socialLinks =
+    (shop.socialLinks as {
+      facebook?: string;
+      instagram?: string;
+      tiktok?: string;
+      youtube?: string;
+      viber?: string;
+    } | null) ?? {};
   const status = statusLabels[shop.status] ?? statusLabels.draft!;
 
   return (
@@ -45,6 +52,9 @@ export default async function StorePage() {
           workingDays: parseWorkingHours(shop.workingHours),
           facebook: socialLinks.facebook ?? "",
           instagram: socialLinks.instagram ?? "",
+          tiktok: socialLinks.tiktok ?? "",
+          youtube: socialLinks.youtube ?? "",
+          viber: socialLinks.viber ?? "",
         }}
       />
     </div>

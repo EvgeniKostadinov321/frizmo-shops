@@ -30,6 +30,12 @@ export const sectionSchemas = {
       ctaLabel: shortText(40),
       ctaHref: shortText(300),
       imagePaths: z.array(z.string().max(300)).max(5).default([]),
+      /* Акцентната дума (последната в заглавието) получава цвят — вкл. по
+         подразбиране (текущото поведение). Изключваемо при нежелан ефект. */
+      accentLastWord: z.boolean().default(true),
+      /* Вторичен линк „Нашата история →" до CTA-то. Вкл. по подразбиране;
+         изключваем за магазини без съдържание „За нас". */
+      showStoryLink: z.boolean().default(true),
     }),
   }),
   announcement: z.object({
@@ -64,11 +70,16 @@ export const sectionSchemas = {
     ...base,
     type: z.literal("promo-banner"),
     data: z.object({
+      /* Малкият надпис над заглавието (kicker). Празно = без kicker. */
+      kicker: shortText(30).default("Оферта"),
       title: shortText(100),
       text: shortText(200),
       ctaLabel: shortText(40),
       ctaHref: shortText(300),
       imagePath: z.string().max(300).default(""),
+      /* Отброяване до дата (ISO низ, напр. „2026-08-01T18:00"). Празно = без
+         таймер. При изтичане таймерът се скрива, банерът остава. */
+      countdownTo: z.string().max(40).default(""),
     }),
   }),
   "image-text": z.object({

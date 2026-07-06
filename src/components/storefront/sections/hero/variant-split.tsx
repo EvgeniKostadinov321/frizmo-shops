@@ -38,6 +38,7 @@ export function HeroSplit({ data, ctx }: HeroVariantProps) {
           <div className="sf-rise" style={stagger(1)}>
             <AccentTitle
               title={title}
+              accent={data.accentLastWord}
               className="text-[clamp(2.75rem,6vw,4.75rem)] leading-[1.03] text-(--sf-text)"
             />
           </div>
@@ -51,7 +52,7 @@ export function HeroSplit({ data, ctx }: HeroVariantProps) {
           )}
           <div className="sf-rise flex flex-wrap items-center gap-5" style={stagger(3)}>
             <HeroCta label={data.ctaLabel} href={data.ctaHref} base={ctx.base} large />
-            <HeroSecondary base={ctx.base} />
+            <HeroSecondary base={ctx.base} show={data.showStoryLink} />
           </div>
         </div>
       </div>

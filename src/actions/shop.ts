@@ -46,6 +46,9 @@ function parseShopForm(formData: FormData) {
     workingHours,
     facebook: formData.get("facebook") ?? "",
     instagram: formData.get("instagram") ?? "",
+    tiktok: formData.get("tiktok") ?? "",
+    youtube: formData.get("youtube") ?? "",
+    viber: formData.get("viber") ?? "",
   });
 }
 
@@ -65,6 +68,9 @@ function sanitizedValues(input: ShopInput) {
     socialLinks: {
       facebook: sanitizeText(input.facebook, 200),
       instagram: sanitizeText(input.instagram, 200),
+      tiktok: sanitizeText(input.tiktok, 200),
+      youtube: sanitizeText(input.youtube, 200),
+      viber: sanitizeText(input.viber, 200),
     },
   };
 }

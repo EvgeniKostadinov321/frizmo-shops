@@ -85,6 +85,7 @@ export function HeroPoster({ data, ctx }: HeroVariantProps) {
             <AccentTitle
               title={title}
               dark={Boolean(image)}
+              accent={data.accentLastWord}
               className={`text-balance text-[clamp(2.75rem,8vw,6rem)] leading-[0.98] ${image ? "drop-shadow-md" : ""}`}
             />
           </div>
@@ -100,7 +101,7 @@ export function HeroPoster({ data, ctx }: HeroVariantProps) {
           )}
           <div className="sf-rise mt-1 flex flex-wrap items-center gap-x-6 gap-y-2" style={stagger(3)}>
             <HeroCta label={data.ctaLabel} href={data.ctaHref} base={ctx.base} large />
-            <HeroSecondary base={ctx.base} light={Boolean(image)} />
+            <HeroSecondary base={ctx.base} light={Boolean(image)} show={data.showStoryLink} />
           </div>
         </div>
       </div>

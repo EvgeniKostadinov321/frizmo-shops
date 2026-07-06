@@ -20,6 +20,9 @@ export interface ShopFormInitial {
   workingDays?: WorkingDay[];
   facebook?: string;
   instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  viber?: string;
 }
 
 interface ShopFormProps {
@@ -95,6 +98,28 @@ export function ShopForm({ initial = {}, slug, action }: ShopFormProps) {
           placeholder="https://instagram.com/..."
           defaultValue={initial.instagram}
           error={state.fieldErrors?.instagram}
+        />
+        <Input
+          label="TikTok"
+          name="tiktok"
+          placeholder="https://tiktok.com/@..."
+          defaultValue={initial.tiktok}
+          error={state.fieldErrors?.tiktok}
+        />
+        <Input
+          label="YouTube"
+          name="youtube"
+          placeholder="https://youtube.com/@..."
+          defaultValue={initial.youtube}
+          error={state.fieldErrors?.youtube}
+        />
+        <Input
+          label="Viber"
+          name="viber"
+          placeholder="Телефон или линк за Viber"
+          defaultValue={initial.viber}
+          error={state.fieldErrors?.viber}
+          hint="Номер (напр. +359…) или линк viber://"
         />
       </div>
     </div>

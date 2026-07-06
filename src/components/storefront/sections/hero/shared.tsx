@@ -36,8 +36,18 @@ export function HeroCta({
   );
 }
 
-/** Секундерно действие до CTA-то — тих текстов линк към историята. */
-export function HeroSecondary({ base, light = false }: { base: string; light?: boolean }) {
+/** Секундерно действие до CTA-то — тих текстов линк към историята.
+ *  `show=false` (settings.showStoryLink) → не се рендерира. */
+export function HeroSecondary({
+  base,
+  light = false,
+  show = true,
+}: {
+  base: string;
+  light?: boolean;
+  show?: boolean;
+}) {
+  if (!show) return null;
   return (
     <Link
       href={`${base}/about`}
@@ -83,16 +93,20 @@ export function AccentTitle({
   title,
   dark = false,
   className,
+  accent = true,
 }: {
   title: string;
   dark?: boolean;
   className: string;
+  /** false (settings.accentLastWord) → цялото заглавие в основния цвят. */
+  accent?: boolean;
 }) {
   /* break-words: защита срещу еднословни дълги имена, които не могат да се
      пренесат при min стойността на clamp-а на тесен екран (R5 от одита). */
   const words = title.trim().split(/\s+/);
-  if (words.length < 2) return <h1 className={`wrap-break-word ${className}`}>{title}</h1>;
-  const accent = words[words.length - 1];
+  if (!accent || words.length < 2)
+    return <h1 className={`wrap-break-word ${className}`}>{title}</h1>;
+  const lastWord = words[words.length - 1];
   return (
     <h1 className={`wrap-break-word ${className}`}>
       {words.slice(0, -1).join(" ")}{" "}
@@ -101,7 +115,7 @@ export function AccentTitle({
           dark ? "text-(--sf-accent-ink-dark)" : "text-(--sf-accent-ink)"
         }`}
       >
-        {accent}
+        {lastWord}
       </span>
     </h1>
   );

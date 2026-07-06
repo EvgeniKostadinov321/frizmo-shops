@@ -53,6 +53,7 @@ export function HeroStatement({ data, ctx }: HeroVariantProps) {
           <div className="sf-rise" style={stagger(1)}>
             <AccentTitle
               title={title}
+              accent={data.accentLastWord}
               className="wrap-break-word text-balance text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] text-(--sf-text)"
             />
           </div>
@@ -69,7 +70,7 @@ export function HeroStatement({ data, ctx }: HeroVariantProps) {
             style={stagger(3)}
           >
             <HeroCta label={data.ctaLabel} href={data.ctaHref} base={ctx.base} large />
-            <HeroSecondary base={ctx.base} />
+            <HeroSecondary base={ctx.base} show={data.showStoryLink} />
           </div>
         </div>
 

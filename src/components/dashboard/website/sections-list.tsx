@@ -17,12 +17,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useId } from "react";
 import { Icon } from "@/components/ui";
 import { SECTION_DEFS } from "@/lib/sections";
+import { sectionWarning, type SectionWarningContext } from "@/lib/section-warnings";
 import type { Section } from "@/schemas/site-settings";
 
 interface SectionsListProps {
   sections: Section[];
+  warningCtx: SectionWarningContext;
   onChange: (sections: Section[]) => void;
   onEdit: (section: Section) => void;
   onRemove: (id: string) => void;
@@ -30,11 +33,14 @@ interface SectionsListProps {
 
 function SortableRow({
   section,
+  warning,
   onEdit,
   onRemove,
   onToggle,
 }: {
   section: Section;
+  /** Причина защо секцията няма да се покаже на живо (или null). */
+  warning: string | null;
   onEdit: () => void;
   onRemove: () => void;
   onToggle: () => void;
@@ -47,10 +53,11 @@ function SortableRow({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-2 rounded-control border border-surface-200 bg-surface-0 px-2 py-1.5 ${
+      className={`rounded-control border border-surface-200 bg-surface-0 ${
         isDragging ? "z-10 shadow-lg" : ""
       } ${section.enabled ? "" : "opacity-60"}`}
     >
+      <div className="flex items-center gap-2 px-2 py-1.5">
       {/* Тъч цели ≥44px: drag дръжка и иконните действия са h-11/w-11 на
           мобилно, свиват се на десктоп (по-плътен ред при мишка). */}
       <button
@@ -95,11 +102,25 @@ function SortableRow({
       >
         <Icon name="x" size={16} />
       </button>
+      </div>
+      {/* Предупреждение: секцията е активна, но няма да се покаже на живо
+          (празни данни / данни от друг таб). Само при активна секция. */}
+      {section.enabled && warning && (
+        <div className="flex items-start gap-1.5 border-t border-surface-200 bg-surface-100 px-3 py-1.5 text-xs text-warning-600">
+          <Icon name="help-circle" size={13} className="mt-px shrink-0" />
+          <span>{warning}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-export function SectionsList({ sections, onChange, onEdit, onRemove }: SectionsListProps) {
+export function SectionsList({ sections, warningCtx, onChange, onEdit, onRemove }: SectionsListProps) {
+  /* Стабилен id за DndContext: без него dnd-kit генерира брояч-базиран
+     accessibility id (DndDescribedBy-N), който се разминава сървър↔клиент,
+     когато има >1 DndContext на страницата → hydration warning. useId дава
+     един и същ id на двете страни. */
+  const dndId = useId();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -114,13 +135,14 @@ export function SectionsList({ sections, onChange, onEdit, onRemove }: SectionsL
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-1.5">
           {sections.map((section) => (
             <SortableRow
               key={section.id}
               section={section}
+              warning={sectionWarning(section, warningCtx)}
               onEdit={() => onEdit(section)}
               onRemove={() => onRemove(section.id)}
               onToggle={() =>

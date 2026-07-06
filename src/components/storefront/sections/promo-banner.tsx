@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { publicImageUrl } from "@/lib/storage";
 import type { SectionOfType } from "@/schemas/site-settings";
+import { PromoCountdown } from "./promo-countdown";
 import type { SectionContext } from "./index";
 
 export function PromoBannerSection({
@@ -80,13 +81,16 @@ export function PromoBannerSection({
           hasImage ? "text-white" : ""
         }`}
       >
-        <p
-          className={`text-[11px] font-bold uppercase tracking-[0.24em] ${
-            hasImage ? "opacity-75" : "text-(--sf-primary)"
-          }`}
-        >
-          Оферта
-        </p>
+        {data.kicker && (
+          <p
+            className={`text-[11px] font-bold uppercase tracking-[0.24em] ${
+              hasImage ? "opacity-75" : "text-(--sf-primary)"
+            }`}
+          >
+            {data.kicker}
+          </p>
+        )}
+        {data.countdownTo && <PromoCountdown target={data.countdownTo} onImage={hasImage} />}
         {data.title && (
           <h2 className="max-w-3xl text-balance text-[clamp(2.25rem,6vw,4.25rem)] leading-[1.02]">
             {data.title}

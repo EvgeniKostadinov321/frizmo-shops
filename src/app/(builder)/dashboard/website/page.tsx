@@ -60,9 +60,11 @@ export default async function WebsitePage({ searchParams }: PageProps) {
       where: eq(products.shopId, shop.id),
       orderBy: [desc(products.createdAt)],
       limit: 100,
-      columns: { id: true, name: true },
+      columns: { id: true, name: true, slug: true },
     }),
   ]);
+  /* Slug на най-новия продукт → preview таб „Продукт" сочи реална страница. */
+  const sampleProductSlug = productRows[0]?.slug ?? null;
 
   /* Onboarding wizard: първо влизане (никога пипан сайт → няма ред) или
      изрично „Започни отначало" (?wizard=1). Резултатът пише в draft-а. */
@@ -96,6 +98,10 @@ export default async function WebsitePage({ searchParams }: PageProps) {
   ]);
   const productOptions = productRows.map((p) => ({ value: p.id, label: p.name }));
 
+  const social = (shop.socialLinks as Record<string, string> | null) ?? {};
+  const hasSocials = Object.values(social).some((v) => (v ?? "").trim() !== "");
+  const hasAddress = Boolean(shop.address || shop.city);
+
   return (
     <WebsiteEditor
       shop={{
@@ -109,6 +115,9 @@ export default async function WebsitePage({ searchParams }: PageProps) {
       hasUnpublishedInitial={hasUnpublishedInitial}
       productOptions={productOptions}
       categoryOptions={categoryOptions}
+      hasSocials={hasSocials}
+      hasAddress={hasAddress}
+      sampleProductSlug={sampleProductSlug}
     />
   );
 }

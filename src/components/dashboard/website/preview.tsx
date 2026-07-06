@@ -7,19 +7,29 @@ export interface WebsitePreviewHandle {
   refresh: () => void;
 }
 
-const PAGES = [
-  { path: "", label: "Начало" },
-  { path: "/products", label: "Продукти" },
-  { path: "/about", label: "За нас" },
-  { path: "/contact", label: "Контакти" },
-] as const;
+interface PreviewProps {
+  slug: string;
+  /** Slug на примерен продукт → таб „Продукт" (null = скрит). */
+  sampleProductSlug?: string | null;
+}
 
 /** Live preview на магазина: iframe + табове за страниците + refresh сигнал. */
-export const WebsitePreview = forwardRef<WebsitePreviewHandle, { slug: string }>(
-  function WebsitePreview({ slug }, ref) {
+export const WebsitePreview = forwardRef<WebsitePreviewHandle, PreviewProps>(
+  function WebsitePreview({ slug, sampleProductSlug }, ref) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
     const [pagePath, setPagePath] = useState<string>("");
+
+    /* Табовете за страниците. Продуктовата се показва само при наличен
+       продукт; количката винаги (виждаш празното ѝ състояние + оформление). */
+    const pages = [
+      { path: "", label: "Начало" },
+      { path: "/products", label: "Продукти" },
+      ...(sampleProductSlug ? [{ path: `/p/${sampleProductSlug}`, label: "Продукт" }] : []),
+      { path: "/cart", label: "Количка" },
+      { path: "/about", label: "За нас" },
+      { path: "/contact", label: "Контакти" },
+    ];
 
     useImperativeHandle(ref, () => ({
       refresh() {
@@ -34,7 +44,7 @@ export const WebsitePreview = forwardRef<WebsitePreviewHandle, { slug: string }>
       <div className="flex min-h-0 w-full flex-1 flex-col gap-2 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1">
-            {PAGES.map((page) => (
+            {pages.map((page) => (
               <Button
                 key={page.path}
                 variant={pagePath === page.path ? "secondary" : "ghost"}

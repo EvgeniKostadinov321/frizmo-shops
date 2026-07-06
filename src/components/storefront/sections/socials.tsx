@@ -1,5 +1,6 @@
-import { Icon, type IconName } from "@/components/ui";
+import { Icon } from "@/components/ui";
 import type { SectionOfType } from "@/schemas/site-settings";
+import { buildSocialItems, type SocialItem } from "@/lib/socials";
 import { SectionShell, type SectionTone } from "./shared";
 import type { SectionContext } from "./index";
 
@@ -9,23 +10,13 @@ interface SocialsProps {
   tone?: SectionTone;
 }
 
-interface SocialItem {
-  href: string;
-  label: string;
-  icon: IconName;
-}
-
 /**
  * Три композиции (малка секция → в един файл): 1 = центрирани пилюли с име,
  * 2 = плътна primary CTA лента (брандов момент в края на страницата),
  * 3 = editorial hairline редове със стрелки.
  */
 export function SocialsSection({ data, ctx, tone }: SocialsProps) {
-  const links = (ctx.shop.socialLinks as { facebook?: string; instagram?: string } | null) ?? {};
-  const items: SocialItem[] = [
-    { href: links.facebook, label: "Facebook", icon: "facebook" as IconName },
-    { href: links.instagram, label: "Instagram", icon: "instagram" as IconName },
-  ].filter((i): i is SocialItem => Boolean(i.href));
+  const items: SocialItem[] = buildSocialItems(ctx.shop.socialLinks as never);
   if (items.length === 0) return null;
 
   /* Вариант 2 — плътна CTA лента върху primary */

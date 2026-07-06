@@ -149,6 +149,18 @@ export function SectionForm({
               <Input label="Линк на бутона" value={d.ctaHref} onChange={(e) => patch({ ctaHref: e.target.value })} hint="Празно = към продуктите" />
             </div>
             <ImageUploader kind="site" images={d.imagePaths} max={5} onChange={(imagePaths) => patch({ imagePaths })} />
+            <div className="flex flex-col gap-2 border-t border-surface-200 pt-3">
+              <Checkbox
+                label="Оцвети последната дума от заглавието"
+                checked={d.accentLastWord}
+                onChange={(e) => patch({ accentLastWord: e.target.checked })}
+              />
+              <Checkbox
+                label="Покажи линк „Нашата история →“"
+                checked={d.showStoryLink}
+                onChange={(e) => patch({ showStoryLink: e.target.checked })}
+              />
+            </div>
           </>
         );
       }
@@ -224,12 +236,25 @@ export function SectionForm({
         const d = section!.data;
         return (
           <>
+            <Input
+              label="Надпис отгоре"
+              value={d.kicker}
+              onChange={(e) => patch({ kicker: e.target.value })}
+              hint="Малкият надпис над заглавието. Празно = без него."
+            />
             <Input label="Заглавие" value={d.title} onChange={(e) => patch({ title: e.target.value })} />
             <Textarea label="Текст" rows={2} value={d.text} onChange={(e) => patch({ text: e.target.value })} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Текст на бутона" value={d.ctaLabel} onChange={(e) => patch({ ctaLabel: e.target.value })} />
               <Input label="Линк на бутона" value={d.ctaHref} onChange={(e) => patch({ ctaHref: e.target.value })} />
             </div>
+            <Input
+              type="datetime-local"
+              label="Отброяване до (по желание)"
+              value={d.countdownTo}
+              onChange={(e) => patch({ countdownTo: e.target.value })}
+              hint="Таймер за спешност. При изтичане таймерът се скрива, банерът остава."
+            />
             <ImageUploader kind="site" images={d.imagePath ? [d.imagePath] : []} max={1} onChange={(paths) => patch({ imagePath: paths[0] ?? "" })} />
           </>
         );

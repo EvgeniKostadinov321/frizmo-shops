@@ -35,6 +35,11 @@ export const shopSchema = z.object({
   workingHours: workingHoursSchema,
   facebook: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
   instagram: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
+  tiktok: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
+  youtube: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
+  /* Viber = линк (https://) ИЛИ телефон (viber://chat?number=…) — приемаме
+     произволен низ до 200 знака, за да не блокираме телефонния формат. */
+  viber: z.string().trim().max(200).default(""),
 });
 
 export type ShopInput = z.infer<typeof shopSchema>;

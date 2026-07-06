@@ -36,6 +36,11 @@ interface WebsiteEditorProps {
   hasUnpublishedInitial: boolean;
   productOptions: PickerOption[];
   categoryOptions: PickerOption[];
+  /** За empty-state предупрежденията: секции, чиито данни идват от таб „Магазин“. */
+  hasSocials: boolean;
+  hasAddress: boolean;
+  /** Slug на примерен продукт → preview таб „Продукт". null = няма продукти. */
+  sampleProductSlug: string | null;
 }
 
 export function WebsiteEditor({
@@ -44,6 +49,9 @@ export function WebsiteEditor({
   hasUnpublishedInitial,
   productOptions,
   categoryOptions,
+  hasSocials,
+  hasAddress,
+  sampleProductSlug,
 }: WebsiteEditorProps) {
   const router = useRouter();
   const [settings, setSettings] = useState<SiteSettings>(initial);
@@ -324,6 +332,12 @@ export function WebsiteEditor({
                 </div>
                 <SectionsList
                   sections={settings.sections}
+                  warningCtx={{
+                    productCount: productOptions.length,
+                    categoryCount: categoryOptions.length,
+                    hasSocials,
+                    hasAddress,
+                  }}
                   onChange={(sections) => update({ ...settings, sections })}
                   onEdit={(section) => setEditingId(section.id)}
                   onRemove={(id) =>
@@ -365,7 +379,7 @@ export function WebsiteEditor({
         <div
           className={`min-w-0 flex-1 ${tab === "preview" ? "flex" : "hidden lg:flex"}`}
         >
-          <WebsitePreview ref={previewRef} slug={shop.slug} />
+          <WebsitePreview ref={previewRef} slug={shop.slug} sampleProductSlug={sampleProductSlug} />
         </div>
       </div>
 

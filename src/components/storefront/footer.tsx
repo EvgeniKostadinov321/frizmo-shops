@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Shop } from "@/db";
+import { Icon } from "@/components/ui";
+import { buildSocialItems } from "@/lib/socials";
 import { formatWorkingHours, parseWorkingHours } from "@/lib/working-hours";
 import type { SiteSettings } from "@/schemas/site-settings";
 
@@ -49,9 +51,9 @@ function BottomBar({ shop, centered = false }: { shop: Shop; centered?: boolean 
  */
 export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
   const base = `/s/${shop.slug}`;
-  const socialLinks = (shop.socialLinks as { facebook?: string; instagram?: string } | null) ?? {};
+  const socials = buildSocialItems(shop.socialLinks as never);
   const hours = formatWorkingHours(parseWorkingHours(shop.workingHours));
-  const hasSocials = Boolean(socialLinks.facebook || socialLinks.instagram);
+  const hasSocials = socials.length > 0;
   const meta = [shop.businessCategory, shop.city].filter(Boolean).join(" · ");
 
   /* Вариант 2 — минимален центриран */
@@ -61,12 +63,7 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
       { href: `${base}/about`, label: "За нас" },
       { href: `${base}/contact`, label: "Контакти" },
       { href: `${base}/terms`, label: "Условия" },
-      ...(socialLinks.instagram
-        ? [{ href: socialLinks.instagram, label: "Instagram", external: true }]
-        : []),
-      ...(socialLinks.facebook
-        ? [{ href: socialLinks.facebook, label: "Facebook", external: true }]
-        : []),
+      ...socials.map((s) => ({ href: s.href, label: s.label, external: true })),
     ];
     return (
       <footer className="mt-auto bg-(--sf-text) text-(--sf-bg)">
@@ -191,30 +188,19 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
           <div>
             <ColTitle>Последвай ни</ColTitle>
             <ul className="flex flex-col gap-2.5">
-              {socialLinks.facebook && (
-                <li>
+              {socials.map((s) => (
+                <li key={s.label}>
                   <a
-                    href={socialLinks.facebook}
+                    href={s.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center opacity-80 transition-opacity hover:opacity-100"
+                    className="inline-flex min-h-10 items-center gap-2 opacity-80 transition-opacity hover:opacity-100"
                   >
-                    Facebook
+                    <Icon name={s.icon} size={16} className="shrink-0" />
+                    {s.label}
                   </a>
                 </li>
-              )}
-              {socialLinks.instagram && (
-                <li>
-                  <a
-                    href={socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center opacity-80 transition-opacity hover:opacity-100"
-                  >
-                    Instagram
-                  </a>
-                </li>
-              )}
+              ))}
             </ul>
           </div>
         )}
