@@ -41,7 +41,7 @@ export function HeaderVariant3({
         }`}
       >
         <div className="mx-auto flex h-19 max-w-6xl items-center justify-between gap-4 px-4">
-          <Brand shop={shop} base={base} />
+          <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
           <div className="flex items-center gap-1">
             <CartButton shopId={shop.id} base={base} />
             <MenuButton onOpen={() => setMenuOpen(true)} expanded={menuOpen} />

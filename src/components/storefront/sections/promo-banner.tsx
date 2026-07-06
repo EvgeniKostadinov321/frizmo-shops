@@ -14,14 +14,25 @@ export function PromoBannerSection({
   if (!data.title && !data.text) return null;
   const hasImage = Boolean(data.imagePath);
 
-  /* „Купон-билет": целият текст с кода живее ВЪТРЕ в dashed рамка (талон за
-     отрязване) — показва се винаги при наличен текст, не зависи от CTA полетата.
-     Празен href → към продуктите. */
+  /* Цветна логика по контекст:
+     - СЪС снимка → бял текст върху scrim, акцентите бели (снимката носи цвета).
+     - БЕЗ снимка → спокоен surface фон (тъмен при тъмните теми), а primary
+       живее САМО в акцентите (kicker, лента, dashed талон, CTA). Правилото
+       „ярко никога върху голяма площ" важи и тук — плътен неонов фон на
+       телефон ослепява (одит 2026-07-06). */
+  const accentBorder = hasImage
+    ? "border-white/60 hover:border-white"
+    : "border-(--sf-primary)/45 hover:border-(--sf-primary)";
+
   const ticketInner = (
     <>
       {data.text && <span className="text-lg font-medium">{data.text}</span>}
       {data.ctaLabel && (
-        <span className="inline-flex items-center gap-1.5 font-(family-name:--sf-font-heading) text-lg tracking-[0.14em]">
+        <span
+          className={`inline-flex items-center gap-1.5 font-(family-name:--sf-font-heading) text-lg tracking-[0.14em] ${
+            hasImage ? "text-white" : "text-(--sf-primary)"
+          }`}
+        >
           {data.ctaLabel}
           <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
             →
@@ -30,14 +41,14 @@ export function PromoBannerSection({
       )}
     </>
   );
-  const ticketClass = `group inline-flex max-w-full flex-wrap items-center gap-x-6 gap-y-2 border-2 border-dashed px-6 py-4 transition-colors ${
-    hasImage
-      ? "border-white/60 hover:border-white"
-      : "border-(--sf-on-primary)/60 hover:border-(--sf-on-primary)"
-  }`;
+  const ticketClass = `group inline-flex max-w-full flex-wrap items-center gap-x-6 gap-y-2 border-2 border-dashed px-6 py-4 transition-colors ${accentBorder}`;
 
   return (
-    <section className={`relative w-full overflow-hidden ${hasImage ? "" : "bg-(--sf-primary)"}`}>
+    <section
+      className={`relative w-full overflow-hidden ${
+        hasImage ? "" : "bg-(--sf-surface) text-(--sf-text)"
+      }`}
+    >
       {hasImage && (
         <>
           <Image
@@ -59,12 +70,23 @@ export function PromoBannerSection({
           />
         </>
       )}
+      {/* Без снимка: вертикална primary лента вляво — брандов акцент, който
+          държи цвета в тесен ръб, не на цяла площ. */}
+      {!hasImage && (
+        <span aria-hidden className="absolute inset-y-0 left-0 w-1.5 bg-(--sf-primary)" />
+      )}
       <div
         className={`relative mx-auto flex min-h-72 w-full max-w-6xl flex-col justify-center gap-5 px-4 py-14 ${
-          hasImage ? "text-white" : "text-(--sf-on-primary)"
+          hasImage ? "text-white" : ""
         }`}
       >
-        <p className="text-[11px] font-bold uppercase tracking-[0.24em] opacity-75">Оферта</p>
+        <p
+          className={`text-[11px] font-bold uppercase tracking-[0.24em] ${
+            hasImage ? "opacity-75" : "text-(--sf-primary)"
+          }`}
+        >
+          Оферта
+        </p>
         {data.title && (
           <h2 className="max-w-3xl text-balance text-[clamp(2.25rem,6vw,4.25rem)] leading-[1.02]">
             {data.title}

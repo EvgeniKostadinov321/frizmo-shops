@@ -42,7 +42,7 @@ export function HeaderVariant1({
       }`}
     >
       <div className="mx-auto flex h-19 max-w-6xl items-center justify-between gap-4 px-4">
-        <Brand shop={shop} base={base} />
+        <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
 
         <nav
           aria-label="Навигация на магазина"

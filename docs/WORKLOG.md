@@ -81,6 +81,63 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-06 (6)** — **Полиране на редактора + responsive одит + функционален одит →
+  пътна карта.** Няколко UX кръга по website редактора след live тестване от потребителя:
+  (1) **Tooltip примитив** (`ui/tooltip.tsx`, CSS-only, 300ms delay, работи на disabled и
+  клавиатурен фокус) → hover обяснения на top-bar действията. (2) **„+ Добави" фикс**
+  (иконка+текст вместо пренасящ се `+`). (3) **Палитри per тема в редактора** — theme
+  панелът вече ползва `THEME_PALETTES[theme]` (site-recipes) вместо общия PALETTE_PRESETS,
+  който е **изтрит** от themes.ts; смяната на тема показва нейните курирани комбинации.
+  (4) **`logoOnly` настройка** (`site-settings.ts`) — чекбокс „само логото без името" в
+  таб Тема (само при качено лого); прилага се в `Brand` (3 header варианта + мобилно меню);
+  защита: без лого името винаги се показва. (5) **Upload прогрес + паралелно качване**
+  (`lib/upload-to-signed-url.ts` — XHR с реален %, репликира Supabase signed-upload контракта;
+  fallback към SDK-то; `image-uploader.tsx` качва с `Promise.all`, прогрес-карти вместо
+  spinner). (6) **promo-banner без снимка** заливаше 400px+ с неонов primary (Пулс лайм) →
+  surface фон + primary само в акцентите (лента/kicker/CTA/талон). (7) **DB singleton**
+  (`db/index.ts`) — dev hot-reload пресъздаваше postgres клиента → изчерпани връзки →
+  произволни „Failed query"; фикс: кеш на globalThis. (8) **Responsive одит на 375px**
+  (обективно измерен през временен Playwright тест, после изтрит): top-bar на редактора
+  преливаше с 21px („Публикувай промените" отрязан) → двуредова лента на мобилно;
+  секционни икони/табове/карусел точки < 44px → тъч цели. ⚠️ **Функционален одит**
+  (2 паралелни Explore агента + ръчна проверка) → идентифицирани 13+ липсващи фийчъра;
+  резултатът е **нова пътна карта** в `docs/superpowers/plans/2026-07-06-builder-roadmap.md`
+  (4 вълни). Onboarding wizard спецът от (4) е imported и допълнен. `pnpm check` зелен
+  (131 теста). Гоча: freeze при качване на файл = Windows Explorer диалог (thumbnails/
+  OneDrive), НЕ наш код — само нативният OS модал заключва целия браузър.
+
+- **2026-07-06 (5)** — **E2e спасителна операция + 2 реални бъга.** Пълният
+  e2e suite не беше пускан от редизайн-ерата и беше изгнил. Реални бъгове,
+  хванати от тестовете: (1) wizard-ът се подменяше с редактора ПРЕДИ финалния
+  екран (revalidatePath от saveSiteSettings пре-рендерира страницата → ред
+  вече има → editor; фикс: wizard-ът закотвя URL на ?wizard=1 при mount);
+  (2) **landing-ът беше загубил демо картите и hero телефона** —
+  DEMO_SHOP_SLUGS сочеше изтритите стари демота (ferma-zelena-dolina…);
+  фикс: 3 от тематичните (atelie-glina/puls/efir), hero = Ателие Глина.
+  Тестова хигиена: нови helpers (createShopViaWizard, completeWebsiteWizard),
+  selectOption с hydration retry (toPass), „Табло" heading → toHaveURL
+  (дашбордът има h1 = името на магазина), sonner hover-pause гоча (мишката
+  паузира dismiss → mouse.move + чакане toast=0), strict-mode дубли (.first()/
+  exact/table-scope), стар empty-state/toast текст. **13/13 зелени** (без
+  landing-a11y — 93 РЕАЛНИ контраст нарушения от теракота редизайна, чака
+  дизайн решение). Гоча: 7 фейла за 30 сек = EMAXCONN, не код.
+
+- **2026-07-06 (4)** — **Onboarding wizard „до хубав сайт за 5 минути"**
+  (спец: docs/superpowers/specs/2026-07-06-website-onboarding-wizard.md).
+  Нов `src/lib/site-recipes.ts`: THEME_PALETTES (4 палитри × 9 теми),
+  CATEGORY_SUGGESTIONS + CATEGORY_CONTENT (текстови шаблони по 9-те бизнес
+  категории), buildRecipeSections (реда на демотата, БЕЗ фалшиви отзиви —
+  секцията празна+изключена). Wizard (dashboard/website/wizard/): Поздрав →
+  Тема (РЕАЛНИ скрийншоти на демотата, public/theme-previews/ + README) →
+  Цветове → Снимки (дропзона, най-хоризонталната → hero) → Категории/продукти
+  (по желание) → финал с „Разгледай" + „Публикувай" (publishSiteSettings +
+  publishShop). Прогрес в localStorage (draft-ът е стриктен Zod — не носи чужди
+  ключове); резултатът се пише в draft през saveSiteSettings. Гейт „Първо
+  добави продукт" на целия таб Уебсайт (≥1 продукт). „Започни отначало" в
+  theme панела (?wizard=1, confirm). 4 нови маскот пози (Nano Banana Pro +
+  character ref): bee-palette, bee-camera, bee-product, bee-party.
+  Скрийншотите — механично с Playwright (1200×760 → 600px JPEG).
+
 - **2026-07-06 (3)** — **Terms редизайн + statement еталон + втори пласт
   подписи + 3 микро-фикса.** Terms: PageHeader + номерирани секции (display
   цифри) + hairlines + пълноконтрастен текст (беше най-грубата страница точно

@@ -13,7 +13,7 @@ import {
   unpublishShop,
 } from "@/actions/site-settings";
 import { ImageUploader } from "@/components/dashboard/image-uploader";
-import { Badge, Button, Card, Drawer, Icon, Input, Textarea } from "@/components/ui";
+import { Badge, Button, Card, Checkbox, Drawer, Icon, Input, Textarea, Tooltip } from "@/components/ui";
 import { newSection, SECTION_DEFS } from "@/lib/sections";
 import type { SectionType, SiteSettings } from "@/schemas/site-settings";
 import { SectionForm } from "./section-form";
@@ -167,57 +167,76 @@ export function WebsiteEditor({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Топ-бар */}
-      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-surface-200 bg-surface-0 px-4">
-        <div className="flex min-w-0 items-center gap-3">
+      {/* Топ-бар. На мобилно: два реда (идентичност горе, действия долу с
+          пренасяне) — 4 действия + заглавие не се събират в един ред на 375px.
+          От sm нагоре е един ред както преди. */}
+      <header className="flex shrink-0 flex-col gap-2 border-b border-surface-200 bg-surface-0 px-4 py-2 sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-0">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
+            aria-label="Обратно към таблото"
+            className="flex size-9 shrink-0 items-center justify-center rounded-control text-ink-700 transition-colors hover:bg-surface-100 hover:text-ink-900 sm:size-auto sm:gap-1.5 sm:px-0 sm:text-sm sm:font-medium"
           >
             <Icon name="chevron-down" size={18} className="rotate-90" />
             <span className="hidden sm:inline">Табло</span>
           </Link>
-          <div className="h-5 w-px bg-surface-200" />
+          <div className="h-5 w-px shrink-0 bg-surface-200" />
           <h1 className="truncate text-sm font-bold text-ink-900">{shop.name}</h1>
           <Badge tone={isPublished ? "success" : "neutral"}>
             {isPublished ? "На живо" : "Скрит"}
           </Badge>
           {hasUnpublished && (
             <Badge tone="warning" title="Имаш промени, които клиентите още не виждат">
-              Непубликувани промени
+              <span className="sm:hidden">Чернова</span>
+              <span className="hidden sm:inline">Непубликувани промени</span>
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={publicUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden items-center gap-1 text-sm text-brand-600 hover:underline sm:inline-flex"
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          <Tooltip label="Отваря сайта ти в нов раздел." className="hidden sm:inline-flex">
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
+            >
+              Отвори сайта
+              <Icon name="external-link" size={14} />
+            </a>
+          </Tooltip>
+          <Tooltip
+            label={
+              isPublished
+                ? "Сваля магазина от публичен достъп — клиентите спират да го виждат."
+                : "Прави магазина публично достъпен за клиенти."
+            }
           >
-            Отвори сайта
-            <Icon name="external-link" size={14} />
-          </a>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleVisibilityToggle}
-            loading={togglingVisibility}
-          >
-            {isPublished ? "Скрий магазина" : "Публикувай магазина"}
-          </Button>
-          <div className="h-5 w-px bg-surface-200" />
-          <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={saving} disabled={!dirty}>
-            Запази
-          </Button>
-          <Button
-            size="sm"
-            onClick={handlePublishChanges}
-            loading={publishingChanges}
-            disabled={!hasUnpublished}
-          >
-            Публикувай промените
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleVisibilityToggle}
+              loading={togglingVisibility}
+            >
+              {isPublished ? "Скрий магазина" : "Публикувай магазина"}
+            </Button>
+          </Tooltip>
+          <div className="hidden h-5 w-px bg-surface-200 sm:block" />
+          <Tooltip label="Запазва промените като чернова — виждаш ги само ти.">
+            <Button variant="secondary" size="sm" onClick={handleSaveDraft} loading={saving} disabled={!dirty}>
+              Запази
+            </Button>
+          </Tooltip>
+          <Tooltip label="Пуска черновата на живо — клиентите виждат промените." align="end">
+            <Button
+              size="sm"
+              className="grow sm:grow-0"
+              onClick={handlePublishChanges}
+              loading={publishingChanges}
+              disabled={!hasUnpublished}
+            >
+              Публикувай промените
+            </Button>
+          </Tooltip>
         </div>
       </header>
 
@@ -237,7 +256,7 @@ export function WebsiteEditor({
                 type="button"
                 onClick={() => setTab(t.key)}
                 aria-pressed={tab === t.key}
-                className={`h-9 flex-1 rounded-control text-sm font-medium transition-colors ${
+                className={`h-11 flex-1 rounded-control text-sm font-medium transition-colors sm:h-9 ${
                   t.mobileOnly ? "lg:hidden" : ""
                 } ${
                   tab === t.key
@@ -276,16 +295,31 @@ export function WebsiteEditor({
                     max={1}
                     onChange={handleLogoChange}
                   />
+                  {shop.logoPath && (
+                    <Tooltip label="Скрива името на магазина до логото в header-а на сайта — избери го, ако логото ти вече съдържа името. Името остава във footer-а, заглавията и системните текстове.">
+                      <Checkbox
+                        label="Показвай само логото (без името)"
+                        checked={settings.logoOnly}
+                        onChange={(e) => update({ ...settings, logoOnly: e.target.checked })}
+                      />
+                    </Tooltip>
+                  )}
                 </Card>
               </div>
             )}
 
             {tab === "sections" && (
               <Card className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <h2 className="font-bold text-ink-900">Секции на началната страница</h2>
-                  <Button size="sm" variant="secondary" onClick={() => setPickerOpen(true)}>
-                    + Добави
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="shrink-0"
+                    onClick={() => setPickerOpen(true)}
+                  >
+                    <Icon name="plus" size={15} className="-ml-0.5" />
+                    Добави
                   </Button>
                 </div>
                 <SectionsList

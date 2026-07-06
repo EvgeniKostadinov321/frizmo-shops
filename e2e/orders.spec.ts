@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { selectOption } from "./helpers";
+import { completeWebsiteWizard, createShopViaWizard } from "./helpers";
 
 async function register(page: Page, email: string) {
   /* Cookie банерът покрива бутони — маркираме го като видян */
@@ -20,17 +20,13 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await register(page, `frizmo.e2e+ord${Date.now()}@gmail.com`);
 
   /* Магазин + продукт с наличност 5 и промоция „2 за 30" */
-  await page.getByRole("link", { name: "Създай магазин" }).click();
-  await page.getByLabel("Име на магазина").fill("Е2Е Поръчки");
-  await selectOption(page, "Категория на бизнеса", "Храни и напитки");
-  await page.getByRole("button", { name: "Създай магазина" }).click();
-  await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
+  await createShopViaWizard(page, "Е2Е Поръчки", "Храни и напитки");
 
   await page.getByLabel("Име на продукта").fill("Козе сирене");
   await page.getByLabel("Цена", { exact: true }).fill("20");
   await page.getByLabel("Наличност").fill("5");
   await page.getByRole("button", { name: "Създай продукта" }).click();
-  await expect(page.getByRole("heading", { name: "Табло" })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
 
   /* Промоция „купи 2 за 30" през редакцията */
   await page.getByRole("link", { name: "Продукти", exact: true }).click();
@@ -46,12 +42,14 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await expect(page.getByText("Куриер до адрес")).toBeVisible();
   await expect(page.getByText("Наложен платеж")).toBeVisible();
 
+  /* Първото влизане в Уебсайт = onboarding wizard; публикуваме от финала му */
   await page.getByRole("link", { name: "Уебсайт" }).click();
+  await completeWebsiteWizard(page);
   const publicUrl = await page
-    .getByRole("link", { name: "Отвори сайта ↗" })
+    .getByRole("link", { name: /Разгледай сайта си/ })
     .getAttribute("href");
-  await page.getByRole("button", { name: "Публикувай" }).click();
-  await expect(page.getByText("Магазинът е публикуван! 🎉")).toBeVisible();
+  await page.getByRole("button", { name: "Публикувай — на живо за всички" }).click();
+  await expect(page.getByRole("heading", { name: "Магазинът ти е на живо!" })).toBeVisible();
 
   /* ГОСТ: добавя 2 бр → deal цена 30,00 → checkout */
   const guestContext = await browser.newContext();
@@ -62,7 +60,7 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await expect(guest.getByText(/Купи 2 бр за общо/)).toBeVisible();
   await guest.getByRole("button", { name: "Увеличи количеството" }).click();
   await guest.getByRole("button", { name: "Добави в количката" }).click();
-  await expect(guest.getByText("Добавено в количката.")).toBeVisible();
+  await expect(guest.getByText("Добавени 2 бр в количката.")).toBeVisible();
 
   await guest.goto(`${publicUrl}/cart`);
   await expect(guest.getByText(/2 бр за 30,00/)).toBeVisible();
@@ -90,10 +88,11 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await expect(guest.getByText("#0001")).toBeVisible();
   await guestContext.close();
 
-  /* ТЪРГОВЕЦЪТ: вижда поръчката, потвърждава, наличността е 3 */
-  await page.getByRole("link", { name: "Поръчки", exact: true }).click();
+  /* ТЪРГОВЕЦЪТ: вижда поръчката, потвърждава, наличността е 3.
+     (Финалът на wizard-а е в builder layout без страничния nav → goto.) */
+  await page.goto("/dashboard/orders");
   await page.getByRole("link", { name: "#0001" }).click();
-  await expect(page.getByText("Гост Купувач")).toBeVisible();
+  await expect(page.getByText("Гост Купувач").first()).toBeVisible();
   await expect(page.getByText(/2 бр за 30,00/)).toBeVisible();
   await page.getByRole("button", { name: "Потвърди", exact: true }).click();
   await expect(page.getByText("Потвърдена")).toBeVisible();

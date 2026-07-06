@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { selectOption } from "./helpers";
+import { completeWebsiteWizard, createShopViaWizard } from "./helpers";
 
 async function register(page: Page, email: string) {
   /* Cookie банерът покрива бутони — маркираме го като видян */
@@ -62,20 +62,19 @@ test.describe("Платформен админ", () => {
     const merchant = await merchantContext.newPage();
     const stamp = Date.now();
     await register(merchant, `frizmo.e2e+victim${stamp}@gmail.com`);
-    await merchant.getByRole("link", { name: "Създай магазин" }).click();
-    await merchant.getByLabel("Име на магазина").fill(`Магазин за скриване ${stamp}`);
-    await selectOption(merchant, "Категория на бизнеса", "Друго");
-    await merchant.getByRole("button", { name: "Създай магазина" }).click();
+    await createShopViaWizard(merchant, `Магазин за скриване ${stamp}`, "Друго");
     await merchant.getByLabel("Име на продукта").fill("Продукт");
     await merchant.getByLabel("Цена", { exact: true }).fill("10");
     await merchant.getByRole("button", { name: "Създай продукта" }).click();
-    await expect(merchant.getByRole("heading", { name: "Табло" })).toBeVisible();
-    await merchant.getByRole("link", { name: "Уебсайт" }).click();
+    await expect(merchant).toHaveURL(/\/dashboard$/);
+    /* Първото влизане в Уебсайт = onboarding wizard; публикуваме от финала му */
+    await merchant.getByRole("link", { name: "Уебсайт", exact: true }).click();
+    await completeWebsiteWizard(merchant);
     const publicUrl = await merchant
-      .getByRole("link", { name: "Отвори сайта ↗" })
+      .getByRole("link", { name: /Разгледай сайта си/ })
       .getAttribute("href");
-    await merchant.getByRole("button", { name: "Публикувай" }).click();
-    await expect(merchant.getByText("Магазинът е публикуван! 🎉")).toBeVisible();
+    await merchant.getByRole("button", { name: "Публикувай — на живо за всички" }).click();
+    await expect(merchant.getByRole("heading", { name: "Магазинът ти е на живо!" })).toBeVisible();
     await merchantContext.close();
 
     /* Админ: регистрира се първия път или влиза */

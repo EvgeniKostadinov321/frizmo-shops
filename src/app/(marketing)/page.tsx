@@ -74,9 +74,10 @@ export default async function LandingPage() {
   const demoShops = await db.query.shops.findMany({
     where: inArray(shops.slug, [...DEMO_SHOP_SLUGS]),
   });
-  /* Водещата ниша е home crafts — Ателие Ръчичка (решение 2026-07-03) */
+  /* Водещата ниша е home crafts — Ателие Глина (наследник на Ателие Ръчичка,
+     решение 2026-07-03; демотата са тематичните от 2026-07-05) */
   const heroShop =
-    demoShops.find((s) => s.slug === "atelie-rachichka") ?? demoShops[0] ?? null;
+    demoShops.find((s) => s.slug === "atelie-glina") ?? demoShops[0] ?? null;
   const heroProducts = heroShop
     ? await db.query.products.findMany({
         where: and(eq(products.shopId, heroShop.id), eq(products.status, "active")),

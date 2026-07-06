@@ -1,7 +1,9 @@
 "use client";
 
 import { useId } from "react";
-import { PALETTE_PRESETS, THEME_LABELS, THEME_META, THEME_PRESETS } from "@/lib/themes";
+import { Icon } from "@/components/ui";
+import { THEME_PALETTES } from "@/lib/site-recipes";
+import { THEME_LABELS, THEME_META, THEME_PRESETS } from "@/lib/themes";
 import {
   HEADER_VARIANTS,
   THEMES,
@@ -154,10 +156,15 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
         </div>
       </div>
 
+      {/* Палитрите са курирани per тема (същите като в wizard-а) — смяната на
+          темата показва нейните комбинации, текущите цветове не се пипат. */}
       <div>
         <p className="mb-2 text-sm font-medium text-ink-900">Цветова комбинация</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {PALETTE_PRESETS.map((palette) => {
+        <p className="mb-2 text-xs text-ink-500">
+          Подбрани за тема „{THEME_LABELS[settings.theme]}“.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {THEME_PALETTES[settings.theme].map((palette) => {
             const active =
               settings.primaryColor === palette.primary &&
               settings.accentColor === palette.accent;
@@ -285,6 +292,27 @@ export function ThemePanel({ settings, onChange }: ThemePanelProps) {
             );
           })}
         </div>
+      </div>
+
+      {/* Рестарт на onboarding wizard-а: новата рецепта презаписва ЧЕРНОВАТА
+          (публикуваният сайт не се пипа до изрично „Публикувай"). */}
+      <div className="border-t border-surface-200 pt-4">
+        <a
+          href="/dashboard/website?wizard=1"
+          onClick={(e) => {
+            if (
+              !window.confirm(
+                "Wizard-ът ще замени незапазените промени и черновата с нова рецепта. Публикуваният сайт не се променя. Продължаваш ли?",
+              )
+            ) {
+              e.preventDefault();
+            }
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-brand-600"
+        >
+          <Icon name="sparkles" size={15} />
+          Започни отначало с wizard-а
+        </a>
       </div>
     </div>
   );

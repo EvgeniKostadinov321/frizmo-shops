@@ -63,7 +63,7 @@ test.describe("Магазин и продукти", () => {
     /* 2. Стъпка 2 → прескачаме */
     await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
     await page.getByRole("link", { name: "Прескочи засега" }).click();
-    await expect(page.getByRole("heading", { name: "Табло" })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard$/);
 
     /* 3. Категории: Млечни → Сирена (подкатегория) */
     await page.getByRole("link", { name: "Категории" }).click();
@@ -109,11 +109,12 @@ test.describe("Магазин и продукти", () => {
 
     await page.getByRole("button", { name: "Създай продукта" }).click();
     await expect(page).toHaveURL(/\/dashboard\/products$/);
-    await expect(page.getByText("Краве сирене")).toBeVisible();
-    await expect(page.getByText("12,50")).toBeVisible();
+    /* Списъкът има мобилен (скрит на десктоп) и таблетен изглед → таблицата */
+    await expect(page.getByRole("table").getByText("Краве сирене")).toBeVisible();
+    await expect(page.getByRole("table").getByText("12,50")).toBeVisible();
 
     /* 5. Редакция: вариантната цена е запазена */
-    await page.getByRole("link", { name: /Краве сирене/ }).click();
+    await page.getByRole("table").getByRole("link", { name: /Краве сирене/ }).click();
     await expect(page.getByRole("heading", { name: /Редакция/ })).toBeVisible();
     await expect(page.getByLabel("Цена за 1кг")).toHaveValue("23,00");
   });
@@ -129,7 +130,7 @@ test.describe("Магазин и продукти", () => {
     await page.getByLabel("Име на продукта").fill("Таен продукт");
     await page.getByLabel("Цена", { exact: true }).fill("10");
     await page.getByRole("button", { name: "Създай продукта" }).click();
-    await expect(page.getByRole("heading", { name: "Табло" })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard$/);
 
     await page.getByRole("link", { name: "Продукти", exact: true }).click();
     await page.getByRole("link", { name: /Таен продукт/ }).click();

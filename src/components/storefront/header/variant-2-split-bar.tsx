@@ -56,7 +56,7 @@ export function HeaderVariant2({ shop, settings, rootCategories = [] }: HeaderVa
 
         {/* Лого — центрирано */}
         <div className="flex shrink-0 justify-center">
-          <Brand shop={shop} base={base} />
+          <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
         </div>
 
         {/* Дясно крило (десктоп) + количка */}

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { requestImageUpload } from "@/actions/uploads";
-import { Icon, Spinner } from "@/components/ui";
+import { Icon } from "@/components/ui";
 import {
   ALLOWED_IMAGE_EXT,
   fileExtension,
@@ -13,6 +13,7 @@ import {
   publicImageUrl,
   SHOP_MEDIA_BUCKET,
 } from "@/lib/storage";
+import { uploadToSignedUrlWithProgress } from "@/lib/upload-to-signed-url";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 export interface ImageUploaderProps {
@@ -23,6 +24,13 @@ export interface ImageUploaderProps {
   kind?: "product" | "branding" | "site";
 }
 
+/** Един файл в момента на качване: име + прогрес 0–100. */
+interface Progress {
+  id: number;
+  name: string;
+  percent: number;
+}
+
 export function ImageUploader({
   images,
   onChange,
@@ -30,9 +38,11 @@ export function ImageUploader({
   kind = "product",
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(0);
+  const [progress, setProgress] = useState<Progress[]>([]);
+  /* Пореден id за прогрес картите (без Date.now/random в render). */
+  const idRef = useRef(0);
 
-  async function uploadOne(file: File): Promise<string | null> {
+  async function uploadOne(file: File, id: number): Promise<string | null> {
     const ext = fileExtension(file.name);
     if (!(ALLOWED_IMAGE_EXT as readonly string[]).includes(ext)) {
       toast.error(`„${file.name}": неподдържан формат (JPG, PNG, WebP, AVIF).`);
@@ -49,34 +59,66 @@ export function ImageUploader({
       return null;
     }
 
-    const supabase = createSupabaseBrowser();
-    const { error } = await supabase.storage
-      .from(SHOP_MEDIA_BUCKET)
-      .uploadToSignedUrl(request.data.path, request.data.token, file);
-    if (error) {
-      toast.error(`„${file.name}": качването се провали.`);
-      return null;
+    function setPercent(percent: number) {
+      setProgress((prev) => prev.map((p) => (p.id === id ? { ...p, percent } : p)));
     }
-    return request.data.path;
+
+    /* Основен път: XHR с реален прогрес. При неуспех — пада към SDK-то
+       (без прогрес, но надеждно), за да не блокираме качването заради
+       промяна във вътрешния endpoint формат. */
+    try {
+      await uploadToSignedUrlWithProgress({
+        path: request.data.path,
+        token: request.data.token,
+        file,
+        onProgress: setPercent,
+      });
+      return request.data.path;
+    } catch {
+      const supabase = createSupabaseBrowser();
+      const { error } = await supabase.storage
+        .from(SHOP_MEDIA_BUCKET)
+        .uploadToSignedUrl(request.data.path, request.data.token, file);
+      if (error) {
+        toast.error(`„${file.name}": качването се провали.`);
+        return null;
+      }
+      setPercent(100);
+      return request.data.path;
+    }
   }
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
     const files = Array.from(fileList).slice(0, max - images.length);
     if (files.length < fileList.length) {
-      toast.error(`Максимум ${max} снимки на продукт.`);
+      toast.error(`Максимум ${max} ${max === 1 ? "снимка" : "снимки"}.`);
     }
     if (files.length === 0) return;
 
-    setUploading(files.length);
-    const uploaded: string[] = [];
-    for (const file of files) {
-      const path = await uploadOne(file);
-      if (path) uploaded.push(path);
-      setUploading((n) => n - 1);
-    }
-    if (uploaded.length > 0) onChange([...images, ...uploaded]);
+    /* Реселектирай веднага — input-ът не държи референции към File-овете,
+       докато качваме (позволява ново качване без чакане). */
     if (inputRef.current) inputRef.current.value = "";
+
+    const batch: Progress[] = files.map((file) => ({
+      id: idRef.current++,
+      name: file.name,
+      percent: 0,
+    }));
+    setProgress((prev) => [...prev, ...batch]);
+
+    /* Паралелно качване — всеки файл сам съобщава прогреса си. Всеки
+       разчиства своята прогрес карта при финал (успех или провал). */
+    const results = await Promise.all(
+      files.map((file, i) =>
+        uploadOne(file, batch[i]!.id).finally(() => {
+          setProgress((prev) => prev.filter((p) => p.id !== batch[i]!.id));
+        }),
+      ),
+    );
+
+    const uploaded = results.filter((p): p is string => p !== null);
+    if (uploaded.length > 0) onChange([...images, ...uploaded]);
   }
 
   function move(index: number, delta: -1 | 1) {
@@ -88,6 +130,8 @@ export function ImageUploader({
     next[target] = item;
     onChange(next);
   }
+
+  const uploadingCount = progress.length;
 
   return (
     <div className="flex flex-wrap gap-3">
@@ -103,7 +147,9 @@ export function ImageUploader({
             sizes="96px"
             className="object-cover"
           />
-          {i === 0 && (
+          {/* „Корица" има смисъл само при няколко снимки (първата е водеща);
+              при единично поле (лого) баджът подвежда. */}
+          {i === 0 && max > 1 && (
             <span className="absolute left-1 top-1 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
               Корица
             </span>
@@ -141,16 +187,28 @@ export function ImageUploader({
         </div>
       ))}
 
-      {Array.from({ length: uploading }).map((_, i) => (
+      {/* Прогрес карти — една на файл в момента на качване, с реален %. */}
+      {progress.map((p) => (
         <div
-          key={`uploading-${i}`}
-          className="flex size-24 items-center justify-center rounded-control border border-surface-200 bg-surface-50"
+          key={p.id}
+          className="relative flex size-24 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-control border border-surface-200 bg-surface-50 px-1"
+          role="progressbar"
+          aria-valuenow={p.percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Качване на ${p.name}`}
         >
-          <Spinner size="sm" />
+          <span className="text-sm font-semibold text-ink-700">{p.percent}%</span>
+          <span className="h-1 w-16 overflow-hidden rounded-full bg-surface-200">
+            <span
+              className="block h-full rounded-full bg-brand-600 transition-[width] duration-200"
+              style={{ width: `${p.percent}%` }}
+            />
+          </span>
         </div>
       ))}
 
-      {images.length + uploading < max && (
+      {images.length + uploadingCount < max && (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}

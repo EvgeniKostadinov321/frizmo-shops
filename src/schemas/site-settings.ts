@@ -215,6 +215,9 @@ export const siteSettingsSchema = z.object({
   ),
   /* Footer композиция: 1 = богат тъмен (колони), 2 = минимален центриран. */
   footerVariant: z.union([z.literal(1), z.literal(2)]).default(1),
+  /* Header-ът показва само логото (без името) — за лога, които вече съдържат
+     името на бранда. Игнорира се, когато магазинът няма качено лого. */
+  logoOnly: z.boolean().default(false),
   footerText: shortText(300),
   aboutText: shortText(5000),
   aboutImagePaths: z.array(z.string().max(300)).max(4).default([]),

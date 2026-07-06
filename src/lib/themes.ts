@@ -418,16 +418,6 @@ export function recommendedThemesFor(category: string): ThemeId[] {
   );
 }
 
-/** Курирани цветови комбинации за theme панела (primary + accent). */
-export const PALETTE_PRESETS = [
-  { name: "Гора", primary: "#0e7c4a", accent: "#c98a1b" },
-  { name: "Океан", primary: "#1d4ed8", accent: "#0e9488" },
-  { name: "Теракота", primary: "#b4532a", accent: "#3f6212" },
-  { name: "Слива", primary: "#7e2a8c", accent: "#be7c2c" },
-  { name: "Въглен", primary: "#27272a", accent: "#dc2626" },
-  { name: "Роза", primary: "#be2a5d", accent: "#4a7a6f" },
-] as const;
-
 export function themeStyle(
   settings: Pick<SiteSettings, "theme" | "primaryColor" | "accentColor">,
 ): CSSProperties {

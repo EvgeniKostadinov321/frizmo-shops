@@ -1,9 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
-import { selectOption } from "./helpers";
+import { completeWebsiteWizard, createShopViaWizard } from "./helpers";
 
 async function register(page: Page, email: string) {
-  /* Cookie банерът покрива бутони — маркираме го като видян */
-  await page.addInitScript(() => window.localStorage.setItem("frizmo-cookie-notice", "1"));
+  /* Cookie банерът и интро модалът на редактора покриват бутони — маркираме ги
+     като видени */
+  await page.addInitScript(() => {
+    window.localStorage.setItem("frizmo-cookie-notice", "1");
+    window.localStorage.setItem("frizmo-website-intro", "1");
+  });
   await page.goto("/auth/register");
   await page.getByLabel("Име и фамилия").fill("Е2Е Търговец");
   await page.getByLabel("Имейл").fill(email);
@@ -20,16 +24,12 @@ test("персонализация → публикуване → публиче
   await register(page, `frizmo.e2e+sf${Date.now()}@gmail.com`);
 
   /* Магазин + продукт с вариант */
-  await page.getByRole("link", { name: "Създай магазин" }).click();
-  await page.getByLabel("Име на магазина").fill("Е2Е Витрина");
-  await selectOption(page, "Категория на бизнеса", "Дрехи и мода");
-  await page.getByRole("button", { name: "Създай магазина" }).click();
-  await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
+  await createShopViaWizard(page, "Е2Е Витрина", "Дрехи и мода");
 
   await page.getByLabel("Име на продукта").fill("Синя тениска");
   await page.getByLabel("Цена", { exact: true }).fill("20");
   await page.getByRole("button", { name: "Създай продукта" }).click();
-  await expect(page.getByRole("heading", { name: "Табло" })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
 
   /* Добавяме вариант през редакцията */
   await page.getByRole("link", { name: "Продукти", exact: true }).click();
@@ -45,9 +45,14 @@ test("персонализация → публикуване → публиче
   await page.getByRole("button", { name: "Запази промените" }).click();
   await expect(page).toHaveURL(/\/dashboard\/products$/);
 
-  /* Уебсайт: hero заглавие → запази */
+  /* Уебсайт: първото влизане минава през onboarding wizard-а → редактора */
   await page.getByRole("link", { name: "Уебсайт" }).click();
-  await expect(page.getByRole("heading", { name: "Уебсайт" })).toBeVisible();
+  await completeWebsiteWizard(page);
+  await page.getByRole("button", { name: "Към редактора" }).click();
+  /* Editor-ът е зареден, когато се появи publish контролата му */
+  await expect(page.getByRole("button", { name: "Публикувай промените" })).toBeVisible({
+    timeout: 15_000,
+  });
   const publicUrl = await page
     .getByRole("link", { name: "Отвори сайта" })
     .getAttribute("href");
@@ -59,6 +64,10 @@ test("персонализация → публикуване → публиче
   /* Публикуваме промените (draft → live за клиентите) */
   await page.getByRole("button", { name: "Публикувай промените" }).click();
   await expect(page.getByText(/Промените са запазени|на живо/)).toBeVisible();
+  /* Мишката е върху toast-а (горе вдясно) → sonner паузира dismiss таймера и
+     toast-ът покрива header бутоните. Местим я и чакаме да изчезне. */
+  await page.mouse.move(10, 300);
+  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, { timeout: 10_000 });
 
   /* Скрит магазин: анонимен посетител вижда 404 */
   const anonBefore = await browser.newContext();
@@ -90,7 +99,7 @@ test("персонализация → публикуване → публиче
   await shopPage.goto(`${publicUrl}/products?search=Синя`);
   await expect(shopPage.getByRole("link", { name: /Синя тениска/ })).toBeVisible();
   await shopPage.goto(`${publicUrl}/products?search=НямаТакова`);
-  await expect(shopPage.getByText("Няма продукти, отговарящи на търсенето.")).toBeVisible();
+  await expect(shopPage.getByText("Нищо не намерихме")).toBeVisible();
 
   /* Условията са достъпни */
   await shopPage.goto(`${publicUrl}/terms`);

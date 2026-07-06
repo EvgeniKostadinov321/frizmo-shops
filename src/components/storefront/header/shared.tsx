@@ -51,14 +51,19 @@ export function Brand({
   shop,
   base,
   size = "md",
+  logoOnly = false,
 }: {
   shop: Shop;
   base: string;
   size?: "md" | "lg";
+  /** Само логото, без името (settings.logoOnly) — изисква качено лого. */
+  logoOnly?: boolean;
 }) {
   const logoPx = size === "lg" ? 52 : 40;
   const boxClass = size === "lg" ? "size-13" : "size-10";
   const textClass = size === "lg" ? "text-2xl" : "text-xl";
+  /* Без лого няма какво да остане → името винаги се показва. */
+  const hideName = logoOnly && Boolean(shop.logoPath);
   return (
     <Link href={base} className="flex min-w-0 items-center gap-3">
       {shop.logoPath ? (
@@ -79,11 +84,13 @@ export function Brand({
           {shop.name.slice(0, 1).toUpperCase()}
         </span>
       )}
-      <span
-        className={`truncate tracking-tight [font-family:var(--sf-font-heading)] [font-weight:var(--sf-heading-weight)] ${textClass}`}
-      >
-        {shop.name}
-      </span>
+      {!hideName && (
+        <span
+          className={`truncate tracking-tight [font-family:var(--sf-font-heading)] font-(--sf-heading-weight) ${textClass}`}
+        >
+          {shop.name}
+        </span>
+      )}
     </Link>
   );
 }
@@ -237,7 +244,7 @@ export function MobileMenu({
         }`}
       >
         <div className="flex h-19 shrink-0 items-center justify-between border-b border-(--sf-border) px-5">
-          <Brand shop={shop} base={base} />
+          <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
           <button
             type="button"
             aria-label="Затвори менюто"
@@ -256,7 +263,7 @@ export function MobileMenu({
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className="sf-rise flex min-h-13 items-center border-b border-(--sf-border) text-2xl tracking-tight [font-family:var(--sf-font-heading)] [font-weight:var(--sf-heading-weight)]"
+              className="sf-rise flex min-h-13 items-center border-b border-(--sf-border) text-2xl tracking-tight [font-family:var(--sf-font-heading)] font-(--sf-heading-weight)"
               style={{ "--sf-stagger": i } as CSSProperties}
             >
               {item.label}
