@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { cloneElement, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { priceCartAction } from "@/actions/cart";
 import { validateCoupon } from "@/actions/coupons";
 import { createOrder } from "@/actions/orders";
@@ -33,16 +33,23 @@ function Field({
   label: string;
   required?: boolean;
   error?: string;
-  children: React.ReactNode;
+  children: React.ReactElement<{ "aria-invalid"?: boolean }>;
 }) {
+  /* aria-invalid върху input-а → SR го обявява като невалиден И дава хука за
+     авто-фокус на първото невалидно поле след submit. */
+  const control = error ? cloneElement(children, { "aria-invalid": true }) : children;
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-sm font-medium text-(--sf-text)">
         {label}
         {required && <span className="text-(--sf-accent)"> *</span>}
       </span>
-      {children}
-      {error && <span className="text-sm text-(--sf-accent)">{error}</span>}
+      {control}
+      {error && (
+        <span role="alert" className="text-sm text-(--sf-accent)">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
@@ -77,6 +84,7 @@ export function CheckoutForm({
   paymentMethods,
 }: CheckoutFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const stored = useSyncExternalStore(
     (cb) => onCartChange(shopId, cb),
     () => getCartSnapshot(shopId),
@@ -218,6 +226,12 @@ export function CheckoutForm({
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});
         setError(result.error);
+        /* Фокус на първото невалидно поле (WCAG focus-management). */
+        queueMicrotask(() =>
+          formRef.current
+            ?.querySelector<HTMLElement>('[aria-invalid="true"]')
+            ?.focus(),
+        );
         return;
       }
       clearCart(shopId);
@@ -228,7 +242,7 @@ export function CheckoutForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-8 md:grid-cols-[1fr_320px]">
+    <form ref={formRef} onSubmit={submit} noValidate className="grid gap-8 md:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-4">
         <Field label="Име и фамилия" required error={fieldErrors.customerName}>
           <input
@@ -351,7 +365,7 @@ export function CheckoutForm({
         </Field>
 
         {/* Honeypot — скрито от хора, ботовете го попълват */}
-        <div aria-hidden className="absolute -left-2497 size-px overflow-hidden">
+        <div aria-hidden className="absolute left-[-9999px] size-px overflow-hidden">
           <label>
             Website
             <input
@@ -446,7 +460,11 @@ export function CheckoutForm({
             <span>{formatPrice(totals.totalCents)}</span>
           </div>
         )}
-        {error && <p className="text-sm font-medium text-(--sf-accent)">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm font-medium text-(--sf-accent)">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={submitting || !cart || cart.hasErrors}

@@ -50,7 +50,11 @@ export function PromoCountdown({ target, onImage }: { target: string; onImage: b
   const visible = units[0]!.value === 0 ? units.slice(1) : units;
 
   return (
-    <div className={`flex items-center gap-3 ${onImage ? "text-white" : "text-(--sf-text)"}`}>
+    <div
+      role="timer"
+      aria-label="Оставащо време до края на офертата"
+      className={`flex items-center gap-3 ${onImage ? "text-white" : "text-(--sf-text)"}`}
+    >
       {visible.map((u) => (
         <div key={u.label} className="flex flex-col items-center">
           <span className="font-(family-name:--sf-font-heading) text-3xl leading-none tabular-nums sm:text-4xl">

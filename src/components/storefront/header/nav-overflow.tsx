@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/ui";
 import type { NavItem } from "./shared";
 
 /**
@@ -42,8 +43,8 @@ export function NavOverflow({ items }: { items: NavItem[] }) {
         className="sf-nav-link flex h-11 shrink-0 items-center gap-1 px-3 text-sm font-medium text-current"
       >
         Още
-        <span aria-hidden className={`transition-transform ${open ? "rotate-180" : ""}`}>
-          ⌄
+        <span aria-hidden className={`flex transition-transform ${open ? "rotate-180" : ""}`}>
+          <Icon name="chevron-down" size={16} />
         </span>
       </button>
       {open && (

@@ -91,7 +91,11 @@ export function NewsletterSection({
           </form>
         )}
 
-        {error && <p className="text-sm text-(--sf-accent)">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-(--sf-accent)">
+            {error}
+          </p>
+        )}
         {!done && (
           <p className="text-xs text-(--sf-muted)">Без спам. Отписваш се по всяко време.</p>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { cloneElement, useRef, useState } from "react";
 import { sendContactMessage } from "@/actions/contact";
 
 const inputClass =
@@ -13,13 +13,18 @@ function Field({
 }: {
   label: string;
   error?: string;
-  children: React.ReactNode;
+  children: React.ReactElement<{ "aria-invalid"?: boolean }>;
 }) {
+  const control = error ? cloneElement(children, { "aria-invalid": true }) : children;
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-sm font-medium text-(--sf-text)">{label}</span>
-      {children}
-      {error && <span className="text-sm text-(--sf-accent)">{error}</span>}
+      {control}
+      {error && (
+        <span role="alert" className="text-sm text-(--sf-accent)">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
@@ -29,6 +34,7 @@ function Field({
  * (без запис в базата). Показва се само ако магазинът има имейл.
  */
 export function ContactForm({ slug }: { slug: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -48,6 +54,9 @@ export function ContactForm({ slug }: { slug: string }) {
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});
         setError(result.error);
+        queueMicrotask(() =>
+          formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+        );
         return;
       }
       setSent(true);
@@ -71,7 +80,7 @@ export function ContactForm({ slug }: { slug: string }) {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={submit} noValidate className="flex flex-col gap-4">
       <Field label="Име" error={fieldErrors.name}>
         <input
           className={inputClass}
@@ -109,7 +118,11 @@ export function ContactForm({ slug }: { slug: string }) {
         className="absolute left-[-9999px] size-0"
       />
 
-      {error && <p className="text-sm text-(--sf-accent)">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-(--sf-accent)">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"

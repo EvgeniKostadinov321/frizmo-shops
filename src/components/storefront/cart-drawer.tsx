@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui";
 import { CartView } from "@/components/storefront/cart-view";
@@ -31,6 +31,8 @@ interface CartDrawerProps {
 export function CartDrawer({ shopId, slug, base, settings, logoPath, freeShippingOverCents }: CartDrawerProps) {
   const [open, setOpen] = useState(false);
   const [container, setContainer] = useState<HTMLElement | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const el = document.createElement("div");
@@ -71,14 +73,41 @@ export function CartDrawer({ shopId, slug, base, settings, logoPath, freeShippin
     const prevPadding = root.style.paddingRight;
     root.style.overflow = "hidden";
     if (scrollbar > 0) root.style.paddingRight = `${scrollbar}px`;
+
+    /* Запомни фокуса, за да го върнем при затваряне; фокусирай drawer-а. */
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+    queueMicrotask(() => panelRef.current?.focus());
+
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      /* Focus trap: Tab не бива да излиза зад drawer-а към заключената страница. */
+      if (event.key === "Tab" && panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0]!;
+        const last = focusable[focusable.length - 1]!;
+        const active = document.activeElement;
+        if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       root.style.overflow = prevOverflow;
       root.style.paddingRight = prevPadding;
       window.removeEventListener("keydown", onKey);
+      /* Върни фокуса към елемента, отворил drawer-а (cart бутона). */
+      returnFocusRef.current?.focus();
     };
   }, [render]);
 
@@ -95,8 +124,12 @@ export function CartDrawer({ shopId, slug, base, settings, logoPath, freeShippin
         }`}
       />
       <aside
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
         aria-label="Количка"
-        className={`absolute inset-y-0 right-0 flex w-[min(420px,92vw)] flex-col bg-(--sf-bg) pb-[env(safe-area-inset-bottom)] text-(--sf-text) shadow-(--sf-shadow) transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+        className={`absolute inset-y-0 right-0 flex w-[min(420px,92vw)] flex-col bg-(--sf-bg) pb-[env(safe-area-inset-bottom)] text-(--sf-text) shadow-(--sf-shadow) outline-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
           shown ? "translate-x-0" : "translate-x-full"
         }`}
       >
