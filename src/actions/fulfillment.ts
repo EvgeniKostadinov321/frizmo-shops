@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db, paymentMethods, shippingMethods } from "@/db";
@@ -38,7 +38,10 @@ export async function saveShippingMethod(
       where: eq(shippingMethods.id, id),
     });
     if (!method || method.shopId !== shop.id) return fail("Методът не съществува.");
-    await db.update(shippingMethods).set(values).where(eq(shippingMethods.id, id));
+    await db
+      .update(shippingMethods)
+      .set(values)
+      .where(and(eq(shippingMethods.id, id), eq(shippingMethods.shopId, shop.id)));
   }
 
   revalidate(shop.slug);
@@ -67,7 +70,10 @@ export async function savePaymentMethod(
       where: eq(paymentMethods.id, id),
     });
     if (!method || method.shopId !== shop.id) return fail("Методът не съществува.");
-    await db.update(paymentMethods).set(values).where(eq(paymentMethods.id, id));
+    await db
+      .update(paymentMethods)
+      .set(values)
+      .where(and(eq(paymentMethods.id, id), eq(paymentMethods.shopId, shop.id)));
   }
 
   revalidate(shop.slug);
@@ -87,7 +93,7 @@ export async function toggleShippingMethod(input: { id: string }): Promise<Actio
   await db
     .update(shippingMethods)
     .set({ active: !method.active, updatedAt: new Date() })
-    .where(eq(shippingMethods.id, method.id));
+    .where(and(eq(shippingMethods.id, method.id), eq(shippingMethods.shopId, shop.id)));
   revalidate(shop.slug);
   return ok(null);
 }
@@ -103,7 +109,7 @@ export async function togglePaymentMethod(input: { id: string }): Promise<Action
   await db
     .update(paymentMethods)
     .set({ active: !method.active, updatedAt: new Date() })
-    .where(eq(paymentMethods.id, method.id));
+    .where(and(eq(paymentMethods.id, method.id), eq(paymentMethods.shopId, shop.id)));
   revalidate(shop.slug);
   return ok(null);
 }
@@ -116,7 +122,9 @@ export async function deleteShippingMethod(input: { id: string }): Promise<Actio
     where: eq(shippingMethods.id, parsed.data.id),
   });
   if (!method || method.shopId !== shop.id) return fail("Методът не съществува.");
-  await db.delete(shippingMethods).where(eq(shippingMethods.id, method.id));
+  await db
+    .delete(shippingMethods)
+    .where(and(eq(shippingMethods.id, method.id), eq(shippingMethods.shopId, shop.id)));
   revalidate(shop.slug);
   return ok(null);
 }
@@ -129,7 +137,9 @@ export async function deletePaymentMethod(input: { id: string }): Promise<Action
     where: eq(paymentMethods.id, parsed.data.id),
   });
   if (!method || method.shopId !== shop.id) return fail("Методът не съществува.");
-  await db.delete(paymentMethods).where(eq(paymentMethods.id, method.id));
+  await db
+    .delete(paymentMethods)
+    .where(and(eq(paymentMethods.id, method.id), eq(paymentMethods.shopId, shop.id)));
   revalidate(shop.slug);
   return ok(null);
 }

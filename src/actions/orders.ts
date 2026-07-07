@@ -60,13 +60,13 @@ async function decrementStock(
 export async function createOrder(
   shopSlug: string,
   rawInput: unknown,
-): Promise<ActionResult<{ orderId: string }>> {
+): Promise<ActionResult<{ orderId: string; token: string }>> {
   const parsed = orderSchema.safeParse(rawInput);
   if (!parsed.success) return zodFail(parsed.error);
   const input = parsed.data;
 
   /* Honeypot: ботът получава "успех" и не научава нищо. */
-  if (input.website !== "") return ok({ orderId: randomUUID() });
+  if (input.website !== "") return ok({ orderId: randomUUID(), token: randomUUID() });
 
   const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });
   if (!shop || shop.status !== "published") {
@@ -104,7 +104,7 @@ export async function createOrder(
   const phone = parseBgPhone(input.customerPhone);
   if (!phone.ok) return fail("Невалиден телефонен номер.");
 
-  let created: { orderId: string; orderNumber: number; cart: PricedCart };
+  let created: { orderId: string; publicToken: string; orderNumber: number; cart: PricedCart };
   try {
     created = await db.transaction(async (tx) => {
       /* Заключваме продуктите — двама за последната бройка е безопасно. */
@@ -199,7 +199,7 @@ export async function createOrder(
               discountCents: cart.discountCents,
               totalCents: cart.totalCents,
             })
-            .returning({ id: orders.id });
+            .returning({ id: orders.id, publicToken: orders.publicToken });
 
           await tx.insert(orderItems).values(
             cart.lines.map((line) => ({
@@ -215,7 +215,7 @@ export async function createOrder(
             })),
           );
 
-          return { orderId: order!.id, orderNumber, cart };
+          return { orderId: order!.id, publicToken: order!.publicToken, orderNumber, cart };
         } catch (e) {
           if (attempt >= 2) throw e;
         }
@@ -256,7 +256,7 @@ export async function createOrder(
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
-  return ok({ orderId: created.orderId });
+  return ok({ orderId: created.orderId, token: created.publicToken });
 }
 
 /** Смяна на статус от търговеца; отказ връща наличностите. */

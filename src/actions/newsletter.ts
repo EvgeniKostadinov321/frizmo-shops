@@ -69,3 +69,45 @@ export async function subscribeToNewsletter(
 
   return ok({});
 }
+
+const confirmSchema = z.object({
+  shopSlug: z.string().max(120),
+  token: z.uuid(),
+  action: z.enum(["confirm", "unsubscribe"]).default("confirm"),
+});
+
+export type ConfirmResult = "confirmed" | "already" | "unsubscribed" | "invalid";
+
+/**
+ * Потвърждава/отписва абонамент по token. Мутацията е ТУК (не при рендиране на
+ * страницата), за да не я задейства prefetch/preview на линка от имейл клиент.
+ * Викана от бутон на страницата с потвърждение.
+ */
+export async function confirmNewsletter(rawInput: unknown): Promise<ConfirmResult> {
+  const parsed = confirmSchema.safeParse(rawInput);
+  if (!parsed.success) return "invalid";
+  const { shopSlug, token, action } = parsed.data;
+
+  const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });
+  if (!shop) return "invalid";
+
+  const row = await db.query.subscribers.findFirst({
+    where: and(eq(subscribers.shopId, shop.id), eq(subscribers.token, token)),
+  });
+  if (!row) return "invalid";
+
+  if (action === "unsubscribe") {
+    await db
+      .update(subscribers)
+      .set({ status: "unsubscribed", updatedAt: new Date() })
+      .where(eq(subscribers.id, row.id));
+    return "unsubscribed";
+  }
+
+  if (row.status === "confirmed") return "already";
+  await db
+    .update(subscribers)
+    .set({ status: "confirmed", confirmedAt: new Date(), updatedAt: new Date() })
+    .where(eq(subscribers.id, row.id));
+  return "confirmed";
+}

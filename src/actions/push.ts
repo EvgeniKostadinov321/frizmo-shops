@@ -19,6 +19,14 @@ export async function savePushSubscription(input: unknown): Promise<ActionResult
   if (!parsed.success) return fail("Невалиден абонамент.");
 
   const user = await requireUser();
+
+  /* Ако endpoint-ът вече е регистриран към ДРУГ потребител — не го открадвай
+     (не презаписвай userId). Обновяваме ключовете само за собствения ред. */
+  const existing = await db.query.pushSubscriptions.findFirst({
+    where: eq(pushSubscriptions.endpoint, parsed.data.endpoint),
+  });
+  if (existing && existing.userId !== user.id) return ok(null);
+
   await db
     .insert(pushSubscriptions)
     .values({

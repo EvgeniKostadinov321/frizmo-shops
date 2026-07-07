@@ -269,6 +269,9 @@ export const orders = pgTable(
     couponCode: text("coupon_code").notNull().default(""),
     discountCents: integer("discount_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull(),
+    /* Непубличен ключ за страницата с потвърждение: URL-ът носи token, не само
+       id — иначе всеки с познат orderId (UUID) вижда личните данни на клиента. */
+    publicToken: uuid("public_token").notNull().defaultRandom(),
     status: orderStatusEnum("status").notNull().default("new"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

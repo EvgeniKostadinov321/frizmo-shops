@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { Icon } from "@/components/ui";
 import { db, orderItems, orders } from "@/db";
 import { getPublicShop } from "@/db/queries/storefront";
@@ -9,19 +10,27 @@ import { formatPrice } from "@/lib/money";
 
 interface PageProps {
   params: Promise<{ slug: string; orderId: string }>;
+  searchParams: Promise<{ t?: string }>;
 }
 
 export const metadata: Metadata = { title: "Поръчката е приета", robots: { index: false } };
 
-export default async function OrderConfirmationPage({ params }: PageProps) {
+export default async function OrderConfirmationPage({ params, searchParams }: PageProps) {
   const { slug, orderId } = await params;
+  const { t: token } = await searchParams;
   const result = await getPublicShop(slug);
   if (!result) notFound();
   const { shop } = result;
 
-  if (!/^[0-9a-f-]{36}$/.test(orderId)) notFound();
+  /* URL-ът трябва да носи валиден token — само id не стига (личните данни на
+     клиента иначе биха били достъпни на всеки с познат orderId). */
+  if (!z.uuid().safeParse(orderId).success || !token) notFound();
   const order = await db.query.orders.findFirst({
-    where: and(eq(orders.id, orderId), eq(orders.shopId, shop.id)),
+    where: and(
+      eq(orders.id, orderId),
+      eq(orders.shopId, shop.id),
+      eq(orders.publicToken, token),
+    ),
   });
   if (!order) notFound();
 

@@ -221,7 +221,7 @@ export function CheckoutForm({
         return;
       }
       clearCart(shopId);
-      router.push(`${base}/order/${result.data.orderId}`);
+      router.push(`${base}/order/${result.data.orderId}?t=${result.data.token}`);
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { OrderActions } from "@/components/dashboard/order-actions";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { Card } from "@/components/ui";
@@ -19,7 +20,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
   const { shop } = await requireShop();
   const { id } = await params;
 
-  if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
+  if (!z.uuid().safeParse(id).success) notFound();
   const order = await getOrderWithItems(id);
   if (!order || order.shopId !== shop.id) notFound();
 
