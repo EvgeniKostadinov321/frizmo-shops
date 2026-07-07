@@ -85,6 +85,9 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pa
       <p className="mt-6 text-center text-sm text-(--sf-muted)">
         {shop.name} ще се свърже с теб при нужда на {order.customerPhone}.
       </p>
+      <p className="mt-1.5 text-center text-sm text-(--sf-muted)">
+        Запиши си номер <strong className="text-(--sf-text)">{number}</strong> — цитирай го при въпроси към магазина.
+      </p>
       <p className="mt-4 text-center">
         <Link
           href={`/s/${shop.slug}`}

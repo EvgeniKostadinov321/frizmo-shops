@@ -236,6 +236,10 @@ export function CheckoutForm({
       }
       clearCart(shopId);
       router.push(`${base}/order/${result.data.orderId}?t=${result.data.token}`);
+    } catch {
+      /* Мрежов срив/timeout: попълненото се пази (localStorage), количката е
+         непокътната → потребителят просто натиска пак. Без тиха гола грешка. */
+      setError("Няма връзка със сървъра. Провери интернета и опитай пак.");
     } finally {
       setSubmitting(false);
     }

@@ -85,6 +85,18 @@ export function WebsiteEditor({
     return () => clearTimeout(timer);
   }, [settings, dirty]);
 
+  /* Предупреждение при затваряне на таба с незапазена чернова (промените се
+     пазят в draft, но „Запази" още не е натиснат — избягваме тиха загуба). */
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
   /** „Запази“ — записва като чернова (само собственикът я вижда). */
   async function handleSaveDraft() {
     setSaving(true);
@@ -185,6 +197,12 @@ export function WebsiteEditor({
           <Link
             href="/dashboard"
             aria-label="Обратно към таблото"
+            onClick={(e) => {
+              /* Незапазена чернова → потвърди преди да напуснеш. */
+              if (dirty && !window.confirm("Имаш незапазени промени. Да напуснеш ли редактора?")) {
+                e.preventDefault();
+              }
+            }}
             className="flex size-9 shrink-0 items-center justify-center rounded-control text-ink-700 transition-colors hover:bg-surface-100 hover:text-ink-900 sm:size-auto sm:gap-1.5 sm:px-0 sm:text-sm sm:font-medium"
           >
             <Icon name="chevron-down" size={18} className="rotate-90" />
