@@ -48,6 +48,7 @@ export default async function CartPage({ params }: PageProps) {
         shopId={shop.id}
         slug={shop.slug}
         base={`/s/${shop.slug}`}
+        logoPath={shop.logoPath}
         freeShippingOverCents={freeShippingOverCents}
       />
     </div>

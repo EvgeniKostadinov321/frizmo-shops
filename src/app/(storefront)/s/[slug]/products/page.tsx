@@ -179,7 +179,8 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
 
       {items.length === 0 ? (
         <MascotState
-          pose={sp.search ? "lost" : "peek"}
+          icon={sp.search ? "search" : "products"}
+          logoPath={shop.logoPath}
           title={sp.search ? "Нищо не намерихме" : "Още няма продукти"}
           text={
             sp.search

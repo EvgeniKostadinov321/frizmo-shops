@@ -493,3 +493,14 @@ html:has([data-storefront]) [data-sonner-toast] [data-button]:hover {
     }
   }
 }
+
+/* Native date/datetime picker на тъмна тема: иконата на календарчето
+   (::-webkit-calendar-picker-indicator) е черна по подразбиране и се губи на
+   тъмен фон. color-scheme:dark кара браузъра да рисува иконата и popup-а в
+   тъмен вид (иконата става светла). Само за dashboard/admin, където е dark. */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="month"] {
+  color-scheme: dark;
+}

@@ -19,6 +19,7 @@ interface CartDrawerProps {
   slug: string;
   base: string;
   settings: SiteSettings;
+  logoPath?: string | null;
   freeShippingOverCents: number | null;
 }
 
@@ -27,7 +28,7 @@ interface CartDrawerProps {
  * страницата /cart — една логика, две опаковки). Портал в собствен контейнер
  * на <body> + themeStyle, по механиката на MobileMenu (header/shared.tsx).
  */
-export function CartDrawer({ shopId, slug, base, settings, freeShippingOverCents }: CartDrawerProps) {
+export function CartDrawer({ shopId, slug, base, settings, logoPath, freeShippingOverCents }: CartDrawerProps) {
   const [open, setOpen] = useState(false);
   const [container, setContainer] = useState<HTMLElement | null>(null);
 
@@ -115,6 +116,7 @@ export function CartDrawer({ shopId, slug, base, settings, freeShippingOverCents
             shopId={shopId}
             slug={slug}
             base={base}
+            logoPath={logoPath}
             freeShippingOverCents={freeShippingOverCents}
             onNavigate={() => setOpen(false)}
           />

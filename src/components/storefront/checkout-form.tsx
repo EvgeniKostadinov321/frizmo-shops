@@ -233,6 +233,7 @@ export function CheckoutForm({
         <Field label="Име и фамилия" required error={fieldErrors.customerName}>
           <input
             className={inputClass}
+            name="name"
             value={form.customerName}
             onChange={(e) => set("customerName", e.target.value)}
             autoComplete="name"
@@ -243,6 +244,7 @@ export function CheckoutForm({
             <input
               className={inputClass}
               type="tel"
+              name="tel"
               placeholder="0888 123 456"
               value={form.customerPhone}
               onChange={(e) => set("customerPhone", e.target.value)}
@@ -253,6 +255,7 @@ export function CheckoutForm({
             <input
               className={inputClass}
               type="email"
+              name="email"
               value={form.customerEmail}
               onChange={(e) => set("customerEmail", e.target.value)}
               autoComplete="email"
@@ -295,6 +298,7 @@ export function CheckoutForm({
             <Field label="Адрес за доставка" required error={fieldErrors.address}>
               <input
                 className={inputClass}
+                name="street-address"
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
                 autoComplete="street-address"
@@ -303,6 +307,7 @@ export function CheckoutForm({
             <Field label="Град" error={fieldErrors.city}>
               <input
                 className={inputClass}
+                name="city"
                 value={form.city}
                 onChange={(e) => set("city", e.target.value)}
                 autoComplete="address-level2"
@@ -397,18 +402,26 @@ export function CheckoutForm({
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <div className="flex gap-2">
+            {/* Поле + бутон в общ „pill" бордер — бутонът е вътре вдясно, не
+                стърчи навън. min-w-0 пази input-а да не прелива каре-то. */}
+            <div className="flex items-stretch overflow-hidden rounded-(--sf-radius) border border-(--sf-border) focus-within:border-(--sf-primary)">
               <input
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyCoupon();
+                  }
+                }}
                 placeholder="Промо код"
-                className="h-10 flex-1 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-bg) px-3 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
+                className="h-10 w-0 min-w-0 flex-1 bg-transparent px-3 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:outline-none"
               />
               <button
                 type="button"
                 onClick={applyCoupon}
                 disabled={couponBusy || !couponInput.trim()}
-                className="h-10 shrink-0 rounded-(--sf-radius) border border-(--sf-border) px-4 text-sm font-medium text-(--sf-text) transition-colors hover:bg-(--sf-bg) disabled:opacity-50"
+                className="shrink-0 border-l border-(--sf-border) px-3 text-sm font-medium text-(--sf-primary) transition-opacity hover:opacity-80 disabled:opacity-40"
               >
                 {couponBusy ? "…" : "Приложи"}
               </button>

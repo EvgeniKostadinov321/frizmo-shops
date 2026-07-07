@@ -30,6 +30,8 @@ interface CartViewProps {
   shopId: string;
   slug: string;
   base: string;
+  /** Логото на магазина — показва се в празната количка вместо неутрална икона. */
+  logoPath?: string | null;
   /** Най-ниският праг за безплатна доставка на магазина (null = няма такъв). */
   freeShippingOverCents: number | null;
   /** В mini-cart drawer-а: затваря панела при навигация от линк. */
@@ -52,7 +54,7 @@ interface ServerLine {
  * Докато отговорът пътува, редовете без deal показват optimistic total
  * (единична × количество); сървърът потвърждава мигове по-късно.
  */
-export function CartView({ shopId, slug, base, freeShippingOverCents, onNavigate }: CartViewProps) {
+export function CartView({ shopId, slug, base, logoPath, freeShippingOverCents, onNavigate }: CartViewProps) {
   const stored = useSyncExternalStore(
     (cb) => onCartChange(shopId, cb),
     () => getCartSnapshot(shopId),
@@ -95,7 +97,8 @@ export function CartView({ shopId, slug, base, freeShippingOverCents, onNavigate
   if (stored.length === 0) {
     return (
       <MascotState
-        pose="basket"
+        icon="cart"
+        logoPath={logoPath}
         title="Тук е празничко"
         text="Количката ти чака първото си съкровище — разгледай продуктите."
         action={

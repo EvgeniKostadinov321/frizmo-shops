@@ -126,6 +126,7 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
         slug={shop.slug}
         base={`/s/${shop.slug}`}
         settings={settings}
+        logoPath={shop.logoPath}
         freeShippingOverCents={freeShippingOverCents}
       />
       </div>
