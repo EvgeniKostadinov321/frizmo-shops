@@ -1,10 +1,11 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { db, shops } from "@/db";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { getOwnShop, requireShop } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
@@ -130,6 +131,7 @@ export async function updateShop(
 
   revalidatePath("/dashboard/store");
   revalidatePath("/dashboard");
+  revalidateTag(shopCacheTag(shop.slug), "max");
   revalidatePath(`/s/${shop.slug}`, "layout");
   return { ok: true };
 }

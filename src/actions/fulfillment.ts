@@ -1,9 +1,10 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db, paymentMethods, shippingMethods } from "@/db";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { toCents } from "@/lib/money";
@@ -11,6 +12,7 @@ import { sanitizeText } from "@/lib/sanitize";
 import { paymentMethodSchema, shippingMethodSchema } from "@/schemas/fulfillment";
 
 function revalidate(slug: string) {
+  revalidateTag(shopCacheTag(slug), "max");
   revalidatePath("/dashboard/fulfillment");
   revalidatePath(`/s/${slug}`, "layout");
 }

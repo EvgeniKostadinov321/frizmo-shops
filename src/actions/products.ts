@@ -1,7 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
   categories,
@@ -12,6 +12,7 @@ import {
   productVariants,
   promotions,
 } from "@/db";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { toCents } from "@/lib/money";
@@ -22,6 +23,12 @@ import { SHOP_MEDIA_BUCKET } from "@/lib/storage";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { countProducts } from "@/db/queries/products";
 import { productSchema, type ProductInput } from "@/schemas/product";
+
+/** Инвалидира публичния кеш + layout пътя на магазина. */
+function revalidateShop(slug: string) {
+  revalidateTag(shopCacheTag(slug), "max");
+  revalidatePath(`/s/${slug}`, "layout");
+}
 
 async function ownProduct(id: string, shopId: string) {
   const product = await db.query.products.findFirst({ where: eq(products.id, id) });
@@ -170,7 +177,7 @@ export async function saveProduct(
 
     revalidatePath("/dashboard/products");
     revalidatePath("/dashboard");
-    revalidatePath(`/s/${shop.slug}`, "layout");
+    revalidateShop(shop.slug);
     return ok({ id });
   }
 
@@ -189,7 +196,7 @@ export async function saveProduct(
   });
 
   revalidatePath("/dashboard/products");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok({ id: product.id });
 }
 
@@ -210,7 +217,7 @@ export async function deleteProduct(input: { id: string }): Promise<ActionResult
 
   revalidatePath("/dashboard/products");
   revalidatePath("/dashboard");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok(null);
 }
 
@@ -228,6 +235,6 @@ export async function toggleProductStatus(input: { id: string }): Promise<Action
     .where(eq(products.id, product.id));
 
   revalidatePath("/dashboard/products");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok(null);
 }

@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, ilike, isNotNull, ne, type SQL } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
   categories,
@@ -16,25 +17,56 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 export const STOREFRONT_PAGE_SIZE = 12;
 
+/** Кеш таг на публичните данни на магазин — инвалидира се при мутация. */
+export const shopCacheTag = (slug: string) => `shop:${slug}`;
+
 /**
- * Публичен достъп до магазин: published → за всички; иначе само за
- * собственика (draft preview). cache() дедупира в рамките на заявката
- * (layout + page викат едно и също).
+ * ПУБЛИЧЕН достъп до магазин — КЕШИРАН, само `published`, БЕЗ cookies/auth.
+ * Това е, което storefront page-овете ползват → те стават статични/ISR за
+ * анонимни посетители (нула SSR + нула DB заявка при кеш hit). Инвалидира се
+ * on-demand с `revalidateTag(shopCacheTag(slug))` при всяка мутация.
+ *
+ * Понеже НЕ докосва `cookies()`, не opt-out-ва поддървото от статичен рендер.
+ * Owner draft preview НЕ минава оттук — то живее в редактора (`?preview=1`,
+ * виж `getShopForRender`).
+ */
+export function getPublicShopCached(slug: string) {
+  return unstable_cache(
+    async () => {
+      const shop = await db.query.shops.findFirst({ where: eq(shops.slug, slug) });
+      if (!shop || shop.status !== "published") return null;
+
+      const row = await getSiteSettingsRow(shop.id);
+      const settings =
+        row?.settings != null ? parseSiteSettings(row.settings, shop.name) : defaultSiteSettings(shop.name);
+      return { shop, settings };
+    },
+    ["public-shop", slug],
+    { tags: [shopCacheTag(slug)] },
+  )();
+}
+
+/**
+ * ПЪЛЕН достъп до магазин (DYNAMIC — чете cookies): published за всички, draft
+ * само за собственика. Ползва се от страниците, които и без това са dynamic
+ * (searchParams / owner draft preview в редактора): about, contact, cart,
+ * checkout, terms, products, order, newsletter. `cache()` дедупира в заявката.
+ *
+ * Началната и продуктовата страница НЕ ползват това — те са кеширани
+ * (`getPublicShopCached`); owner ги гледа в редактора през preview iframe-а.
  */
 export const getPublicShop = cache(async (slug: string) => {
   const shop = await db.query.shops.findFirst({ where: eq(shops.slug, slug) });
   if (!shop) return null;
 
-  let viewerIsOwner = false;
   const supabase = await createSupabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  viewerIsOwner = user?.id === shop.ownerId;
+  const viewerIsOwner = user?.id === shop.ownerId;
 
   if (shop.status !== "published" && !viewerIsOwner) return null;
 
-  /* Собственикът вижда draft-а си (незапазените промени от редактора) на живо. */
   const row = await getSiteSettingsRow(shop.id);
   const useDraft = viewerIsOwner && row?.draft != null;
   const raw = useDraft ? row?.draft : row?.settings;

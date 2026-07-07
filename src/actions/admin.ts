@@ -1,9 +1,10 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db, shops } from "@/db";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { requireAdmin } from "@/lib/auth";
 
@@ -44,6 +45,7 @@ export async function setShopStatus(input: {
     .where(eq(shops.id, shop.id));
 
   revalidatePath("/admin");
+  revalidateTag(shopCacheTag(shop.slug), "max");
   revalidatePath(`/s/${shop.slug}`, "layout");
   revalidatePath("/shops");
   return ok(null);

@@ -1,7 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db, shops } from "@/db";
 import { countProducts } from "@/db/queries/products";
@@ -9,10 +9,18 @@ import {
   publishSiteSettings as publishSiteSettingsQuery,
   saveSiteSettingsDraft,
 } from "@/db/queries/site-settings";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sanitizeMultiline } from "@/lib/sanitize";
 import { siteSettingsSchema, type SiteSettings } from "@/schemas/site-settings";
+
+/** Инвалидира ПУБЛИЧНИЯ кеш на магазина (използвай само при промяна на
+ *  published данни — НЕ при draft/preview записи). */
+function revalidateShop(slug: string) {
+  revalidateTag(shopCacheTag(slug), "max");
+  revalidatePath(`/s/${slug}`, "layout");
+}
 
 /** Дълбока санитизация: всички string стойности минават през sanitizeMultiline. */
 function deepSanitize<T>(value: T): T {
@@ -78,7 +86,7 @@ export async function publishSiteSettings(raw: unknown): Promise<ActionResult> {
   if (!result.ok) return fail(result.error);
 
   await publishSiteSettingsQuery(shop.id, result.settings);
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug); // публикуване → инвалидира публичния кеш
   revalidatePath("/dashboard/website");
   return ok(null);
 }
@@ -108,7 +116,7 @@ export async function setShopLogo(input: { path: string | null }): Promise<Actio
     .set({ logoPath: parsed.data.path, updatedAt: new Date() })
     .where(eq(shops.id, shop.id));
 
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   revalidatePath("/dashboard/website");
   return ok(null);
 }
@@ -127,7 +135,7 @@ export async function publishShop(): Promise<ActionResult> {
     .set({ status: "published", updatedAt: new Date() })
     .where(eq(shops.id, shop.id));
 
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/website");
   return ok(null);
@@ -142,7 +150,7 @@ export async function unpublishShop(): Promise<ActionResult> {
     .set({ status: "draft", updatedAt: new Date() })
     .where(eq(shops.id, shop.id));
 
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/website");
   return ok(null);

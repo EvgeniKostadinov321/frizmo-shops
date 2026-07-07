@@ -1,13 +1,20 @@
 "use server";
 
 import { and, asc, eq, isNull, max } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { categories, db } from "@/db";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sanitizeText } from "@/lib/sanitize";
 import { categorySchema } from "@/schemas/category";
+
+/** Инвалидира публичния кеш + layout пътя на магазина. */
+function revalidateShop(slug: string) {
+  revalidateTag(shopCacheTag(slug), "max");
+  revalidatePath(`/s/${slug}`, "layout");
+}
 
 async function ownCategory(id: string, shopId: string) {
   const category = await db.query.categories.findFirst({ where: eq(categories.id, id) });
@@ -54,7 +61,7 @@ export async function createCategory(input: {
     .returning({ id: categories.id });
 
   revalidatePath("/dashboard/categories");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok({ id: created!.id });
 }
 
@@ -77,7 +84,7 @@ export async function updateCategory(input: {
     .where(eq(categories.id, category.id));
 
   revalidatePath("/dashboard/categories");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok(null);
 }
 
@@ -98,7 +105,7 @@ export async function deleteCategory(input: { id: string }): Promise<ActionResul
   });
 
   revalidatePath("/dashboard/categories");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok(null);
 }
 
@@ -138,6 +145,6 @@ export async function moveCategory(input: {
   });
 
   revalidatePath("/dashboard/categories");
-  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidateShop(shop.slug);
   return ok(null);
 }
