@@ -1,4 +1,4 @@
-import { desc, eq, inArray, isNotNull, and } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db, products, type Product } from "@/db";
@@ -31,37 +31,48 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-/** Зарежда продуктите за всички featured-products секции наведнъж. */
+/**
+ * Зарежда продуктите за всички featured-products секции с ЕДНА заявка (без
+ * N+1 per секция): тегли активните продукти веднъж — най-новите + изрично
+ * посочените в manual секции — и ги разпределя по секция в JS.
+ */
 async function loadSectionProducts(
   shopId: string,
   sections: Section[],
 ): Promise<Record<string, Product[]>> {
+  const featured = sections.filter(
+    (s): s is Extract<Section, { type: "featured-products" }> =>
+      s.type === "featured-products" && s.enabled,
+  );
+  if (featured.length === 0) return {};
+
+  /* Обединяваме нуждите: всички manual id-та + достатъчно най-нови за auto
+     секциите (всяка auto секция показва до 8). Една заявка ги покрива всички. */
+  const manualIds = new Set<string>();
+  let autoNeeded = 0;
+  for (const s of featured) {
+    if (s.data.mode === "manual") s.data.productIds.forEach((id) => manualIds.add(id));
+    else autoNeeded = Math.max(autoNeeded, 8);
+  }
+
+  const rows = await db.query.products.findMany({
+    where: and(eq(products.shopId, shopId), eq(products.status, "active")),
+    orderBy: [desc(products.createdAt)],
+    /* Достатъчно за най-голямата auto секция + всички ръчно посочени. */
+    limit: Math.max(autoNeeded, manualIds.size) + manualIds.size,
+  });
+  const byId = new Map(rows.map((p) => [p.id, p]));
+
   const result: Record<string, Product[]> = {};
-  for (const section of sections) {
-    if (section.type !== "featured-products" || !section.enabled) continue;
+  for (const section of featured) {
     const { mode, productIds } = section.data;
-    if (mode === "manual" && productIds.length > 0) {
-      const items = await db.query.products.findMany({
-        where: and(
-          eq(products.shopId, shopId),
-          eq(products.status, "active"),
-          inArray(products.id, productIds),
-        ),
-      });
-      /* пази реда от настройките */
+    if (mode === "manual") {
       result[section.id] = productIds
-        .map((id) => items.find((p) => p.id === id))
+        .map((id) => byId.get(id))
         .filter((p): p is Product => Boolean(p));
     } else {
-      result[section.id] = await db.query.products.findMany({
-        where: and(
-          eq(products.shopId, shopId),
-          eq(products.status, "active"),
-          mode === "promo" ? isNotNull(products.promoPriceCents) : undefined,
-        ),
-        orderBy: [desc(products.createdAt)],
-        limit: 8,
-      });
+      const pool = mode === "promo" ? rows.filter((p) => p.promoPriceCents !== null) : rows;
+      result[section.id] = pool.slice(0, 8);
     }
   }
   return result;

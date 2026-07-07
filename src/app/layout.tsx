@@ -18,15 +18,17 @@ const sofiaSansCondensed = Sofia_Sans_Condensed({
   subsets: ["latin", "cyrillic"],
   variable: "--font-sofia-cond",
 });
-/* Inter остава за storefront темата classic (THEME_PRESETS) */
-const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
-/* Шрифтовете на storefront темите — виж THEME_PRESETS */
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk" });
-const lora = Lora({ subsets: ["latin", "cyrillic"], variable: "--font-lora" });
+/* Storefront-темовите шрифтове: preload:false → браузърът НЕ ги тегли в
+   critical path на всяка страница (landing/каталог/dashboard ги нямат). @font-face
+   се генерира, но woff2 се дърпа чак когато темата реално приложи шрифта на
+   storefront. Спестява ~5 излишни font заявки извън магазините. */
+const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter", preload: false });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", preload: false });
+const lora = Lora({ subsets: ["latin", "cyrillic"], variable: "--font-lora", preload: false });
 /* Display сериф за темата „Оникс" (premium, висок контраст) */
-const playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" });
+const playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair", preload: false });
 /* Кондензиран за темите „Основа"/„Гранит" (индустриални) */
-const oswald = Oswald({ subsets: ["latin", "cyrillic"], variable: "--font-condensed" });
+const oswald = Oswald({ subsets: ["latin", "cyrillic"], variable: "--font-condensed", preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://frizmo-shops.vercel.app"),
