@@ -81,6 +81,54 @@ auth редизайн. Жив прогрес: `docs/design/mascot-progress.md`. 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-07 (3) · `9d3cc1b`→`51d4c65` (само dev)** — **Цикъл от 4 фокусирани
+  одита** („тази част на 100%" преди нови фийчъри). Брифове: `docs/superpowers/audits/`
+  (самостоятелни, inline изпълнение, само откриване → после поправки). **20 находки,
+  0 критични, 0 отворени HIGH.** Кодовата база излезе много здрава — предимно калени
+  ръбове, не дупки.
+  - **Одит 1 — Security** (`9d3cc1b`): 5 находки. IDOR на страницата с потвърждение
+    на поръчка → нова колона `orders.public_token` (URL носи `?t=<token>`); newsletter
+    потвърждение/отписване изнесено от GET рендер в action+бутон (prefetch вече не
+    мутира); push абонамент не се „краде" (без презапис на userId); fulfillment
+    UPDATE/DELETE вече носят `shopId` в where (дълбочина); UUID regex → `z.uuid()`.
+  - **Одит 2 — Accessibility** (`82fc968`): 7 находки. `--sf-muted` под 4.5:1 на efir
+    (3.32) + atelie (4.07) → потъмнени (WCAG PASS); грешките във формите `role="alert"`;
+    фокус на първото невалидно поле; cart drawer focus trap + връщане на фокуса; nav
+    „⌄" емоджи → `<Icon>`; countdown `role="timer"`; honeypot typo.
+  - **Одит 3 — Performance** (`8ca0adb`): изображения/CLS/заявки бяха вече образцови.
+    Поправени: N+1 при featured-products (1 заявка + JS разпределение); 5-те
+    storefront-темови шрифта → `preload:false` (не тежат извън магазините). Оттеглено:
+    гол `<img>` в pwa-splash (съзнателно). **ОТЛОЖЕНО (архитектурен дълг): storefront е
+    изцяло dynamic — нула кеш**, защото `getPublicShop` вика `supabase.auth.getUser()`;
+    ISR + on-demand revalidation за анонимни посетители (без да се чупи owner draft
+    preview) е следващата голяма performance стъпка, иска собствен план.
+  - **Одит 4 — UX/Conversion** (`51d4c65`): 4 находки. Storefront нямаше `error.tsx`/
+    `loading.tsx` → добавени (брандиран „Опитай пак" + спинър); builder `beforeunload`
+    guard при незапазена чернова; createOrder `try` вече има `catch` (мрежов срив →
+    ясно съобщение, не гола грешка); order confirmation „запиши си номер N" подсказка.
+  - ⚠️ **`orders.public_token` е само на dev/облачната база** (db:push изпълнен). Ако
+    някога има ОТДЕЛНА prod база — db:push срещу нея преди първа поръчка на живо, иначе
+    checkout гърми. (Одит установи: най-вероятно няма отделен prod — една обща база.)
+
+- **2026-07-07 (2) · `46a8cbf` (dev+prod)** — **Тестване на Вълни 2–3Б + визуални
+  поправки + prod deploy.** Потребителят изтества всичко; 6/7 фийчъра перфектни от
+  раз. Поправки след тестване: (1) промо код приемаше само латиница → regex
+  `[\p{L}\p{N}_-]/u` за кирилица (напр. „ЛЯТО26"); (2) промо код поле+бутон стърчеше
+  извън резюме карето → общ „pill" бордер, бутон вътре + Enter прилага; (3) native
+  date picker икона черна на тъмна тема → `color-scheme:dark` в globals.css за
+  `input[type=date/datetime-local/time/month]` под `[data-theme=dark]`; (4) checkout
+  адрес не се autofill-ваше → добавени `name` атрибути (браузърът разчита на тях, не
+  само на autoComplete); (5) storefront empty states (празна количка/продукти/търсене)
+  показваха Frizmo пчелата на ЧУЖДИЯ магазин → `MascotState` показва **логото на
+  търговеца** (кръгло каре) или неутрална икона (cart/store/search); пчелата остава
+  само за платформените екрани (dashboard/auth/PWA/глобален 404). **Качено на dev И
+  prod** (fast-forward, 77 файла на main). **Env одит за Vercel:** кодът ползва 13 env
+  vars; на prod ЛИПСВАТ `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (push нотификации — трябва да се
+  добави) и `NEXT_PUBLIC_SITE_URL` (имейл линкове — има hardcoded fallback
+  `frizmo-shops.vercel.app`, работи и без него). `DATABASE_URL_MIGRATIONS` НЕ трябва в
+  Vercel (само локални db:push/seed скриптове). Новите фийчъри НЕ зависят от липсващите
+  → prod е готов за тестване от външен човек. Prod URL: `frizmo-shops.vercel.app`.
+
 - **2026-07-07** — **Website builder Вълни 1–3Б (функционалните фийчъри от одита).**
   Пътна карта: `docs/superpowers/plans/2026-07-06-builder-roadmap.md`; спецове в
   `docs/superpowers/specs/2026-07-0{6-wizard,7-builder-wave-2,7-builder-wave-3a,7-builder-wave-3b}`.
