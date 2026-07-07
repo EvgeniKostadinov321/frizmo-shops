@@ -4,13 +4,14 @@ SaaS платформа за онлайн магазини (BG пазар, EUR).
 
 **Източник на истината:** `docs/superpowers/specs/2026-07-02-frizmo-shops-mvp-design.md`
 **Дизайн език:** `docs/superpowers/specs/2026-07-03-pazaren-den-design.md` („Пазарен ден")
-**Ред на работа:** `docs/superpowers/plans/2026-07-02-roadmap.md`
+**Изпълнени планове 1–6 (резюме):** `docs/superpowers/plans/executed-plans-summary.md`
+**Какво следва:** `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`
 **Website builder пътна карта (2026-07-06, в ход):** `docs/superpowers/plans/2026-07-06-builder-roadmap.md` — 4 вълни функционални фийчъра след одита; всяка вълна получава собствен спец преди имплементация.
 **Жив контекст (докъде сме + setup на нова машина):** `docs/WORKLOG.md` — ЗАДЪЛЖИТЕЛНО го обновявай в края на всяка сесия със смислена промяна (нов ред в „Дневник" + текущ commit). Чете се пръв при продължаване от друга машина (напр. Mac).
 
 **Статус (2026-07-04):** Планове 1–5 ✅ · План 6: Фаза А (платформен админ) ✅, Фаза Б (Stripe) стартира САМО при изрична заявка от потребителя. До Фаза Б `getShopPlan()` (src/lib/plan.ts) е stub — всички магазини са "pro".
 
-**Post-MVP визуален редизайн (в ход, спец `docs/docs-03-07-2026/2026-07-03-visual-redesign-spec.md`):** брандът е сменен от зелено на **теракота** (`brand-*` в tokens.css); публичните страници са **само светли** (dark е само за /dashboard + /admin — anti-FOUC скриптът в layout.tsx е гейтнат по път, `ForceLightTheme` на marketing); primary бутон = тъмен (`bg-ink-900`); цени 10/20 € (Starter/Pro — решение 2026-07-04: „разумно евтино" за растеж; преди 20/35), trial 30 дни без grace. Редизайнирани секция по секция: landing (hero профит-first, before/after, step visuals, feature bento, done-for-you сервиз, responsive header с мобилно меню, footer), `/shops` и `/products` (hero зона, cover снимки, сортиране, филтър-чипове, скрити тест-магазини), `/blog` (editorial списък + акцентна статия + 5 статии с категория/време за четене/TOC). Всичко проверено responsive на 375px. Логото и CTA/OG снимките са AI-генерирани (Magnific) в `public/`.
+**Визуален редизайн (завършен):** брандът е **теракота** (`brand-*` в tokens.css); публичните страници са **само светли** (dark е само за /dashboard + /admin — anti-FOUC скриптът в layout.tsx е гейтнат по път, `ForceLightTheme` на marketing); primary бутон = тъмен (`bg-ink-900`); цени 10/20 € (Starter/Pro), trial 30 дни без grace. Landing/`/shops`/`/products`/`/blog` редизайнирани и проверени на 375px. Логото и CTA/OG снимките са AI-генерирани (Magnific) в `public/`.
 
 **PWA (2026-07-04):** manifest `standalone` + splash/welcome анимация при студен старт на инсталираното PWA (`src/components/pwa-splash.tsx`, монтиран в root layout + инстант splash-shell скрипт срещу мигане на landing-а). Показва се САМО в standalone (не в браузър таб); маскот видео в работилница + брандов lockup (лого + „Frizmo Shops") + „Старт" бутон; tap-to-skip; звук тих на 1-во отваряне; **reduced-motion → статичен постер** (уважава се). Асети: `public/splash-bee.{mp4,webm}` + `splash-bee-poster.jpg` + `splash-welcome.mp3`. Генерационен пайплайн и iOS faststart урокът: `docs/design/mascot-progress.md`.
 

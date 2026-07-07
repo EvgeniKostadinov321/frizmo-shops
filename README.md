@@ -4,7 +4,8 @@ SaaS платформа за онлайн магазини за българск
 
 * Спецификация: `docs/superpowers/specs/2026-07-02-frizmo-shops-mvp-design.md`
 * Дизайн език „Пазарен ден": `docs/superpowers/specs/2026-07-03-pazaren-den-design.md`
-* Roadmap и статус: `docs/superpowers/plans/2026-07-02-roadmap.md`
+* Изпълнени планове (резюме): `docs/superpowers/plans/executed-plans-summary.md`
+* Какво следва: `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`
 
 ## Стек
 

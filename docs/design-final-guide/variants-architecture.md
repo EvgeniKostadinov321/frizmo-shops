@@ -112,6 +112,5 @@ Announcement няма варианти (utility лента). Общо: **32 ко
   absolute — редът расте с по-високия елемент (responsive одит R3).
 - **Двете featured секции на една страница** (демо) са в различни варианти
   (1-вата grid, 2-рата editorial) — без визуално повторение.
-- Responsive/PWA одит: виж `responsive-pwa-audit-2026-07-05.md`.
 - Всяка нова композиция минава работния ред от README.md (skills → токени →
   9 теми/375px → `pnpm check`).
