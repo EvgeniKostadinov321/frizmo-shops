@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createManualOrder } from "@/actions/orders";
 import type { CartProductView } from "@/db/queries/cart";
-import { Button, Icon, Input, PriceInput, Select, Textarea } from "@/components/ui";
+import { Button, Icon, Input, PriceInput, Select, SelectCheckbox, Textarea } from "@/components/ui";
 import { formatPrice, toCents } from "@/lib/money";
 import { priceCart, type CartLine } from "@/lib/pricing";
 
@@ -317,11 +317,10 @@ export function ManualOrderForm({
           <div className="flex flex-col gap-2">
             {giftWrapEnabled && (
               <label className="flex min-h-11 cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
+                <SelectCheckbox
                   checked={giftWrap}
-                  onChange={(e) => setGiftWrap(e.target.checked)}
-                  className="size-5 shrink-0 rounded accent-brand-600"
+                  onChange={() => setGiftWrap(!giftWrap)}
+                  aria-label="Подаръчна опаковка"
                 />
                 <span className="text-sm font-medium text-ink-900">
                   Подаръчна опаковка
@@ -333,11 +332,10 @@ export function ManualOrderForm({
             )}
             {giftCardEnabled && (
               <label className="flex min-h-11 cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
+                <SelectCheckbox
                   checked={giftCard}
-                  onChange={(e) => setGiftCard(e.target.checked)}
-                  className="size-5 shrink-0 rounded accent-brand-600"
+                  onChange={() => setGiftCard(!giftCard)}
+                  aria-label="Подаръчна картичка"
                 />
                 <span className="text-sm font-medium text-ink-900">Подаръчна картичка</span>
               </label>

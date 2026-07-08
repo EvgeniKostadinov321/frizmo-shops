@@ -59,6 +59,38 @@ function Field({
   );
 }
 
+/* Брандиран чекбокс за storefront (--sf-* токени) — native accent-color е грозен
+   и различен на всеки браузър. Реалният input е скрит peer; кутията се рисува тук. */
+function SfCheckbox({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-(--sf-text)">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="peer sr-only"
+      />
+      <span
+        aria-hidden
+        className="flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-(--sf-border) bg-(--sf-surface-raised) text-(--sf-on-primary) transition-colors peer-checked:border-(--sf-primary) peer-checked:bg-(--sf-primary) peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--sf-primary) [&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <span className="flex items-center gap-2">{children}</span>
+    </label>
+  );
+}
+
 const inputClass =
   "h-11 w-full rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3 text-(--sf-text) placeholder:text-(--sf-muted)";
 
@@ -381,27 +413,17 @@ export function CheckoutForm({
         {(giftWrapEnabled || giftCardEnabled) && (
           <div className="flex flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) p-3">
             {giftWrapEnabled && (
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-(--sf-text)">
-                <input
-                  type="checkbox"
-                  checked={giftWrap}
-                  onChange={(e) => setGiftWrap(e.target.checked)}
-                />
+              <SfCheckbox checked={giftWrap} onChange={setGiftWrap}>
                 Опаковай поръчката като подарък
                 {giftWrapFeeCents > 0 && (
                   <span className="text-(--sf-muted)">(+{formatPrice(giftWrapFeeCents)})</span>
                 )}
-              </label>
+              </SfCheckbox>
             )}
             {giftCardEnabled && (
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-(--sf-text)">
-                <input
-                  type="checkbox"
-                  checked={giftCard}
-                  onChange={(e) => setGiftCard(e.target.checked)}
-                />
+              <SfCheckbox checked={giftCard} onChange={setGiftCard}>
                 Добави подаръчна картичка
-              </label>
+              </SfCheckbox>
             )}
             {giftCardEnabled && giftCard && (
               <Field label="Текст за картичка" error={fieldErrors.giftNote}>
