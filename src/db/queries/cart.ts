@@ -22,22 +22,28 @@ export async function getAllPricingProducts(shopId: string): Promise<CartProduct
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "bg"));
 }
 
-/** Зарежда продуктите на магазина във формата на pricing engine-а. */
+/**
+ * Зарежда продуктите на магазина във формата на pricing engine-а.
+ * `client` позволява четене В транзакция (tx) — при checkout наличността трябва
+ * да се чете под същия лок като декремента, иначе проверката е върху остаряла
+ * снимка (виж decrementStock). По подразбиране е глобалният `db` (cart preview).
+ */
 export async function getPricingProducts(
   shopId: string,
   productIds: string[],
+  client: Pick<typeof db, "query"> = db,
 ): Promise<Map<string, CartProductView>> {
   if (productIds.length === 0) return new Map();
 
-  const rows = await db.query.products.findMany({
+  const rows = await client.query.products.findMany({
     where: and(eq(products.shopId, shopId), inArray(products.id, productIds)),
   });
   const ids = rows.map((r) => r.id);
   if (ids.length === 0) return new Map();
 
   const [variants, deals] = await Promise.all([
-    db.query.productVariants.findMany({ where: inArray(productVariants.productId, ids) }),
-    db.query.promotions.findMany({
+    client.query.productVariants.findMany({ where: inArray(productVariants.productId, ids) }),
+    client.query.promotions.findMany({
       where: and(inArray(promotions.productId, ids), eq(promotions.active, true)),
     }),
   ]);
