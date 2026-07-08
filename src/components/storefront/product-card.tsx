@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui";
 import { FavoriteButton } from "@/components/storefront/favorite-button";
+import { Stars } from "@/components/storefront/stars";
 import type { Product } from "@/db";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
@@ -15,11 +16,14 @@ export function ProductCard({
   product,
   base,
   ratio = "portrait",
+  rating,
 }: {
   product: Product;
   base: string;
   /** portrait = 4:5 (стандарт); square = 1:1 (компактни композиции, напр. 2×2). */
   ratio?: "portrait" | "square";
+  /** S1: агрегат от approved ревюта (подава се от листинга; null/пропуснат = без звезди). */
+  rating?: { avg: number; count: number } | null;
 }) {
   const cover = product.images[0];
   const hoverImage = product.images[1];
@@ -80,6 +84,12 @@ export function ProductCard({
         <span className="truncate font-medium leading-snug text-(--sf-text)" title={product.name}>
           {product.name}
         </span>
+        {rating && rating.count > 0 && (
+          <span className="flex items-center gap-1.5 text-(--sf-primary)">
+            <Stars rating={rating.avg} size={13} />
+            <span className="text-xs text-(--sf-muted)">({rating.count})</span>
+          </span>
+        )}
         <span className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-(--sf-text)">
             {formatPrice(promo ?? product.priceCents)}

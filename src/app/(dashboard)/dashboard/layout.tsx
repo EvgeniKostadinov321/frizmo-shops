@@ -1,4 +1,5 @@
 import { Logo } from "@/components/ui";
+import { countPendingReviews } from "@/db/queries/reviews";
 import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { PushBanner } from "@/components/dashboard/push-banner";
@@ -12,6 +13,7 @@ export default async function DashboardLayout({
 }) {
   const { user, shop } = await getOwnShop();
   await ensureProfile(user.id);
+  const pendingReviews = shop ? await countPendingReviews(shop.id) : 0;
 
   return (
     <div className="min-h-screen">
@@ -27,7 +29,7 @@ export default async function DashboardLayout({
       {shop ? (
         <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
           <aside className="md:w-48 md:shrink-0">
-            <DashboardNav />
+            <DashboardNav pendingReviews={pendingReviews} />
           </aside>
           <main className="min-w-0 flex-1">
             <PushBanner />

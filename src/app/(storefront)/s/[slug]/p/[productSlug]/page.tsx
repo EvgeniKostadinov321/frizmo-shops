@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
 import { RecentlyViewed } from "@/components/storefront/recently-viewed";
 import { Paragraphs } from "@/components/storefront/sections/shared";
+import { ReviewForm } from "@/components/storefront/review-form";
+import { Stars } from "@/components/storefront/stars";
 import { StockAlertForm } from "@/components/storefront/stock-alert-form";
+import { getApprovedReviews, getReviewAggregates } from "@/db/queries/reviews";
 import { VariantPicker } from "@/components/storefront/variant-picker";
 import {
   getActiveProduct,
@@ -16,6 +19,7 @@ import { publicImageUrl } from "@/lib/storage";
 
 interface PageProps {
   params: Promise<{ slug: string; productSlug: string }>;
+  searchParams: Promise<{ reviewsPage?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -34,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ProductPage({ params }: PageProps) {
+export default async function ProductPage({ params, searchParams }: PageProps) {
   const { slug, productSlug } = await params;
   const result = await getPublicShop(slug);
   if (!result) notFound();
@@ -44,10 +48,15 @@ export default async function ProductPage({ params }: PageProps) {
   const product = await getActiveProduct(shop.id, productSlug);
   if (!product) notFound();
 
-  const [related, categories] = await Promise.all([
+  const sp = await searchParams;
+  const reviewsPage = sp.reviewsPage ? Math.max(1, Number(sp.reviewsPage) || 1) : 1;
+  const [related, categories, productReviews, aggregates] = await Promise.all([
     getRelatedProducts(shop.id, product.id, product.categoryId),
     getPublicCategories(shop.id),
+    getApprovedReviews(product.id, reviewsPage),
+    getReviewAggregates([product.id]),
   ]);
+  const rating = aggregates.get(product.id) ?? null;
   const category = categories.find((c) => c.id === product.categoryId);
 
   const effectivePrice = product.promoPriceCents ?? product.priceCents;
@@ -72,6 +81,13 @@ export default async function ProductPage({ params }: PageProps) {
                 ? "https://schema.org/InStock"
                 : "https://schema.org/OutOfStock",
             },
+            ...(rating && {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: rating.avg.toFixed(1),
+                reviewCount: rating.count,
+              },
+            }),
           }),
         }}
       />
@@ -156,6 +172,61 @@ export default async function ProductPage({ params }: PageProps) {
           )}
         </div>
       )}
+
+      {/* S1: ревюта — само approved се виждат; формата подава pending */}
+      <div className="mt-14 border-t border-(--sf-border) pt-10">
+        <div className="mb-6 flex flex-wrap items-center gap-4">
+          <h2 className="text-2xl text-(--sf-text)">Ревюта</h2>
+          {rating && (
+            <span className="flex items-center gap-2 text-(--sf-primary)">
+              <Stars rating={rating.avg} size={18} />
+              <span className="text-sm font-medium text-(--sf-text)">
+                {rating.avg.toFixed(1)} · {rating.count} {rating.count === 1 ? "ревю" : "ревюта"}
+              </span>
+            </span>
+          )}
+        </div>
+
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="flex flex-col gap-4">
+            {productReviews.items.length === 0 ? (
+              <p className="text-sm text-(--sf-muted)">
+                Още няма ревюта — бъди първият, който ще сподели мнение.
+              </p>
+            ) : (
+              <>
+                <ul className="flex flex-col divide-y divide-(--sf-border)">
+                  {productReviews.items.map((review) => (
+                    <li key={review.id} className="flex flex-col gap-1.5 py-4 first:pt-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-(--sf-primary)">
+                          <Stars rating={review.rating} size={14} />
+                        </span>
+                        <span className="font-medium text-(--sf-text)">{review.authorName}</span>
+                        <span className="text-xs text-(--sf-muted)">
+                          {new Intl.DateTimeFormat("bg-BG", { day: "numeric", month: "short", year: "numeric" }).format(review.createdAt)}
+                        </span>
+                      </div>
+                      {review.text && (
+                        <p className="text-sm leading-relaxed text-(--sf-muted)">{review.text}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                {productReviews.total > reviewsPage * productReviews.pageSize && (
+                  <Link
+                    href={`${base}/p/${product.slug}?reviewsPage=${reviewsPage + 1}`}
+                    className="self-start text-sm font-medium text-(--sf-primary) hover:underline"
+                  >
+                    Виж още ревюта →
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
+          <ReviewForm shopSlug={shop.slug} productId={product.id} />
+        </div>
+      </div>
 
       {related.length > 0 && (
         <div className="mt-14">

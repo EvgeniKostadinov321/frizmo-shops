@@ -10,6 +10,7 @@ const items: { href: string; label: string; icon: IconName; exact?: boolean }[] 
   { href: "/dashboard/store", label: "Магазин", icon: "store" },
   { href: "/dashboard/products", label: "Продукти", icon: "store" },
   { href: "/dashboard/orders", label: "Поръчки", icon: "receipt" },
+  { href: "/dashboard/reviews", label: "Ревюта", icon: "star" },
   { href: "/dashboard/categories", label: "Категории", icon: "palette" },
   { href: "/dashboard/website", label: "Уебсайт", icon: "image" },
   { href: "/dashboard/subscribers", label: "Абонати", icon: "megaphone" },
@@ -21,9 +22,13 @@ function isActive(pathname: string, item: (typeof items)[number]) {
   return item.exact ? pathname === item.href : pathname.startsWith(item.href);
 }
 
-export function DashboardNav() {
+export function DashboardNav({ pendingReviews = 0 }: { pendingReviews?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  /* Badge с чакащи за одобрение (S1) — само на „Ревюта". */
+  const badgeFor = (href: string) =>
+    href === "/dashboard/reviews" && pendingReviews > 0 ? pendingReviews : null;
 
   /* Заключи скрола + Escape затваря, докато fullscreen менюто е отворено. */
   useEffect(() => {
@@ -86,6 +91,11 @@ export function DashboardNav() {
                 >
                   <Icon name={item.icon} size={20} className={a ? "text-brand-600" : "text-ink-500"} />
                   {item.label}
+                  {badgeFor(item.href) !== null && (
+                    <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold leading-5 text-surface-0">
+                      {badgeFor(item.href)}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -107,6 +117,11 @@ export function DashboardNav() {
               }`}
             >
               {item.label}
+              {badgeFor(item.href) !== null && (
+                <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold leading-5 text-surface-0">
+                  {badgeFor(item.href)}
+                </span>
+              )}
             </Link>
           );
         })}

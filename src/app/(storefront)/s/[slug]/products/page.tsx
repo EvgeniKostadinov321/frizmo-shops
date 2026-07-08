@@ -7,6 +7,7 @@ import { toCents } from "@/lib/money";
 import { MascotState } from "@/components/storefront/mascot";
 import { PageHeader } from "@/components/storefront/page-header";
 import { ProductCard } from "@/components/storefront/product-card";
+import { getReviewAggregates } from "@/db/queries/reviews";
 import {
   getActiveProducts,
   getPublicCategories,
@@ -84,6 +85,8 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
     }),
     getPublicCategories(shop.id),
   ]);
+  /* S1: една заявка за звездите на всички карти на страницата (без N+1). */
+  const ratings = await getReviewAggregates(items.map((p) => p.id));
 
   const roots = categories.filter((c) => c.parentId === null);
   const activeCategory = categories.find((c) => c.id === sp.category);
@@ -267,7 +270,12 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {items.map((product) => (
-            <ProductCard key={product.id} product={product} base={base} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              base={base}
+              rating={ratings.get(product.id) ?? null}
+            />
           ))}
         </div>
       )}
