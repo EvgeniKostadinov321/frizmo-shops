@@ -7,6 +7,7 @@ import { Icon, type IconName } from "@/components/ui";
 
 const items: { href: string; label: string; icon: IconName; exact?: boolean }[] = [
   { href: "/dashboard", label: "Табло", icon: "trending-up", exact: true },
+  { href: "/dashboard/analytics", label: "Аналитика", icon: "trending-up" },
   { href: "/dashboard/store", label: "Магазин", icon: "store" },
   { href: "/dashboard/products", label: "Продукти", icon: "store" },
   { href: "/dashboard/orders", label: "Поръчки", icon: "receipt" },
