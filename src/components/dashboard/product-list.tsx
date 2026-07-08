@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { deleteProduct, toggleProductStatus } from "@/actions/products";
+import { bulkProductAction, deleteProduct, toggleProductStatus } from "@/actions/products";
 import type { Product } from "@/db";
 import {
   Badge,
@@ -23,7 +23,7 @@ import {
   THead,
   TRow,
 } from "@/components/ui";
-import { formatPrice } from "@/lib/money";
+import { formatPrice, toCents } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 
 interface ProductListProps {
@@ -41,6 +41,14 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [toDelete, setToDelete] = useState<Product | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  /* S7 bulk: селекция (id-та от текущата страница) + action лента */
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [pricePanelOpen, setPricePanelOpen] = useState(false);
+  const [priceMode, setPriceMode] = useState<"percent" | "fixed">("percent");
+  const [priceValueStr, setPriceValueStr] = useState("");
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -83,6 +91,55 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
 
   const categoryLabels = new Map(categories.map((c) => [c.value, c.label]));
   const lowStockFilter = searchParams.get("stock") === "low";
+
+  const allSelected = items.length > 0 && items.every((p) => selected.has(p.id));
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(items.map((p) => p.id)));
+  }
+
+  /* Стойност за bulk цена: percent → цяло число ±, fixed → ± центове (toCents). */
+  function parsePriceValue(): number | null {
+    const raw = priceValueStr.trim();
+    if (!raw) return null;
+    const negative = raw.startsWith("-");
+    const abs = raw.replace(/^[+-]/, "");
+    if (priceMode === "percent") {
+      if (!/^\d+$/.test(abs)) return null;
+      const n = Number(abs);
+      return negative ? -n : n;
+    }
+    const cents = toCents(abs);
+    if (cents === null) return null;
+    return negative ? -cents : cents;
+  }
+
+  async function runBulk(op: { type: string; mode?: string; value?: number }) {
+    setBulkBusy(true);
+    try {
+      const result = await bulkProductAction({ ids: [...selected], op });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(`Готово — ${result.data.affected} ${result.data.affected === 1 ? "продукт" : "продукта"}.`);
+      setSelected(new Set());
+      setPricePanelOpen(false);
+      setPriceValueStr("");
+      router.refresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   /* Складов badge: 0 = изчерпан, 1–3 = нисък; null (не следи) и >3 → без badge. */
   function stockBadge(stock: number | null) {
@@ -138,6 +195,98 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
         </div>
       )}
 
+      {/* S7: action лента при селекция */}
+      {selected.size > 0 && (
+        <div className="flex flex-col gap-3 rounded-card border border-brand-200 bg-brand-50 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-sm font-medium text-ink-900">
+              Избрани: {selected.size}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={bulkBusy}
+              onClick={() => runBulk({ type: "activate" })}
+            >
+              Активирай
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={bulkBusy}
+              onClick={() => runBulk({ type: "deactivate" })}
+            >
+              Деактивирай
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={bulkBusy}
+              onClick={() => setPricePanelOpen((o) => !o)}
+            >
+              Промяна на цени
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={bulkBusy}
+              className="text-danger-600"
+              onClick={() => setConfirmBulkDelete(true)}
+            >
+              Изтрий
+            </Button>
+            <span className="flex-1" />
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="text-sm text-ink-500 underline hover:text-ink-900"
+            >
+              Откажи селекцията
+            </button>
+          </div>
+
+          {pricePanelOpen && (
+            <div className="flex flex-wrap items-end gap-3 border-t border-brand-200 pt-3">
+              <div className="w-40">
+                <Select
+                  label="Режим"
+                  options={[
+                    { value: "percent", label: "± процент" },
+                    { value: "fixed", label: "± сума (EUR)" },
+                  ]}
+                  value={priceMode}
+                  onChange={(e) => setPriceMode(e.target.value as "percent" | "fixed")}
+                />
+              </div>
+              <div className="w-36">
+                <Input
+                  label="Стойност"
+                  placeholder={priceMode === "percent" ? "напр. 10 или -5" : "напр. 2,50 или -1"}
+                  value={priceValueStr}
+                  onChange={(e) => setPriceValueStr(e.target.value)}
+                />
+              </div>
+              <Button
+                size="sm"
+                loading={bulkBusy}
+                disabled={parsePriceValue() === null}
+                onClick={() => {
+                  const value = parsePriceValue();
+                  if (value === null) return;
+                  runBulk({ type: "price", mode: priceMode, value });
+                }}
+              >
+                Приложи
+              </Button>
+              <p className="basis-full text-xs text-ink-500">
+                Прилага се върху редовната цена (минимум 0,01 €). Промо цена, станала
+                по-висока от новата редовна, се премахва.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {items.length === 0 ? (
         <EmptyState
           icon="store"
@@ -154,6 +303,13 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                 key={product.id}
                 className="flex gap-3 rounded-card border border-surface-200 bg-surface-0 p-3"
               >
+                <input
+                  type="checkbox"
+                  aria-label={`Избери „${product.name}“`}
+                  checked={selected.has(product.id)}
+                  onChange={() => toggleSelected(product.id)}
+                  className="size-5 shrink-0 self-center rounded accent-brand-600"
+                />
                 <Link
                   href={`/dashboard/products/${product.id}`}
                   className="relative size-16 shrink-0 overflow-hidden rounded-control border border-surface-200 bg-surface-50"
@@ -231,6 +387,15 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           {/* Десктоп: таблица */}
           <Table className="hidden md:block">
             <THead>
+              <TH>
+                <input
+                  type="checkbox"
+                  aria-label="Избери всички на страницата"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="size-5 rounded accent-brand-600"
+                />
+              </TH>
               <TH>Продукт</TH>
               <TH>Категория</TH>
               <TH>Цена</TH>
@@ -241,6 +406,15 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
             <TBody>
               {items.map((product) => (
                 <TRow key={product.id}>
+                  <TCell>
+                    <input
+                      type="checkbox"
+                      aria-label={`Избери „${product.name}“`}
+                      checked={selected.has(product.id)}
+                      onChange={() => toggleSelected(product.id)}
+                      className="size-5 rounded accent-brand-600"
+                    />
+                  </TCell>
                   <TCell>
                     <Link
                       href={`/dashboard/products/${product.id}`}
@@ -351,6 +525,16 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
         onClose={() => setToDelete(null)}
         onConfirm={handleDelete}
         message={`Изтриване на „${toDelete?.name}"? Действието е необратимо, снимките също ще бъдат изтрити.`}
+      />
+
+      <ConfirmDialog
+        open={confirmBulkDelete}
+        onClose={() => setConfirmBulkDelete(false)}
+        onConfirm={async () => {
+          setConfirmBulkDelete(false);
+          await runBulk({ type: "delete" });
+        }}
+        message={`Изтриване на ${selected.size} ${selected.size === 1 ? "продукт" : "продукта"}? Действието е необратимо, снимките също ще бъдат изтрити.`}
       />
     </div>
   );

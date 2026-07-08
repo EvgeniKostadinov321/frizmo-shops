@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, sql as rawSql } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
@@ -219,6 +219,84 @@ export async function deleteProduct(input: { id: string }): Promise<ActionResult
   revalidatePath("/dashboard");
   revalidateShop(shop.slug);
   return ok(null);
+}
+
+const bulkSchema = z.object({
+  ids: z.array(z.uuid()).min(1, "Избери поне един продукт.").max(100),
+  op: z.discriminatedUnion("type", [
+    z.object({ type: z.literal("activate") }),
+    z.object({ type: z.literal("deactivate") }),
+    z.object({ type: z.literal("delete") }),
+    z.object({
+      type: z.literal("price"),
+      mode: z.enum(["percent", "fixed"]),
+      /** percent: цели проценти −90..500 · fixed: центове −100000..100000. */
+      value: z.number().int().min(-100_000).max(100_000),
+    }),
+  ]),
+});
+
+/**
+ * Bulk операции върху продукти (S7). Tenant изолация: всяка операция е с
+ * WHERE shop_id — чужди id-та тихо се игнорират. Връща броя засегнати.
+ */
+export async function bulkProductAction(
+  rawInput: unknown,
+): Promise<ActionResult<{ affected: number }>> {
+  const parsed = bulkSchema.safeParse(rawInput);
+  if (!parsed.success) return zodFail(parsed.error);
+  const { ids, op } = parsed.data;
+
+  const { shop } = await requireShop();
+  const owned = and(eq(products.shopId, shop.id), inArray(products.id, ids));
+
+  let affected = 0;
+
+  if (op.type === "activate" || op.type === "deactivate") {
+    const rows = await db
+      .update(products)
+      .set({ status: op.type === "activate" ? "active" : "inactive", updatedAt: new Date() })
+      .where(owned)
+      .returning({ id: products.id });
+    affected = rows.length;
+  } else if (op.type === "delete") {
+    /* Първо снимките (нужни са пътищата), после реда — както единичното изтриване. */
+    const rows = await db.query.products.findMany({ where: owned, columns: { id: true, images: true } });
+    if (rows.length > 0) {
+      await db.delete(products).where(inArray(products.id, rows.map((r) => r.id)));
+      const images = rows.flatMap((r) => r.images);
+      if (images.length > 0) {
+        const admin = createSupabaseAdmin();
+        await admin.storage.from(SHOP_MEDIA_BUCKET).remove(images);
+      }
+    }
+    affected = rows.length;
+  } else {
+    if (op.mode === "percent" && (op.value < -90 || op.value > 500)) {
+      return fail("Процентът трябва да е между −90 и +500.");
+    }
+    /* Върху РЕДОВНАТА цена; минимум 1 цент. Промото не се пипа, но ако новата
+       цена падне до/под промото, промото се маха (иначе промо ≥ редовна). */
+    const newPrice =
+      op.mode === "percent"
+        ? rawSql`greatest(1, round(${products.priceCents} * ${100 + op.value} / 100.0)::int)`
+        : rawSql`greatest(1, ${products.priceCents} + ${op.value})`;
+    const rows = await db
+      .update(products)
+      .set({ priceCents: newPrice as unknown as number, updatedAt: new Date() })
+      .where(owned)
+      .returning({ id: products.id });
+    await db
+      .update(products)
+      .set({ promoPriceCents: null })
+      .where(and(owned, rawSql`${products.promoPriceCents} >= ${products.priceCents}`));
+    affected = rows.length;
+  }
+
+  revalidatePath("/dashboard/products");
+  revalidatePath("/dashboard");
+  revalidateShop(shop.slug);
+  return ok({ affected });
 }
 
 export async function toggleProductStatus(input: { id: string }): Promise<ActionResult> {
