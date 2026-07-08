@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon } from "@/components/ui";
+import { PriceStockFilter } from "@/components/price-stock-filter";
+import { toCents } from "@/lib/money";
 import { MascotState } from "@/components/storefront/mascot";
 import { PageHeader } from "@/components/storefront/page-header";
 import { ProductCard } from "@/components/storefront/product-card";
@@ -14,7 +16,15 @@ import {
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ search?: string; category?: string; page?: string; sort?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    category?: string;
+    min?: string;
+    max?: string;
+    inStock?: string;
+    page?: string;
+    sort?: string;
+  }>;
 }
 
 const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
@@ -58,8 +68,20 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
   const page = sp.page ? Math.max(1, Number(sp.page) || 1) : 1;
   const sort: ProductSort =
     sp.sort === "price-asc" || sp.sort === "price-desc" ? sp.sort : "new";
+  /* Невалидна ценова стойност → игнорира се (null от toCents). */
+  const minPrice = sp.min ? (toCents(sp.min) ?? undefined) : undefined;
+  const maxPrice = sp.max ? (toCents(sp.max) ?? undefined) : undefined;
+  const inStock = sp.inStock === "1";
   const [{ items, hasMore, total }, categories] = await Promise.all([
-    getActiveProducts(shop.id, { search: sp.search, categoryId: sp.category, page, sort }),
+    getActiveProducts(shop.id, {
+      search: sp.search,
+      categoryId: sp.category,
+      minPrice,
+      maxPrice,
+      inStock,
+      page,
+      sort,
+    }),
     getPublicCategories(shop.id),
   ]);
 
@@ -71,11 +93,19 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
   const children = activeRootId
     ? categories.filter((c) => c.parentId === activeRootId)
     : [];
-  const hasFilters = Boolean(sp.search || sp.category || sp.sort);
+  const hasFilters = Boolean(sp.search || sp.category || sp.sort || sp.min || sp.max || sp.inStock);
 
   function pageUrl(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { search: sp.search, category: sp.category, sort: sp.sort, ...overrides };
+    const merged = {
+      search: sp.search,
+      category: sp.category,
+      min: sp.min,
+      max: sp.max,
+      inStock: inStock ? "1" : undefined,
+      sort: sp.sort,
+      ...overrides,
+    };
     for (const [key, value] of Object.entries(merged)) {
       if (value && value !== "new") params.set(key, value);
     }
@@ -101,6 +131,9 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
           <form action={`${base}/products`} className="relative w-full max-w-md">
             {sp.category && <input type="hidden" name="category" value={sp.category} />}
             {sp.sort && sp.sort !== "new" && <input type="hidden" name="sort" value={sp.sort} />}
+            {sp.min && <input type="hidden" name="min" value={sp.min} />}
+            {sp.max && <input type="hidden" name="max" value={sp.max} />}
+            {inStock && <input type="hidden" name="inStock" value="1" />}
             <span
               aria-hidden
               className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--sf-muted)"
@@ -175,17 +208,50 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
             )}
           </div>
         )}
+
+        {/* Ценови диапазон + наличност — GET форма, пази останалите филтри */}
+        <form
+          action={`${base}/products`}
+          className="flex flex-wrap items-center gap-3"
+          aria-label="Филтър по цена и наличност"
+        >
+          {sp.search && <input type="hidden" name="search" value={sp.search} />}
+          {sp.category && <input type="hidden" name="category" value={sp.category} />}
+          {sp.sort && sp.sort !== "new" && <input type="hidden" name="sort" value={sp.sort} />}
+          <PriceStockFilter
+            variant="storefront"
+            defaultMin={sp.min}
+            defaultMax={sp.max}
+            defaultInStock={inStock}
+          />
+          <button
+            type="submit"
+            className="flex h-9 items-center rounded-full border border-(--sf-border) bg-(--sf-surface-raised) px-3.5 text-sm text-(--sf-text) transition-colors hover:border-(--sf-primary)"
+          >
+            Приложи
+          </button>
+          {(sp.min || sp.max || inStock) && (
+            <Link
+              href={pageUrl({ min: undefined, max: undefined, inStock: undefined, page: undefined })}
+              className="text-sm text-(--sf-muted) underline hover:text-(--sf-text)"
+            >
+              Изчисти
+            </Link>
+          )}
+        </form>
       </div>
 
       {items.length === 0 ? (
         <MascotState
           icon={sp.search ? "search" : "products"}
           logoPath={shop.logoPath}
-          title={sp.search ? "Нищо не намерихме" : "Още няма продукти"}
+          title={hasFilters ? "Нищо не намерихме" : "Още няма продукти"}
           text={
             sp.search
               ? `Няма продукти, отговарящи на „${sp.search}“. Опитай с друга дума.`
-              : "Магазинът скоро ще добави продукти — намини пак."
+              : hasFilters
+                ? "Няма продукти по тези филтри. Опитай с други стойности."
+                : "Магазинът скоро ще добави продукти — намини пак."
           }
           action={
             hasFilters ? (

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, isNotNull, ne, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNotNull, ne, sql, type SQL } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
@@ -77,14 +77,30 @@ export const getPublicShop = cache(async (slug: string) => {
 
 export type ProductSort = "new" | "price-asc" | "price-desc";
 
+/** Ефективна цена: промо цената, ако има, иначе редовната. */
+const EFFECTIVE_PRICE = sql<number>`coalesce(${products.promoPriceCents}, ${products.priceCents})`;
+
 export async function getActiveProducts(
   shopId: string,
-  filters: { search?: string; categoryId?: string; page?: number; sort?: ProductSort } = {},
+  filters: {
+    search?: string;
+    categoryId?: string;
+    /** Долна/горна граница на ефективната цена (центове). */
+    minPrice?: number;
+    maxPrice?: number;
+    /** Само в наличност: stock IS NULL (не следи) или stock > 0. */
+    inStock?: boolean;
+    page?: number;
+    sort?: ProductSort;
+  } = {},
 ) {
   const page = Math.max(1, filters.page ?? 1);
   const conditions: SQL[] = [eq(products.shopId, shopId), eq(products.status, "active")];
   if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));
   if (filters.categoryId) conditions.push(eq(products.categoryId, filters.categoryId));
+  if (filters.minPrice !== undefined) conditions.push(sql`${EFFECTIVE_PRICE} >= ${filters.minPrice}`);
+  if (filters.maxPrice !== undefined) conditions.push(sql`${EFFECTIVE_PRICE} <= ${filters.maxPrice}`);
+  if (filters.inStock) conditions.push(sql`(${products.stock} is null or ${products.stock} > 0)`);
   const where = and(...conditions);
 
   /* Сортиране по обявената цена (промо не участва — колонна заявка, без CASE). */

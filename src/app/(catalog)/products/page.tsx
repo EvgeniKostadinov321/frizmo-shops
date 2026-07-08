@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
 import { Button, Icon, Input, Select } from "@/components/ui";
+import { PriceStockFilter } from "@/components/price-stock-filter";
 import { type ProductSort, searchCatalogProducts } from "@/db/queries/catalog";
+import { toCents } from "@/lib/money";
 import { BUSINESS_CATEGORIES } from "@/schemas/shop";
 
 export const metadata: Metadata = {
@@ -23,6 +25,9 @@ interface PageProps {
     search?: string;
     category?: string;
     promo?: string;
+    min?: string;
+    max?: string;
+    inStock?: string;
     sort?: string;
     page?: string;
   }>;
@@ -32,11 +37,18 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const page = sp.page ? Math.max(1, Number(sp.page) || 1) : 1;
   const promoOnly = sp.promo === "1";
+  /* Невалидна ценова стойност → игнорира се (null от toCents). */
+  const minPrice = sp.min ? (toCents(sp.min) ?? undefined) : undefined;
+  const maxPrice = sp.max ? (toCents(sp.max) ?? undefined) : undefined;
+  const inStock = sp.inStock === "1";
 
   const { items, total, pageSize, sort } = await searchCatalogProducts({
     search: sp.search,
     category: sp.category,
     promoOnly,
+    minPrice,
+    maxPrice,
+    inStock,
     sort: sp.sort as ProductSort | undefined,
     page,
   });
@@ -48,6 +60,9 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
       search: sp.search,
       category: sp.category,
       promo: promoOnly ? "1" : undefined,
+      min: sp.min,
+      max: sp.max,
+      inStock: inStock ? "1" : undefined,
       sort: sp.sort,
       ...overrides,
     };
@@ -61,6 +76,11 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
     sp.search && { label: `„${sp.search}"`, remove: pageUrl({ search: undefined, page: undefined }) },
     sp.category && { label: sp.category, remove: pageUrl({ category: undefined, page: undefined }) },
     promoOnly && { label: "Промоции", remove: pageUrl({ promo: undefined, page: undefined }) },
+    (sp.min || sp.max) && {
+      label: `Цена ${sp.min ? `от ${sp.min} €` : ""}${sp.min && sp.max ? " " : ""}${sp.max ? `до ${sp.max} €` : ""}`,
+      remove: pageUrl({ min: undefined, max: undefined, page: undefined }),
+    },
+    inStock && { label: "В наличност", remove: pageUrl({ inStock: undefined, page: undefined }) },
   ].filter(Boolean) as { label: string; remove: string }[];
 
   return (
@@ -101,6 +121,14 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
         />
         <Select label="Подредба" hideLabel name="sort" defaultValue={sort} options={SORT_OPTIONS} />
         <Button type="submit">Търси</Button>
+        <div className="sm:col-span-4">
+          <PriceStockFilter
+            variant="catalog"
+            defaultMin={sp.min}
+            defaultMax={sp.max}
+            defaultInStock={inStock}
+          />
+        </div>
       </form>
 
       {/* Само промоции — toggle */}

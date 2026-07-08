@@ -104,6 +104,12 @@ export interface CatalogProductFilters {
   search?: string;
   category?: string;
   promoOnly?: boolean;
+  /** Долна граница на ефективната цена (центове). */
+  minPrice?: number;
+  /** Горна граница на ефективната цена (центове). */
+  maxPrice?: number;
+  /** Само в наличност: stock IS NULL (не следи) или stock > 0. */
+  inStock?: boolean;
   page?: number;
   sort?: ProductSort;
 }
@@ -132,6 +138,12 @@ export async function searchCatalogProducts(filters: CatalogProductFilters = {})
   if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));
   if (filters.category) conditions.push(eq(shops.businessCategory, filters.category));
   if (filters.promoOnly) conditions.push(isNotNull(products.promoPriceCents));
+  if (filters.minPrice !== undefined)
+    conditions.push(sql`${PRODUCT_EFFECTIVE_PRICE} >= ${filters.minPrice}`);
+  if (filters.maxPrice !== undefined)
+    conditions.push(sql`${PRODUCT_EFFECTIVE_PRICE} <= ${filters.maxPrice}`);
+  if (filters.inStock)
+    conditions.push(sql`(${products.stock} is null or ${products.stock} > 0)`);
   const where = and(...conditions);
 
   const [rows, [total]] = await Promise.all([
