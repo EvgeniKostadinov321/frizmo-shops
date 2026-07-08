@@ -124,7 +124,7 @@ export function ProductImportExport({ stacked = false }: { stacked?: boolean }) 
             <span className="text-sm font-medium text-ink-900">
               {fileName || "Избери CSV файл"}
             </span>
-            <span className="text-xs text-ink-500">до 1MB · UTF-8</span>
+            <span className="text-xs text-ink-500">максимум 1MB · UTF-8</span>
           </label>
 
           {result && (
