@@ -24,6 +24,8 @@ interface CheckoutFormProps {
   /** N9: подаръчна опаковка (настройка на магазина; таксата е преглед — сървърът я прилага). */
   giftWrapEnabled?: boolean;
   giftWrapFeeCents?: number;
+  /** N9: подаръчна картичка (текст поздрав) — независима от опаковката. */
+  giftCardEnabled?: boolean;
 }
 
 /* Storefront полета — стилизирани със --sf-* променливите на темата. */
@@ -87,6 +89,7 @@ export function CheckoutForm({
   paymentMethods,
   giftWrapEnabled = false,
   giftWrapFeeCents = 0,
+  giftCardEnabled = false,
 }: CheckoutFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -116,8 +119,9 @@ export function CheckoutForm({
   const [appliedCode, setAppliedCode] = useState("");
   const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [couponBusy, setCouponBusy] = useState(false);
-  /* N9: подаръчна опаковка */
+  /* N9: подаръчна опаковка (такса) + картичка (текст) — независими опции. */
   const [giftWrap, setGiftWrap] = useState(false);
+  const [giftCard, setGiftCard] = useState(false);
   const [giftNote, setGiftNote] = useState("");
 
   /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
@@ -233,7 +237,8 @@ export function CheckoutForm({
         lines: stored,
         couponCode: appliedCode,
         giftWrap: giftWrapEnabled && giftWrap,
-        giftNote: giftWrap ? giftNote : "",
+        giftCard: giftCardEnabled && giftCard,
+        giftNote: giftCardEnabled && giftCard ? giftNote : "",
       });
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});
@@ -372,21 +377,33 @@ export function CheckoutForm({
           </div>
         </Field>
 
-        {/* N9: подаръчна опаковка (само ако магазинът я предлага) */}
-        {giftWrapEnabled && (
-          <div className="flex flex-col gap-2 rounded-(--sf-radius) border border-(--sf-border) p-3">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-(--sf-text)">
-              <input
-                type="checkbox"
-                checked={giftWrap}
-                onChange={(e) => setGiftWrap(e.target.checked)}
-              />
-              Опаковай като подарък
-              {giftWrapFeeCents > 0 && (
-                <span className="text-(--sf-muted)">(+{formatPrice(giftWrapFeeCents)})</span>
-              )}
-            </label>
-            {giftWrap && (
+        {/* N9: подаръчни опции — опаковка и/или картичка (само включените от магазина) */}
+        {(giftWrapEnabled || giftCardEnabled) && (
+          <div className="flex flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) p-3">
+            {giftWrapEnabled && (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-(--sf-text)">
+                <input
+                  type="checkbox"
+                  checked={giftWrap}
+                  onChange={(e) => setGiftWrap(e.target.checked)}
+                />
+                Опаковай поръчката като подарък
+                {giftWrapFeeCents > 0 && (
+                  <span className="text-(--sf-muted)">(+{formatPrice(giftWrapFeeCents)})</span>
+                )}
+              </label>
+            )}
+            {giftCardEnabled && (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-(--sf-text)">
+                <input
+                  type="checkbox"
+                  checked={giftCard}
+                  onChange={(e) => setGiftCard(e.target.checked)}
+                />
+                Добави подаръчна картичка
+              </label>
+            )}
+            {giftCardEnabled && giftCard && (
               <Field label="Текст за картичка" error={fieldErrors.giftNote}>
                 <input
                   className={inputClass}

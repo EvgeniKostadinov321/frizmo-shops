@@ -53,6 +53,8 @@ export const shops = pgTable(
     /** N9: подаръчна опаковка (настройка на търговеца, такса snapshot-ва се в поръчката). */
     giftWrapEnabled: boolean("gift_wrap_enabled").notNull().default(false),
     giftWrapFeeCents: integer("gift_wrap_fee_cents").notNull().default(0),
+    /** N9: подаръчна картичка (текст поздрав) — независим от опаковката toggle. */
+    giftCardEnabled: boolean("gift_card_enabled").notNull().default(false),
     /** N12: срок за заявка на връщане в дни (14/30/45, валидира се в Zod). */
     returnWindowDays: integer("return_window_days").notNull().default(14),
     status: shopStatusEnum("status").notNull().default("draft"),
@@ -276,8 +278,9 @@ export const orders = pgTable(
     /* Приложен промо код (snapshot) + спестена сума; празно/0 = без купон. */
     couponCode: text("coupon_code").notNull().default(""),
     discountCents: integer("discount_cents").notNull().default(0),
-    /* N9: подаръчна опаковка (snapshot на таксата към момента). */
+    /* N9: подаръчна опаковка (snapshot на таксата към момента) + картичка (независими). */
     giftWrap: boolean("gift_wrap").notNull().default(false),
+    giftCard: boolean("gift_card").notNull().default(false),
     giftNote: text("gift_note").notNull().default(""),
     giftWrapFeeCents: integer("gift_wrap_fee_cents").notNull().default(0),
     /* N12: заявено връщане от купувача (причина + кога, за срока/одита). */

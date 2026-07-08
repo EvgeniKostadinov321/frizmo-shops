@@ -10,14 +10,21 @@ import { centsToInput } from "@/lib/money";
 interface OrderSettingsProps {
   giftWrapEnabled: boolean;
   giftWrapFeeCents: number;
+  giftCardEnabled: boolean;
   returnWindowDays: number;
 }
 
-/** N9+N12: подаръчна опаковка (toggle + такса) и срок за връщане (14/30/45). */
-export function OrderSettings({ giftWrapEnabled, giftWrapFeeCents, returnWindowDays }: OrderSettingsProps) {
+/** N9+N12: подаръчна опаковка (toggle + такса) + картичка (toggle) и срок за връщане (14/30/45). */
+export function OrderSettings({
+  giftWrapEnabled,
+  giftWrapFeeCents,
+  giftCardEnabled,
+  returnWindowDays,
+}: OrderSettingsProps) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(giftWrapEnabled);
   const [fee, setFee] = useState(giftWrapFeeCents > 0 ? centsToInput(giftWrapFeeCents) : "");
+  const [cardEnabled, setCardEnabled] = useState(giftCardEnabled);
   const [windowDays, setWindowDays] = useState(String(returnWindowDays));
   const [busy, setBusy] = useState(false);
 
@@ -27,6 +34,7 @@ export function OrderSettings({ giftWrapEnabled, giftWrapFeeCents, returnWindowD
       const result = await saveOrderSettings({
         giftWrapEnabled: enabled,
         giftWrapFee: fee,
+        giftCardEnabled: cardEnabled,
         returnWindowDays: Number(windowDays),
       });
       if (!result.ok) toast.error(result.error);
@@ -42,13 +50,13 @@ export function OrderSettings({ giftWrapEnabled, giftWrapFeeCents, returnWindowD
       <div>
         <h2 className="font-display text-lg font-bold text-ink-900">Поръчки и връщания</h2>
         <p className="mt-1 text-sm text-ink-500">
-          Подаръчна опаковка в checkout-а и срок, в който клиентът може да заяви връщане.
+          Подаръчни опции в checkout-а и срок, в който клиентът може да заяви връщане.
         </p>
       </div>
 
       <Checkbox
         label="Предлагам подаръчна опаковка"
-        hint="Клиентът вижда чекбокс + поле за картичка при поръчка."
+        hint="Клиентът може да заяви опаковане на поръчката в подаръчна хартия (със или без такса)."
         checked={enabled}
         onChange={(e) => setEnabled(e.target.checked)}
       />
@@ -62,6 +70,13 @@ export function OrderSettings({ giftWrapEnabled, giftWrapFeeCents, returnWindowD
           />
         </div>
       )}
+
+      <Checkbox
+        label="Предлагам подаръчна картичка"
+        hint="Клиентът може да добави текст поздрав към поръчката. Безплатно."
+        checked={cardEnabled}
+        onChange={(e) => setCardEnabled(e.target.checked)}
+      />
 
       <div className="max-w-64">
         <Select

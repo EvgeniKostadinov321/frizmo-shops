@@ -32,8 +32,9 @@ interface OrderEmailData {
   paymentDetails: string;
   totalCents: number;
   lines: PricedLine[];
-  /** N9: подаръчна опаковка (търговецът трябва да я види в имейла). */
+  /** N9: подаръчна опаковка + картичка (търговецът трябва да ги види в имейла). */
   giftWrap?: boolean;
+  giftCard?: boolean;
   giftNote?: string;
   giftWrapFeeCents?: number;
 }
@@ -76,10 +77,13 @@ export async function sendOrderEmails(shop: Shop, order: OrderEmailData): Promis
     name: order.shippingName,
     cents: order.shippingPriceCents,
   });
-  const giftRow = order.giftWrap
-    ? `<p style="font-size:14px;color:#b45309;font-weight:600;">Подаръчна опаковка${(order.giftWrapFeeCents ?? 0) > 0 ? ` (+${formatPrice(order.giftWrapFeeCents!)})` : ""}${order.giftNote ? ` — картичка: „${esc(order.giftNote)}“` : ""}</p>`
+  const giftWrapRow = order.giftWrap
+    ? `<p style="font-size:14px;color:#b45309;font-weight:600;">Подаръчна опаковка${(order.giftWrapFeeCents ?? 0) > 0 ? ` (+${formatPrice(order.giftWrapFeeCents!)})` : ""}</p>`
     : "";
-  const totalRow = `${giftRow}<p style="font-size:16px;font-weight:bold;">Общо: ${formatPrice(order.totalCents)}</p>`;
+  const giftCardRow = order.giftCard
+    ? `<p style="font-size:14px;color:#b45309;font-weight:600;">Подаръчна картичка${order.giftNote ? `: „${esc(order.giftNote)}“` : ""}</p>`
+    : "";
+  const totalRow = `${giftWrapRow}${giftCardRow}<p style="font-size:16px;font-weight:bold;">Общо: ${formatPrice(order.totalCents)}</p>`;
 
   const sends: Promise<unknown>[] = [];
 

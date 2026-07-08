@@ -16,6 +16,8 @@ interface ManualOrderFormProps {
   /** N9: подаръчна опаковка (настройката на магазина). */
   giftWrapEnabled?: boolean;
   giftWrapFeeCents?: number;
+  /** N9: подаръчна картичка (текст поздрав) — независима от опаковката. */
+  giftCardEnabled?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export function ManualOrderForm({
   paymentMethods,
   giftWrapEnabled = false,
   giftWrapFeeCents = 0,
+  giftCardEnabled = false,
 }: ManualOrderFormProps) {
   const router = useRouter();
 
@@ -45,6 +48,7 @@ export function ManualOrderForm({
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
   const [overrideStr, setOverrideStr] = useState("");
   const [giftWrap, setGiftWrap] = useState(false);
+  const [giftCard, setGiftCard] = useState(false);
   const [giftNote, setGiftNote] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -109,7 +113,8 @@ export function ManualOrderForm({
         paymentMethodId,
         shippingOverrideCents: overrideCents,
         giftWrap: giftWrapEnabled && giftWrap,
-        giftNote: giftWrap ? giftNote : "",
+        giftCard: giftCardEnabled && giftCard,
+        giftNote: giftCardEnabled && giftCard ? giftNote : "",
         lines,
       });
       if (!result.ok) {
@@ -306,23 +311,36 @@ export function ManualOrderForm({
           error={fieldErrors.paymentMethodId}
         />
 
-        {giftWrapEnabled && (
+        {(giftWrapEnabled || giftCardEnabled) && (
           <div className="flex flex-col gap-2">
-            <label className="flex min-h-11 cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                checked={giftWrap}
-                onChange={(e) => setGiftWrap(e.target.checked)}
-                className="size-5 shrink-0 rounded accent-brand-600"
-              />
-              <span className="text-sm font-medium text-ink-900">
-                Подаръчна опаковка
-                {giftWrapFeeCents > 0 && (
-                  <span className="text-ink-500"> (+{formatPrice(giftWrapFeeCents)})</span>
-                )}
-              </span>
-            </label>
-            {giftWrap && (
+            {giftWrapEnabled && (
+              <label className="flex min-h-11 cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={giftWrap}
+                  onChange={(e) => setGiftWrap(e.target.checked)}
+                  className="size-5 shrink-0 rounded accent-brand-600"
+                />
+                <span className="text-sm font-medium text-ink-900">
+                  Подаръчна опаковка
+                  {giftWrapFeeCents > 0 && (
+                    <span className="text-ink-500"> (+{formatPrice(giftWrapFeeCents)})</span>
+                  )}
+                </span>
+              </label>
+            )}
+            {giftCardEnabled && (
+              <label className="flex min-h-11 cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={giftCard}
+                  onChange={(e) => setGiftCard(e.target.checked)}
+                  className="size-5 shrink-0 rounded accent-brand-600"
+                />
+                <span className="text-sm font-medium text-ink-900">Подаръчна картичка</span>
+              </label>
+            )}
+            {giftCardEnabled && giftCard && (
               <Input
                 label="Текст за картичка"
                 maxLength={200}

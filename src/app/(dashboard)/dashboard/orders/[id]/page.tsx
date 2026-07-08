@@ -81,10 +81,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
               <span>{order.note}</span>
             </p>
           )}
-          {order.giftWrap && (
-            <p className="mt-2 rounded-control bg-brand-50 p-2 font-medium text-brand-700">
-              Подаръчна опаковка{order.giftNote && ` — картичка: „${order.giftNote}“`}
-            </p>
+          {(order.giftWrap || order.giftCard) && (
+            <div className="mt-2 flex flex-col gap-1 rounded-control bg-brand-50 p-2 font-medium text-brand-700">
+              {order.giftWrap && <p>Подаръчна опаковка</p>}
+              {order.giftCard && (
+                <p>Подаръчна картичка{order.giftNote && `: „${order.giftNote}“`}</p>
+              )}
+            </div>
           )}
         </Card>
 

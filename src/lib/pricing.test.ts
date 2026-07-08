@@ -268,3 +268,42 @@ describe("priceCart — промо кодове", () => {
     expect(cart.totalCents).toBe(1000); // 2000 - 1000 + 0
   });
 });
+
+describe("priceCart — подаръчна опаковка (N9)", () => {
+  const line = [{ productId: "p1", variantKey: null, qty: 1 }];
+
+  it("таксата влиза в total и в полето giftWrapFeeCents", () => {
+    const cart = priceCart(line, productsMap(product()), undefined, undefined, 200);
+    expect(cart.giftWrapFeeCents).toBe(200);
+    expect(cart.totalCents).toBe(2200); // 2000 + 200
+  });
+
+  it("без такса → 0, total непроменен", () => {
+    const cart = priceCart(line, productsMap(product()));
+    expect(cart.giftWrapFeeCents).toBe(0);
+    expect(cart.totalCents).toBe(2000);
+  });
+
+  it("опаковка + доставка + купон заедно", () => {
+    const cart = priceCart(
+      line,
+      productsMap(product()),
+      { name: "Куриер", priceCents: 500, freeOverCents: null },
+      { code: "MINUS10", discountType: "percent", discountValue: 10, minSubtotalCents: 0 },
+      200,
+    );
+    expect(cart.totalCents).toBe(2500); // 2000 - 200 + 500 + 200
+  });
+
+  it("празна количка не добавя такса (няма поръчка)", () => {
+    const cart = priceCart([], productsMap(), undefined, undefined, 200);
+    expect(cart.giftWrapFeeCents).toBe(0);
+    expect(cart.totalCents).toBe(0);
+  });
+
+  it("отрицателна такса се клампва към 0 (защита)", () => {
+    const cart = priceCart(line, productsMap(product()), undefined, undefined, -500);
+    expect(cart.giftWrapFeeCents).toBe(0);
+    expect(cart.totalCents).toBe(2000);
+  });
+});

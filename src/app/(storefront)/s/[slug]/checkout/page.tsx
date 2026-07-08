@@ -45,6 +45,7 @@ export default async function CheckoutPage({ params }: PageProps) {
           paymentMethods={activePayment}
           giftWrapEnabled={shop.giftWrapEnabled}
           giftWrapFeeCents={shop.giftWrapFeeCents}
+          giftCardEnabled={shop.giftCardEnabled}
         />
       )}
     </div>

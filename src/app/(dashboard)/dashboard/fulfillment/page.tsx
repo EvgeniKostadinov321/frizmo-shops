@@ -24,6 +24,7 @@ export default async function FulfillmentPage() {
       <OrderSettings
         giftWrapEnabled={shop.giftWrapEnabled}
         giftWrapFeeCents={shop.giftWrapFeeCents}
+        giftCardEnabled={shop.giftCardEnabled}
         returnWindowDays={shop.returnWindowDays}
       />
     </div>

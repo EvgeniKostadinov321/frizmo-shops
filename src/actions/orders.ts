@@ -151,6 +151,8 @@ export async function createOrder(
     publicToken: string;
     orderNumber: number;
     cart: PricedCart;
+    giftWrap: boolean;
+    giftCard: boolean;
     giftWrapFeeCents: number;
   };
   try {
@@ -190,6 +192,12 @@ export async function createOrder(
         couponRowId = row!.id;
       }
 
+      /* N9: опаковка/картичка от НАСТРОЙКАТА на магазина (не от клиента). Таксата
+         минава през priceCart → cart.totalCents вече я включва (един източник). */
+      const giftWrap = shop.giftWrapEnabled && input.giftWrap;
+      const giftCard = shop.giftCardEnabled && input.giftCard;
+      const giftWrapFeeCents = giftWrap ? shop.giftWrapFeeCents : 0;
+
       const cart = priceCart(
         input.lines,
         pricingProducts,
@@ -199,6 +207,7 @@ export async function createOrder(
           freeOverCents: shipping.freeOverCents,
         },
         appliedCoupon,
+        giftWrapFeeCents,
       );
       if (cart.hasErrors || cart.lines.length === 0) {
         throw new Error("CART_ERRORS");
@@ -219,10 +228,6 @@ export async function createOrder(
 
       await decrementStock(tx, input.lines);
 
-      /* N9: таксата за опаковка — от НАСТРОЙКАТА на магазина (не от клиента). */
-      const giftWrap = shop.giftWrapEnabled && input.giftWrap;
-      const giftWrapFeeCents = giftWrap ? shop.giftWrapFeeCents : 0;
-
       const inserted = await insertOrderWithNumber(
         tx,
         shop.id,
@@ -241,13 +246,14 @@ export async function createOrder(
           couponCode: cart.appliedCouponCode,
           discountCents: cart.discountCents,
           giftWrap,
-          giftNote: giftWrap ? sanitizeText(input.giftNote, 200) : "",
+          giftCard,
+          giftNote: giftCard ? sanitizeText(input.giftNote, 200) : "",
           giftWrapFeeCents,
-          totalCents: cart.totalCents + giftWrapFeeCents,
+          totalCents: cart.totalCents,
         },
         cart.lines,
       );
-      return { ...inserted, cart, giftWrapFeeCents };
+      return { ...inserted, cart, giftWrap, giftCard, giftWrapFeeCents };
     });
   } catch (error) {
     const msg = (error as Error).message;
@@ -276,13 +282,14 @@ export async function createOrder(
       shippingPriceCents: created.cart.shipping?.priceCents ?? 0,
       paymentName: payment.name,
       paymentDetails: payment.details,
-      totalCents: created.cart.totalCents + created.giftWrapFeeCents,
+      totalCents: created.cart.totalCents,
       lines: created.cart.lines,
-      giftWrap: shop.giftWrapEnabled && input.giftWrap,
-      giftNote: sanitizeText(input.giftNote, 200),
+      giftWrap: created.giftWrap,
+      giftCard: created.giftCard,
+      giftNote: created.giftCard ? sanitizeText(input.giftNote, 200) : "",
       giftWrapFeeCents: created.giftWrapFeeCents,
     }),
-    sendNewOrderPush(shop, created.orderNumber, created.cart.totalCents + created.giftWrapFeeCents),
+    sendNewOrderPush(shop, created.orderNumber, created.cart.totalCents),
   ]);
 
   revalidatePath("/dashboard/orders");
@@ -342,14 +349,17 @@ export async function createManualOrder(
       await tx.select({ id: products.id }).from(products).where(inArray(products.id, ids)).for("update");
 
       const pricingProducts = await getPricingProducts(shop.id, ids);
-      const cart = priceCart(input.lines, pricingProducts, shippingOption);
+
+      /* N9: опаковка/картичка от настройката на магазина; таксата минава през
+         priceCart → cart.totalCents вече я включва. */
+      const giftWrap = shop.giftWrapEnabled && input.giftWrap;
+      const giftCard = shop.giftCardEnabled && input.giftCard;
+      const giftWrapFeeCents = giftWrap ? shop.giftWrapFeeCents : 0;
+
+      const cart = priceCart(input.lines, pricingProducts, shippingOption, undefined, giftWrapFeeCents);
       if (cart.hasErrors || cart.lines.length === 0) throw new Error("CART_ERRORS");
 
       await decrementStock(tx, input.lines);
-
-      /* N9: таксата — от настройката на магазина. */
-      const giftWrap = shop.giftWrapEnabled && input.giftWrap;
-      const giftWrapFeeCents = giftWrap ? shop.giftWrapFeeCents : 0;
 
       const inserted = await insertOrderWithNumber(
         tx,
@@ -367,9 +377,10 @@ export async function createManualOrder(
           paymentType: payment.type,
           subtotalCents: cart.subtotalCents,
           giftWrap,
-          giftNote: giftWrap ? sanitizeText(input.giftNote, 200) : "",
+          giftCard,
+          giftNote: giftCard ? sanitizeText(input.giftNote, 200) : "",
           giftWrapFeeCents,
-          totalCents: cart.totalCents + giftWrapFeeCents,
+          totalCents: cart.totalCents,
           status: "confirmed",
         },
         cart.lines,

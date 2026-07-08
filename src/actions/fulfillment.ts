@@ -21,6 +21,7 @@ const orderSettingsSchema = z.object({
   giftWrapEnabled: z.boolean(),
   /** EUR текст ("2,50"); празно при изключена опаковка = 0. */
   giftWrapFee: z.string().trim().max(10).default(""),
+  giftCardEnabled: z.boolean(),
   returnWindowDays: z.union([z.literal(14), z.literal(30), z.literal(45)]),
 });
 
@@ -38,6 +39,7 @@ export async function saveOrderSettings(input: unknown): Promise<ActionResult> {
     .set({
       giftWrapEnabled: parsed.data.giftWrapEnabled,
       giftWrapFeeCents: parsed.data.giftWrapEnabled ? feeCents : 0,
+      giftCardEnabled: parsed.data.giftCardEnabled,
       returnWindowDays: parsed.data.returnWindowDays,
       updatedAt: new Date(),
     })

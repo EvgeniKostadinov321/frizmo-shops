@@ -81,6 +81,8 @@ export interface PricedCart {
   /** Причина купонът да НЕ се приложи (за UI съобщение). */
   couponError?: CouponError;
   shipping: { name: string; priceCents: number; freeApplied: boolean } | null;
+  /** N9: такса за подаръчна опаковка (0 = няма). Влиза в totalCents. */
+  giftWrapFeeCents: number;
   totalCents: number;
   hasErrors: boolean;
 }
@@ -106,6 +108,8 @@ export function priceCart(
   products: Map<string, PricingProduct>,
   shipping?: ShippingOption,
   coupon?: AppliedCoupon,
+  /** N9: такса за подаръчна опаковка (снапшотната цена на магазина). 0 = без опаковка. */
+  giftWrapFeeCents = 0,
 ): PricedCart {
   const priced: PricedLine[] = lines.map((line) => {
     const base: PricedLine = {
@@ -192,6 +196,9 @@ export function priceCart(
     };
   }
 
+  /* Опаковката се добавя само при реална количка (без нея няма поръчка). */
+  const giftFee = subtotalCents > 0 ? Math.max(0, giftWrapFeeCents) : 0;
+
   return {
     lines: priced,
     subtotalCents,
@@ -199,7 +206,8 @@ export function priceCart(
     appliedCouponCode,
     couponError,
     shipping: shippingResult,
-    totalCents: discountedSubtotal + (shippingResult?.priceCents ?? 0),
+    giftWrapFeeCents: giftFee,
+    totalCents: discountedSubtotal + (shippingResult?.priceCents ?? 0) + giftFee,
     hasErrors,
   };
 }

@@ -87,6 +87,12 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pa
             <span>{order.giftWrapFeeCents > 0 ? formatPrice(order.giftWrapFeeCents) : "Безплатна"}</span>
           </div>
         )}
+        {order.giftCard && (
+          <div className="flex justify-between text-sm text-(--sf-muted)">
+            <span>Подаръчна картичка</span>
+            <span>Включена</span>
+          </div>
+        )}
         <div className="flex justify-between text-lg font-bold text-(--sf-text)">
           <span>Общо</span>
           <span>{formatPrice(order.totalCents)}</span>
