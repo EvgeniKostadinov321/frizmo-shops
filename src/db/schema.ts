@@ -388,6 +388,57 @@ export const subscribers = pgTable(
   ],
 ).enableRLS();
 
+/** S14: „извести ме при наличност" — чакащи имейли за изчерпани продукти. */
+export const stockAlerts = pgTable(
+  "stock_alerts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    /** null = чака; попълва се при изпратен имейл (не се праща втори път). */
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("stock_alerts_product_email_idx").on(t.productId, t.email),
+    index("stock_alerts_shop_idx").on(t.shopId),
+    index("stock_alerts_product_idx").on(t.productId),
+  ],
+).enableRLS();
+
+/** S1: ревюта — предварителна модерация (pending не се вижда публично). */
+export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved"]);
+
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(),
+    /** 1–5 (валидира се в Zod; тук integer). */
+    rating: integer("rating").notNull(),
+    text: text("text").notNull().default(""),
+    status: reviewStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("reviews_shop_status_idx").on(t.shopId, t.status),
+    index("reviews_product_status_idx").on(t.productId, t.status),
+  ],
+).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
@@ -402,5 +453,7 @@ export type Product = typeof products.$inferSelect;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
 export type ProductOption = typeof productOptions.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
+export type StockAlert = typeof stockAlerts.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
 export type Subscriber = typeof subscribers.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;

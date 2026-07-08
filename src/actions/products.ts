@@ -21,6 +21,7 @@ import { slugify } from "@/lib/slug";
 import { getShopPlan, PLAN_LIMITS } from "@/lib/plan";
 import { generateUniqueProductSlug } from "@/lib/product-slug";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
+import { notifyStockAlerts } from "@/lib/stock-alerts";
 import { SHOP_MEDIA_BUCKET } from "@/lib/storage";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { countProducts } from "@/db/queries/products";
@@ -186,16 +187,19 @@ export async function saveProduct(
   const product = await ownProduct(productId, shop.id);
   if (!product) return fail("Продуктът не съществува.");
 
+  const values = productValues(input, shop.id);
   await db.transaction(async (tx) => {
-    await tx
-      .update(products)
-      .set(productValues(input, shop.id))
-      .where(eq(products.id, product.id));
+    await tx.update(products).set(values).where(eq(products.id, product.id));
     await tx.delete(productAttributes).where(eq(productAttributes.productId, product.id));
     await tx.delete(productOptions).where(eq(productOptions.productId, product.id));
     await tx.delete(productVariants).where(eq(productVariants.productId, product.id));
     await insertRelations(tx, product.id, input, shop.id);
   });
+
+  /* S14: наличност 0 → >0 → back-in-stock известия (неблокиращо). */
+  if (product.stock === 0 && values.stock !== null && values.stock > 0) {
+    void notifyStockAlerts(shop.id, [product.id]);
+  }
 
   revalidatePath("/dashboard/products");
   revalidateShop(shop.slug);
@@ -343,12 +347,15 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
   const [existing, cats] = await Promise.all([
     db.query.products.findMany({
       where: eq(products.shopId, shop.id),
-      columns: { id: true, slug: true },
+      columns: { id: true, slug: true, stock: true },
     }),
     db.query.categories.findMany({ where: eq(categories.shopId, shop.id) }),
   ]);
   const bySlug = new Map(existing.map((p) => [p.slug, p.id]));
+  const oldStockById = new Map(existing.map((p) => [p.id, p.stock]));
   const categoryByName = new Map(cats.map((c) => [c.name.toLowerCase(), c.id]));
+  /* S14: продукти с преход на наличността 0 → >0 (известия след транзакцията). */
+  const restockedIds: string[] = [];
 
   /* Плановият лимит важи и за импорта (скрит бутон не е защита). */
   const plan = await getShopPlan(shop.id);
@@ -423,6 +430,9 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
       const existingId = bySlug.get(slug);
       if (existingId) {
         await tx.update(products).set(values).where(eq(products.id, existingId));
+        if (oldStockById.get(existingId) === 0 && stock !== null && stock > 0) {
+          restockedIds.push(existingId);
+        }
         result.updated++;
       } else {
         if (productCount >= maxProducts) {
@@ -439,6 +449,9 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
       }
     }
   });
+
+  /* S14: back-in-stock известия за върналите се в наличност (неблокиращо). */
+  if (restockedIds.length > 0) void notifyStockAlerts(shop.id, restockedIds);
 
   revalidatePath("/dashboard/products");
   revalidatePath("/dashboard");

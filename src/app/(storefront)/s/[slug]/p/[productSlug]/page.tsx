@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
 import { RecentlyViewed } from "@/components/storefront/recently-viewed";
 import { Paragraphs } from "@/components/storefront/sections/shared";
+import { StockAlertForm } from "@/components/storefront/stock-alert-form";
 import { VariantPicker } from "@/components/storefront/variant-picker";
 import {
   getActiveProduct,
@@ -122,6 +123,13 @@ export default async function ProductPage({ params }: PageProps) {
             : null
         }
       />
+
+      {/* S14: изчерпан продукт (следи наличност) → „извести ме" */}
+      {product.stock === 0 && (
+        <div className="mt-6 max-w-md">
+          <StockAlertForm shopSlug={shop.slug} productId={product.id} />
+        </div>
+      )}
 
       {(product.description || product.attributes.length > 0) && (
         <div className="mt-14 grid gap-10 border-t border-(--sf-border) pt-10 md:grid-cols-2 md:gap-10">

@@ -236,6 +236,41 @@ export async function sendNewsletterConfirmEmail(input: {
 }
 
 /**
+ * S14: „{Продукт} отново е в наличност" — до чакащ купувач (back-in-stock).
+ */
+export async function sendBackInStockEmail(input: {
+  toEmail: string;
+  shopName: string;
+  shopSlug: string;
+  productName: string;
+  productSlug: string;
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — back-in-stock имейлът е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const productUrl = `${BASE_URL}/s/${input.shopSlug}/p/${input.productSlug}`;
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.toEmail,
+      subject: `${input.productName} отново е в наличност — ${input.shopName}`,
+      html: shell(
+        "Отново е в наличност",
+        `<p style="font-size:14px;line-height:1.6;"><strong>${esc(input.productName)}</strong> в <strong>${esc(input.shopName)}</strong> отново е наличен. Количествата може да са ограничени.</p>
+        <p style="margin:24px 0;">
+          <a href="${productUrl}" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Виж продукта</a>
+        </p>
+        <p style="font-size:12px;color:#9ca3af;">Получаваш този имейл, защото поиска известие при наличност. Няма да получиш втори за същия продукт.</p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Back-in-stock имейлът се провали:", e);
+  }
+}
+
+/**
  * Съобщение от контактната форма на магазина → имейл до търговеца.
  * reply-to = имейла на клиента, за да отговори директно от пощата си.
  * Връща false при липсващ ключ / грешка (извикващият показва обща грешка).
