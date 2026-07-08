@@ -7,8 +7,10 @@ import { Button } from "./button";
 const CONSENT_KEY = "frizmo-cookie-notice";
 
 /**
- * Информативен банер: ползваме само строго необходими бисквитки (вход/сесия),
- * без маркетингови — затова „Разбрах" вместо избор на категории.
+ * Cookie банер: ползваме само строго необходими бисквитки (вход/сесия), без
+ * маркетингови/проследяващи. Opt-in законът важи за non-essential cookies — нямаме
+ * такива, затова „Приемам" без избор на категории (няма какво да се opt-in-ва).
+ * Щом дойде аналитика/pixel → пълен opt-in с категории.
  */
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
@@ -33,7 +35,7 @@ export function CookieConsent() {
     >
       <div className="mx-auto flex max-w-4xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-700">
-          🍪 Използваме само строго необходими бисквитки — за вход и сесия. Без проследяване,
+          Използваме само строго необходими бисквитки — за вход и сесия. Без проследяване,
           без реклами.{" "}
           <Link href="/privacy" className="text-brand-600 underline">
             Научи повече
@@ -46,7 +48,7 @@ export function CookieConsent() {
             setVisible(false);
           }}
         >
-          Разбрах
+          Приемам
         </Button>
       </div>
     </div>
