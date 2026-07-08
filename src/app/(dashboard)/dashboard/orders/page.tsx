@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/dashboard/order-status-badge";
 import { OrderStatusFilter } from "@/components/dashboard/order-status-filter";
-import { EmptyState, Table, TBody, TCell, TCellLink, TH, THead, TRow } from "@/components/ui";
+import { EmptyState, Table, TableRowLink, TBody, TCell, TH, THead } from "@/components/ui";
 import { getOrders } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
@@ -91,14 +91,15 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
               {items.map((order) => {
                 const number = `#${String(order.orderNumber).padStart(4, "0")}`;
                 return (
-                  <TRow key={order.id}>
-                    <TCellLink
-                      href={`/dashboard/orders/${order.id}`}
-                      label={`Отвори поръчка ${number}`}
-                      className="hover:text-brand-600"
-                    >
-                      {number}
-                    </TCellLink>
+                  <TableRowLink key={order.id} href={`/dashboard/orders/${order.id}`}>
+                    <TCell>
+                      <Link
+                        href={`/dashboard/orders/${order.id}`}
+                        className="font-medium hover:text-brand-600"
+                      >
+                        {number}
+                      </Link>
+                    </TCell>
                     <TCell className="text-ink-500">{dateFormat.format(order.createdAt)}</TCell>
                     <TCell>
                       <span className="block max-w-40 truncate">{order.customerName}</span>
@@ -107,7 +108,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                     <TCell>
                       <OrderStatusBadge status={order.status} />
                     </TCell>
-                  </TRow>
+                  </TableRowLink>
                 );
               })}
             </TBody>
