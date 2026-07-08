@@ -15,4 +15,4 @@ Known Next.js 16 differences already hit in this repo (ADR: `docs/decisions/2026
 * Package manager: **pnpm**. Gate before any commit: `pnpm check` (lint + unit + build); e2e: `pnpm test:e2e`.
 * Project instructions live in `CLAUDE.md` (+ `CLAUDE-frontend.md`, `CLAUDE-backend.md`) — read them; they define the design language, tenant-isolation rules, and money handling.
 * UI copy is Bulgarian with typographic quotes „…“; currency is EUR stored as integer cents.
-* Never commit `.env*`. Work on `dev`; `main` is production. Push to `main` only after asking the user and getting explicit approval — not blocked, but never done without asking.
+* Never commit `.env*`. **`dev` is the Vercel PRODUCTION branch** (confirmed 2026-07-08); we work and deploy only on `dev`. `main` is unused (do not merge into it). Push to `dev` only after asking the user and getting explicit approval — not blocked, but never done without asking.
