@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Icon, TransitionLink } from "@/components/ui";
-import { PriceStockFilter } from "@/components/price-stock-filter";
 import { toCents } from "@/lib/money";
 import { MascotState } from "@/components/storefront/mascot";
-import { PageHeader } from "@/components/storefront/page-header";
 import { ProductCard } from "@/components/storefront/product-card";
+import { StorefrontProductToolbar } from "@/components/storefront/product-toolbar";
 import { getReviewAggregates } from "@/db/queries/reviews";
 import {
   getActiveProducts,
@@ -40,23 +39,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title: `Продукти — ${result.shop.name}` };
 }
 
-/** Чип-линк за филтри/сортиране — 36px висок, pill, активен = плътен primary. */
-function Chip({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <TransitionLink
-      href={href}
-      aria-current={active ? "true" : undefined}
-      className={`flex h-9 items-center rounded-full border px-3.5 text-sm transition-colors ${
-        active
-          ? "border-(--sf-primary) bg-(--sf-primary) font-medium text-(--sf-on-primary)"
-          : "border-(--sf-border) bg-(--sf-surface-raised) text-(--sf-text) hover:border-(--sf-primary)"
-      }`}
-    >
-      {children}
-    </TransitionLink>
-  );
-}
-
 export default async function StorefrontProductsPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const result = await getPublicShop(slug);
@@ -87,14 +69,7 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
   /* S1: една заявка за звездите на всички карти на страницата (без N+1). */
   const ratings = await getReviewAggregates(items.map((p) => p.id));
 
-  const roots = categories.filter((c) => c.parentId === null);
   const activeCategory = categories.find((c) => c.id === sp.category);
-  /* Активният корен: избраната категория или родителят ѝ — така при избрана
-     подкатегория останалите сестрински подкатегории остават видими. */
-  const activeRootId = activeCategory?.parentId ?? activeCategory?.id;
-  const children = activeRootId
-    ? categories.filter((c) => c.parentId === activeRootId)
-    : [];
   const hasFilters = Boolean(sp.search || sp.category || sp.sort || sp.min || sp.max || sp.inStock);
 
   function pageUrl(overrides: Record<string, string | undefined>) {
@@ -117,20 +92,28 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-10">
-      <PageHeader
-        kicker="Магазин"
-        title={activeCategory ? activeCategory.name : "Всички продукти"}
-        intro={
-          sp.search
-            ? `${total} ${total === 1 ? "резултат" : "резултата"} за „${sp.search}“`
-            : `${total} ${total === 1 ? "продукт" : "продукта"}`
-        }
-      />
+      {/* Заглавие вляво + търсачка (десктоп вдясно, мобилно отдолу) */}
+      <header className="mb-8 border-b border-(--sf-border) pb-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+          <div className="max-w-2xl">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-(--sf-primary)">
+              Магазин
+            </p>
+            <h1 className="text-[clamp(2rem,5vw,3rem)] leading-[1.05] text-(--sf-text)">
+              {activeCategory ? activeCategory.name : "Всички продукти"}
+            </h1>
+            <p className="mt-2 text-sm text-(--sf-muted)">
+              {sp.search
+                ? `${total} ${total === 1 ? "резултат" : "резултата"} за „${sp.search}“`
+                : `${total} ${total === 1 ? "продукт" : "продукта"}`}
+            </p>
+          </div>
 
-      <div className="mb-8 flex flex-col gap-4">
-        {/* Търсене: лупа в самия input, изчистване с ×, submit с Enter */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <form action={`${base}/products`} className="relative w-full max-w-md">
+          {/* Търсене: лупа в input, × за изчистване, submit с Enter */}
+          <form
+            action={`${base}/products`}
+            className="relative w-full lg:w-80 lg:shrink-0"
+          >
             {sp.category && <input type="hidden" name="category" value={sp.category} />}
             {sp.sort && sp.sort !== "new" && <input type="hidden" name="sort" value={sp.sort} />}
             {sp.min && <input type="hidden" name="min" value={sp.min} />}
@@ -161,87 +144,17 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
               </TransitionLink>
             )}
           </form>
-
-          {/* Сортиране — server-side чипове, без JS */}
-          <div className="flex items-center gap-2" role="group" aria-label="Сортиране">
-            <span className="hidden text-xs uppercase tracking-[0.14em] text-(--sf-muted) sm:block">
-              Подреди
-            </span>
-            {SORT_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.value}
-                href={pageUrl({ sort: opt.value === "new" ? undefined : opt.value, page: undefined })}
-                active={sort === opt.value}
-              >
-                {opt.label}
-              </Chip>
-            ))}
-          </div>
         </div>
+      </header>
 
-        {roots.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
-              <Chip href={pageUrl({ category: undefined, page: undefined })} active={!sp.category}>
-                Всички
-              </Chip>
-              {roots.map((category) => (
-                <Chip
-                  key={category.id}
-                  href={pageUrl({ category: category.id, page: undefined })}
-                  active={sp.category === category.id || activeRootId === category.id}
-                >
-                  {category.name}
-                </Chip>
-              ))}
-            </div>
-            {children.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 border-l-2 border-(--sf-border) pl-3">
-                {children.map((category) => (
-                  <Chip
-                    key={category.id}
-                    href={pageUrl({ category: category.id, page: undefined })}
-                    active={sp.category === category.id}
-                  >
-                    {category.name}
-                  </Chip>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Ценови диапазон + наличност — GET форма, пази останалите филтри */}
-        <form
-          action={`${base}/products`}
-          className="flex flex-wrap items-center gap-3"
-          aria-label="Филтър по цена и наличност"
-        >
-          {sp.search && <input type="hidden" name="search" value={sp.search} />}
-          {sp.category && <input type="hidden" name="category" value={sp.category} />}
-          {sp.sort && sp.sort !== "new" && <input type="hidden" name="sort" value={sp.sort} />}
-          <PriceStockFilter
-            variant="storefront"
-            defaultMin={sp.min}
-            defaultMax={sp.max}
-            defaultInStock={inStock}
-          />
-          <button
-            type="submit"
-            className="flex h-9 items-center rounded-full border border-(--sf-border) bg-(--sf-surface-raised) px-3.5 text-sm text-(--sf-text) transition-colors hover:border-(--sf-primary)"
-          >
-            Приложи
-          </button>
-          {(sp.min || sp.max || inStock) && (
-            <TransitionLink
-              href={pageUrl({ min: undefined, max: undefined, inStock: undefined, page: undefined })}
-              className="text-sm text-(--sf-muted) underline hover:text-(--sf-text)"
-            >
-              Изчисти
-            </TransitionLink>
-          )}
-        </form>
-      </div>
+      <StorefrontProductToolbar
+        base={base}
+        sp={sp}
+        sort={sort}
+        inStock={inStock}
+        sortOptions={SORT_OPTIONS}
+        categories={categories.map((c) => ({ id: c.id, name: c.name, parentId: c.parentId }))}
+      />
 
       {items.length === 0 ? (
         <MascotState
