@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { OrderActions } from "@/components/dashboard/order-actions";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
-import { Card } from "@/components/ui";
+import { Card, Icon } from "@/components/ui";
 import { getOrderWithItems } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
@@ -76,8 +76,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
             <p className="text-ink-700">{[order.address, order.city].filter(Boolean).join(", ")}</p>
           )}
           {order.note && (
-            <p className="mt-2 rounded-control bg-surface-50 p-2 text-ink-700">
-              💬 {order.note}
+            <p className="mt-2 flex items-start gap-2 rounded-control bg-surface-50 p-2 text-ink-700">
+              <Icon name="message-circle" size={16} className="mt-0.5 shrink-0 text-ink-500" />
+              <span>{order.note}</span>
             </p>
           )}
           {order.giftWrap && (
@@ -89,10 +90,16 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
         <Card className="flex flex-col gap-1 text-sm">
           <h2 className="mb-2 font-bold text-ink-900">Доставка и плащане</h2>
-          <p className="text-ink-700">
-            🚚 {order.shippingName} — {order.shippingPriceCents === 0 ? "безплатна" : formatPrice(order.shippingPriceCents)}
+          <p className="flex items-center gap-2 text-ink-700">
+            <Icon name="truck" size={16} className="shrink-0 text-ink-500" />
+            <span>
+              {order.shippingName} — {order.shippingPriceCents === 0 ? "безплатна" : formatPrice(order.shippingPriceCents)}
+            </span>
           </p>
-          <p className="text-ink-700">💳 {order.paymentName}</p>
+          <p className="flex items-center gap-2 text-ink-700">
+            <Icon name="wallet" size={16} className="shrink-0 text-ink-500" />
+            <span>{order.paymentName}</span>
+          </p>
         </Card>
       </div>
 
