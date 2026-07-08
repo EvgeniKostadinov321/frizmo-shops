@@ -8,6 +8,20 @@ export interface CartProductView extends PricingProduct {
   imagePath: string | null;
 }
 
+/** Всички АКТИВНИ продукти на магазина за ръчна поръчка (picker + клиентска сметка). */
+export async function getAllPricingProducts(shopId: string): Promise<CartProductView[]> {
+  const rows = await db.query.products.findMany({
+    where: and(eq(products.shopId, shopId), eq(products.status, "active")),
+    columns: { id: true },
+    limit: 500,
+  });
+  const map = await getPricingProducts(
+    shopId,
+    rows.map((r) => r.id),
+  );
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "bg"));
+}
+
 /** Зарежда продуктите на магазина във формата на pricing engine-а. */
 export async function getPricingProducts(
   shopId: string,

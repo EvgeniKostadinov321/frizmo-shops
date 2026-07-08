@@ -27,16 +27,15 @@ import { sendNewOrderPush } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { variantKey as makeVariantKey } from "@/lib/variants";
-import { orderSchema, type OrderInput } from "@/schemas/order";
+import { manualOrderSchema, orderSchema, type OrderInput } from "@/schemas/order";
 
 const LINE_ERROR_MESSAGE = "Някои продукти вече не са налични — виж количката.";
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /** Декремент на наличности вътре в транзакция (редовете вече са заключени). */
-async function decrementStock(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  input: OrderInput,
-) {
-  for (const line of input.lines) {
+async function decrementStock(tx: Tx, lines: OrderInput["lines"]) {
+  for (const line of lines) {
     if (line.variantKey) {
       const variants = await tx.query.productVariants.findMany({
         where: eq(productVariants.productId, line.productId),
@@ -54,6 +53,49 @@ async function decrementStock(
       .update(products)
       .set({ stock: rawSql`case when stock is null then null else stock - ${line.qty} end` })
       .where(eq(products.id, line.productId));
+  }
+}
+
+/**
+ * Insert на поръчка + редове с пореден номер per-магазин (max+1, 3 retry-а при
+ * конкурентен conflict върху unique индекса). Вика се вътре в транзакция.
+ */
+async function insertOrderWithNumber(
+  tx: Tx,
+  shopId: string,
+  values: Omit<typeof orders.$inferInsert, "shopId" | "orderNumber">,
+  lines: PricedCart["lines"],
+): Promise<{ orderId: string; publicToken: string; orderNumber: number }> {
+  for (let attempt = 0; ; attempt++) {
+    const [row] = await tx
+      .select({ max: rawSql<number>`coalesce(max(order_number), 0)` })
+      .from(orders)
+      .where(eq(orders.shopId, shopId));
+    const orderNumber = Number(row?.max ?? 0) + 1;
+    try {
+      const [order] = await tx
+        .insert(orders)
+        .values({ ...values, shopId, orderNumber })
+        .returning({ id: orders.id, publicToken: orders.publicToken });
+
+      await tx.insert(orderItems).values(
+        lines.map((line) => ({
+          orderId: order!.id,
+          productId: line.productId,
+          productName: line.productName,
+          variantLabel: line.variantLabel,
+          variantKey: line.variantKey ?? "",
+          unitPriceCents: line.unitPriceCents,
+          quantity: line.qty,
+          lineTotalCents: line.lineTotalCents,
+          appliedDeal: line.appliedDeal,
+        })),
+      );
+
+      return { orderId: order!.id, publicToken: order!.publicToken, orderNumber };
+    } catch (e) {
+      if (attempt >= 2) throw e;
+    }
   }
 }
 
@@ -169,57 +211,30 @@ export async function createOrder(
           .where(eq(coupons.id, couponRowId));
       }
 
-      await decrementStock(tx, input);
+      await decrementStock(tx, input.lines);
 
-      /* Пореден номер per-магазин: max+1 с 3 retry-а при конкурентен conflict. */
-      for (let attempt = 0; ; attempt++) {
-        const [row] = await tx
-          .select({ max: rawSql<number>`coalesce(max(order_number), 0)` })
-          .from(orders)
-          .where(eq(orders.shopId, shop.id));
-        const orderNumber = Number(row?.max ?? 0) + 1;
-        try {
-          const [order] = await tx
-            .insert(orders)
-            .values({
-              shopId: shop.id,
-              orderNumber,
-              customerName: sanitizeText(input.customerName, 100),
-              customerPhone: phone.e164,
-              customerEmail: sanitizeText(input.customerEmail, 120),
-              address: sanitizeText(input.address, 200),
-              city: sanitizeText(input.city, 60),
-              note: sanitizeText(input.note, 500),
-              shippingName: shipping.name,
-              shippingPriceCents: cart.shipping?.priceCents ?? 0,
-              paymentName: payment.name,
-              paymentType: payment.type,
-              subtotalCents: cart.subtotalCents,
-              couponCode: cart.appliedCouponCode,
-              discountCents: cart.discountCents,
-              totalCents: cart.totalCents,
-            })
-            .returning({ id: orders.id, publicToken: orders.publicToken });
-
-          await tx.insert(orderItems).values(
-            cart.lines.map((line) => ({
-              orderId: order!.id,
-              productId: line.productId,
-              productName: line.productName,
-              variantLabel: line.variantLabel,
-              variantKey: line.variantKey ?? "",
-              unitPriceCents: line.unitPriceCents,
-              quantity: line.qty,
-              lineTotalCents: line.lineTotalCents,
-              appliedDeal: line.appliedDeal,
-            })),
-          );
-
-          return { orderId: order!.id, publicToken: order!.publicToken, orderNumber, cart };
-        } catch (e) {
-          if (attempt >= 2) throw e;
-        }
-      }
+      const inserted = await insertOrderWithNumber(
+        tx,
+        shop.id,
+        {
+          customerName: sanitizeText(input.customerName, 100),
+          customerPhone: phone.e164,
+          customerEmail: sanitizeText(input.customerEmail, 120),
+          address: sanitizeText(input.address, 200),
+          city: sanitizeText(input.city, 60),
+          note: sanitizeText(input.note, 500),
+          shippingName: shipping.name,
+          shippingPriceCents: cart.shipping?.priceCents ?? 0,
+          paymentName: payment.name,
+          paymentType: payment.type,
+          subtotalCents: cart.subtotalCents,
+          couponCode: cart.appliedCouponCode,
+          discountCents: cart.discountCents,
+          totalCents: cart.totalCents,
+        },
+        cart.lines,
+      );
+      return { ...inserted, cart };
     });
   } catch (error) {
     const msg = (error as Error).message;
@@ -257,6 +272,113 @@ export async function createOrder(
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
   return ok({ orderId: created.orderId, token: created.publicToken });
+}
+
+/**
+ * Ръчна поръчка от търговеца („каса"): телефонни/DM/офлайн продажби влизат в
+ * системата като нормална поръчка (наличности, пореден номер, snapshot,
+ * статистика). През requireShop() — БЕЗ rate-limit/honeypot (не е публичен
+ * endpoint), работи и за draft магазин. Статусът започва „confirmed"
+ * (търговецът вече я е приел). Без купони — цената на доставка може да е с
+ * ръчен override (уговорка по телефона).
+ */
+export async function createManualOrder(
+  rawInput: unknown,
+): Promise<ActionResult<{ orderId: string }>> {
+  const parsed = manualOrderSchema.safeParse(rawInput);
+  if (!parsed.success) return zodFail(parsed.error);
+  const input = parsed.data;
+
+  const { shop } = await requireShop();
+
+  const phone = parseBgPhone(input.customerPhone);
+  if (!phone.ok) return fail("Невалиден телефонен номер.");
+
+  const [shipping, payment] = await Promise.all([
+    db.query.shippingMethods.findFirst({
+      where: and(
+        eq(shippingMethods.id, input.shippingMethodId),
+        eq(shippingMethods.shopId, shop.id),
+        eq(shippingMethods.active, true),
+      ),
+    }),
+    db.query.paymentMethods.findFirst({
+      where: and(
+        eq(paymentMethods.id, input.paymentMethodId),
+        eq(paymentMethods.shopId, shop.id),
+        eq(paymentMethods.active, true),
+      ),
+    }),
+  ]);
+  if (!shipping) return fail("Избери валиден метод за доставка.");
+  if (!payment) return fail("Избери валиден метод за плащане.");
+
+  /* Override → фиксирана цена без праг за безплатна доставка. */
+  const shippingOption =
+    input.shippingOverrideCents !== null
+      ? { name: shipping.name, priceCents: input.shippingOverrideCents, freeOverCents: null }
+      : { name: shipping.name, priceCents: shipping.priceCents, freeOverCents: shipping.freeOverCents };
+
+  let created: { orderId: string; publicToken: string; orderNumber: number; cart: PricedCart };
+  try {
+    created = await db.transaction(async (tx) => {
+      const ids = input.lines.map((l) => l.productId);
+      await tx.select({ id: products.id }).from(products).where(inArray(products.id, ids)).for("update");
+
+      const pricingProducts = await getPricingProducts(shop.id, ids);
+      const cart = priceCart(input.lines, pricingProducts, shippingOption);
+      if (cart.hasErrors || cart.lines.length === 0) throw new Error("CART_ERRORS");
+
+      await decrementStock(tx, input.lines);
+
+      const inserted = await insertOrderWithNumber(
+        tx,
+        shop.id,
+        {
+          customerName: sanitizeText(input.customerName, 100),
+          customerPhone: phone.e164,
+          customerEmail: sanitizeText(input.customerEmail, 120),
+          address: sanitizeText(input.address, 200),
+          city: sanitizeText(input.city, 60),
+          note: sanitizeText(input.note, 500),
+          shippingName: shipping.name,
+          shippingPriceCents: cart.shipping?.priceCents ?? 0,
+          paymentName: payment.name,
+          paymentType: payment.type,
+          subtotalCents: cart.subtotalCents,
+          totalCents: cart.totalCents,
+          status: "confirmed",
+        },
+        cart.lines,
+      );
+      return { ...inserted, cart };
+    });
+  } catch (error) {
+    if ((error as Error).message === "CART_ERRORS") {
+      return fail("Някои продукти не са налични в исканото количество.");
+    }
+    console.error("createManualOrder се провали:", error);
+    return fail("Поръчката не можа да бъде създадена. Опитай отново.");
+  }
+
+  /* Купувачът получава „потвърдена" (ако има имейл); търговецът — нищо (сам я създаде). */
+  void Promise.allSettled([
+    sendOrderStatusEmail({
+      shop,
+      order: {
+        id: created.orderId,
+        orderNumber: created.orderNumber,
+        publicToken: created.publicToken,
+        customerName: sanitizeText(input.customerName, 100),
+        customerEmail: input.customerEmail,
+      },
+      status: "confirmed",
+    }),
+  ]);
+
+  revalidatePath("/dashboard/orders");
+  revalidatePath("/dashboard");
+  return ok({ orderId: created.orderId });
 }
 
 /** Смяна на статус от търговеца; отказ връща наличностите. */

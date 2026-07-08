@@ -2,7 +2,7 @@ import Link from "next/link";
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/dashboard/order-status-badge";
 import { OrderSearch } from "@/components/dashboard/order-search";
 import { OrderStatusFilter } from "@/components/dashboard/order-status-filter";
-import { EmptyState, Table, TableRowLink, TBody, TCell, TH, THead } from "@/components/ui";
+import { EmptyState, LinkButton, Table, TableRowLink, TBody, TCell, TH, THead } from "@/components/ui";
 import { getOrders } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
@@ -49,7 +49,10 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-ink-900">Поръчки</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-ink-900">Поръчки</h1>
+        <LinkButton href="/dashboard/orders/new">Нова поръчка</LinkButton>
+      </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="sm:max-w-xs sm:flex-1">
