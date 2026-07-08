@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/dashboard/order-status-badge";
+import { OrderSearch } from "@/components/dashboard/order-search";
 import { OrderStatusFilter } from "@/components/dashboard/order-status-filter";
 import { EmptyState, Table, TableRowLink, TBody, TCell, TH, THead } from "@/components/ui";
 import { getOrders } from "@/db/queries/orders";
@@ -9,7 +10,7 @@ import { formatPrice } from "@/lib/money";
 export const metadata = { title: "Поръчки — Frizmo Shops" };
 
 interface OrdersPageProps {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; q?: string }>;
 }
 
 const dateFormat = new Intl.DateTimeFormat("bg-BG", {
@@ -25,8 +26,18 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const { items, total, page, pageSize } = await getOrders(shop.id, {
     status: params.status,
     page: params.page ? Number(params.page) : 1,
+    search: params.q,
   });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  /* Пагинационните линкове носят активните status + q. */
+  const pageQuery = (p: number) => {
+    const sp = new URLSearchParams();
+    sp.set("page", String(p));
+    if (params.status) sp.set("status", params.status);
+    if (params.q) sp.set("q", params.q);
+    return `/dashboard/orders?${sp.toString()}`;
+  };
 
   const statusOptions = [
     { value: "", label: "Всички статуси" },
@@ -40,15 +51,30 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold text-ink-900">Поръчки</h1>
 
-      <div className="sm:max-w-xs">
-        <OrderStatusFilter options={statusOptions} value={params.status ?? ""} />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="sm:max-w-xs sm:flex-1">
+          <OrderSearch />
+        </div>
+        <div className="sm:max-w-xs">
+          <OrderStatusFilter options={statusOptions} value={params.status ?? ""} />
+        </div>
       </div>
 
       {items.length === 0 ? (
         <EmptyState
           icon="receipt"
-          title={params.status ? "Няма поръчки с този статус" : "Още нямаш поръчки"}
-          description="Когато клиент направи поръчка от магазина ти, тя ще се появи тук — с имейл и известие до теб."
+          title={
+            params.q
+              ? "Няма поръчки с този критерий"
+              : params.status
+                ? "Няма поръчки с този статус"
+                : "Още нямаш поръчки"
+          }
+          description={
+            params.q
+              ? "Опитай друг номер, име или телефон."
+              : "Когато клиент направи поръчка от магазина ти, тя ще се появи тук — с имейл и известие до теб."
+          }
         />
       ) : (
         <>
@@ -117,10 +143,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
           {totalPages > 1 && (
             <div className="flex items-center justify-between text-sm">
               {page > 1 ? (
-                <Link
-                  className="text-brand-600 hover:underline"
-                  href={`/dashboard/orders?page=${page - 1}${params.status ? `&status=${params.status}` : ""}`}
-                >
+                <Link className="text-brand-600 hover:underline" href={pageQuery(page - 1)}>
                   ← Предишна
                 </Link>
               ) : (
@@ -130,10 +153,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                 Страница {page} от {totalPages}
               </span>
               {page < totalPages ? (
-                <Link
-                  className="text-brand-600 hover:underline"
-                  href={`/dashboard/orders?page=${page + 1}${params.status ? `&status=${params.status}` : ""}`}
-                >
+                <Link className="text-brand-600 hover:underline" href={pageQuery(page + 1)}>
                   Следваща →
                 </Link>
               ) : (

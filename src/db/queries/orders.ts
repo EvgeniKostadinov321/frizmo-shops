@@ -1,11 +1,11 @@
-import { and, count, desc, eq, gte, ne, sql as rawSql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, ne, or, sql as rawSql, type SQL } from "drizzle-orm";
 import { db, orderItems, orders } from "@/db";
 
 export const ORDERS_PAGE_SIZE = 20;
 
 export async function getOrders(
   shopId: string,
-  filters: { status?: string; page?: number } = {},
+  filters: { status?: string; page?: number; search?: string } = {},
 ) {
   const page = Math.max(1, filters.page ?? 1);
   const conditions: SQL[] = [eq(orders.shopId, shopId)];
@@ -15,6 +15,23 @@ export async function getOrders(
   ) {
     conditions.push(eq(orders.status, filters.status as typeof orders.status.enumValues[number]));
   }
+
+  /* Търсене по номер / име / телефон. Едно OR-условие, добавено с AND към
+     tenant + статус. Телефонът е E.164 в базата → търсим по цифрите на заявката
+     (частична цифра работи). Чисто число → и точен orderNumber. */
+  const q = (filters.search ?? "").trim().slice(0, 60);
+  if (q) {
+    const digits = q.replace(/\D/g, "");
+    const orParts: SQL[] = [ilike(orders.customerName, `%${q}%`)];
+    if (digits) orParts.push(ilike(orders.customerPhone, `%${digits}%`));
+    /* „#0012" / „0012" / „12" → orderNumber = 12 (само ако цялата заявка е число). */
+    if (/^#?0*\d+$/.test(q)) {
+      const n = Number(digits);
+      if (Number.isInteger(n) && n > 0) orParts.push(eq(orders.orderNumber, n));
+    }
+    conditions.push(or(...orParts)!);
+  }
+
   const where = and(...conditions);
 
   const [items, [total]] = await Promise.all([
