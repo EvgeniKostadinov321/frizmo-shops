@@ -61,7 +61,10 @@ export default function RootLayout({
       /* data-theme се слага от anti-FOUC скрипта преди хидратацията */
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans">
+      {/* suppressHydrationWarning: браузър разширения (ColorZilla и др.) слагат
+          атрибути като cz-shortcut-listen на body-то преди хидратацията →
+          безобиден mismatch, който заглушаваме само на този елемент. */}
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         {/* Anti-FOUC: dark темата е САМО за dashboard/admin (търговски панел).
             Публичните страници (landing, каталог, магазини) са винаги светли —
             лицето на бранда не зависи от лична настройка (решение 2026-07-03). */}
