@@ -388,6 +388,24 @@ export const subscribers = pgTable(
   ],
 ).enableRLS();
 
+/** S4: изпратени newsletter кампании — история + одит. */
+export const campaigns = pgTable(
+  "campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    subject: text("subject").notNull(),
+    body: text("body").notNull(),
+    /** Реално успешно изпратени имейли. */
+    recipientCount: integer("recipient_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("campaigns_shop_idx").on(t.shopId)],
+).enableRLS();
+
 /** S14: „извести ме при наличност" — чакащи имейли за изчерпани продукти. */
 export const stockAlerts = pgTable(
   "stock_alerts",
@@ -454,6 +472,7 @@ export type ProductAttribute = typeof productAttributes.$inferSelect;
 export type ProductOption = typeof productOptions.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
 export type StockAlert = typeof stockAlerts.$inferSelect;
+export type Campaign = typeof campaigns.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Subscriber = typeof subscribers.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;

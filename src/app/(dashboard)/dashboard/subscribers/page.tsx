@@ -1,6 +1,7 @@
+import { CampaignComposer } from "@/components/dashboard/campaign-composer";
 import { SubscribersExport } from "@/components/dashboard/subscribers-export";
 import { Card, EmptyState, Table, TBody, TCell, TH, THead, TRow } from "@/components/ui";
-import { getConfirmedSubscribers } from "@/db/queries/subscribers";
+import { getCampaigns, getConfirmedSubscribers } from "@/db/queries/subscribers";
 import { requireShop } from "@/lib/auth";
 
 export const metadata = { title: "Абонати — Frizmo Shops" };
@@ -13,7 +14,10 @@ const dateFormat = new Intl.DateTimeFormat("bg-BG", {
 
 export default async function SubscribersPage() {
   const { shop } = await requireShop();
-  const rows = await getConfirmedSubscribers(shop.id);
+  const [rows, campaignHistory] = await Promise.all([
+    getConfirmedSubscribers(shop.id),
+    getCampaigns(shop.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -26,6 +30,30 @@ export default async function SubscribersPage() {
         </div>
         {rows.length > 0 && <SubscribersExport />}
       </div>
+
+      {/* S4: нова кампания (само при поне 1 абонат) + история */}
+      {rows.length > 0 && <CampaignComposer recipientCount={rows.length} />}
+
+      {campaignHistory.length > 0 && (
+        <Card>
+          <div className="border-b border-surface-200 px-5 py-4">
+            <h2 className="font-display text-lg font-bold text-ink-900">Изпратени кампании</h2>
+          </div>
+          <ul className="divide-y divide-surface-100">
+            {campaignHistory.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                <span className="min-w-0 flex-1 truncate font-medium text-ink-900">
+                  {c.subject}
+                </span>
+                <span className="text-sm text-ink-500">{dateFormat.format(c.createdAt)}</span>
+                <span className="text-sm tabular-nums text-ink-500">
+                  {c.recipientCount} {c.recipientCount === 1 ? "получател" : "получатели"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {rows.length === 0 ? (
         <Card>

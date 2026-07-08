@@ -236,6 +236,52 @@ export async function sendNewsletterConfirmEmail(input: {
 }
 
 /**
+ * S4: newsletter кампания до потвърден абонат. Обикновен текст → параграфи;
+ * ЗАДЪЛЖИТЕЛЕН „Отпиши се" линк (token механизмът на абонамента).
+ * Връща true при успешно изпращане (за реалния recipientCount).
+ */
+export async function sendCampaignEmail(input: {
+  toEmail: string;
+  shopName: string;
+  shopSlug: string;
+  subject: string;
+  body: string;
+  unsubscribeToken: string;
+}): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — кампанийният имейл е пропуснат.");
+    return false;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const unsubscribeUrl = `${BASE_URL}/s/${input.shopSlug}/newsletter/confirm?token=${input.unsubscribeToken}&action=unsubscribe`;
+  const paragraphs = input.body
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map(
+      (p) =>
+        `<p style="font-size:14px;line-height:1.6;white-space:pre-line;">${esc(p)}</p>`,
+    )
+    .join("");
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.toEmail,
+      subject: input.subject,
+      html: shell(
+        input.shopName,
+        `${paragraphs}
+        <p style="margin-top:28px;font-size:12px;color:#9ca3af;">Получаваш този имейл като абонат на ${esc(input.shopName)}. <a href="${unsubscribeUrl}" style="color:#9ca3af;">Отпиши се</a></p>`,
+      ),
+    });
+    return true;
+  } catch (e) {
+    console.error("Кампаниен имейл се провали:", e);
+    return false;
+  }
+}
+
+/**
  * S14: „{Продукт} отново е в наличност" — до чакащ купувач (back-in-stock).
  */
 export async function sendBackInStockEmail(input: {

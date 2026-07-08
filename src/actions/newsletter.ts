@@ -3,12 +3,14 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, shops, subscribers } from "@/db";
+import { campaigns, db, shops, subscribers } from "@/db";
 import { clientIp } from "@/actions/cart";
-import { fail, ok, type ActionResult } from "@/lib/action-result";
-import { sendNewsletterConfirmEmail } from "@/lib/email";
+import { revalidatePath } from "next/cache";
+import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
+import { requireShop } from "@/lib/auth";
+import { sendCampaignEmail, sendNewsletterConfirmEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { sanitizeText } from "@/lib/sanitize";
+import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
 
 const subscribeSchema = z.object({
   email: z.email("Невалиден имейл"),
@@ -110,4 +112,56 @@ export async function confirmNewsletter(rawInput: unknown): Promise<ConfirmResul
     .set({ status: "confirmed", confirmedAt: new Date(), updatedAt: new Date() })
     .where(eq(subscribers.id, row.id));
   return "confirmed";
+}
+
+const campaignSchema = z.object({
+  subject: z.string().trim().min(3, "Въведи тема").max(120),
+  body: z.string().trim().min(10, "Въведи съдържание").max(5000),
+});
+
+/**
+ * S4: изпраща кампания до ВСИЧКИ потвърдени абонати на магазина. През
+ * requireShop(); лимит 1 кампания/час (срещу двойно цъкане/спам). Всеки имейл
+ * съдържа „Отпиши се" линк (token механизма). Записва историята с реалния
+ * брой успешно изпратени.
+ */
+export async function sendCampaign(
+  rawInput: unknown,
+): Promise<ActionResult<{ sent: number; total: number }>> {
+  const parsed = campaignSchema.safeParse(rawInput);
+  if (!parsed.success) return zodFail(parsed.error);
+
+  const { shop } = await requireShop();
+
+  if (!(await checkRateLimit(`campaign:${shop.id}`, 1, 3600))) {
+    return fail("Може да изпращаш най-много 1 кампания на час. Опитай по-късно.");
+  }
+
+  const recipients = await db.query.subscribers.findMany({
+    where: and(eq(subscribers.shopId, shop.id), eq(subscribers.status, "confirmed")),
+    columns: { email: true, token: true },
+  });
+  if (recipients.length === 0) return fail("Няма потвърдени абонати.");
+
+  const subject = sanitizeText(parsed.data.subject, 120);
+  const body = sanitizeMultiline(parsed.data.body, 5000);
+
+  const results = await Promise.allSettled(
+    recipients.map((r) =>
+      sendCampaignEmail({
+        toEmail: r.email,
+        shopName: shop.name,
+        shopSlug: shop.slug,
+        subject,
+        body,
+        unsubscribeToken: r.token,
+      }),
+    ),
+  );
+  const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
+
+  await db.insert(campaigns).values({ shopId: shop.id, subject, body, recipientCount: sent });
+
+  revalidatePath("/dashboard/subscribers");
+  return ok({ sent, total: recipients.length });
 }
