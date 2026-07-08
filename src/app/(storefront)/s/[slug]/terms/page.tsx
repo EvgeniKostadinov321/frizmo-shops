@@ -43,7 +43,8 @@ export default async function TermsPage({ params }: PageProps) {
         {sections.map((section, i) => (
           <section
             key={section.id}
-            className="grid gap-x-6 gap-y-2 border-b border-(--sf-border) py-7 last:border-b-0 sm:grid-cols-[3rem_1fr]"
+            id={section.id}
+            className="grid scroll-mt-24 gap-x-6 gap-y-2 border-b border-(--sf-border) py-7 last:border-b-0 sm:grid-cols-[3rem_1fr]"
           >
             <span
               aria-hidden

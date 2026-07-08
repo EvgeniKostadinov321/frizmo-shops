@@ -82,7 +82,12 @@ export function VariantPicker({
   const priceCents = selectedVariant?.priceCents ?? basePriceCents;
   const stock = selectedVariant ? selectedVariant.stock : baseStock;
   const outOfStock = stock !== null && stock <= 0;
-  const showPromo = promoPriceCents !== null && selectedVariant?.priceCents == null;
+  /* Промо само при реална отстъпка (promo < цена) и когато вариантът няма
+     собствена цена — иначе баджът показва „−0%"/отрицателно. */
+  const showPromo =
+    promoPriceCents !== null &&
+    promoPriceCents < priceCents &&
+    selectedVariant?.priceCents == null;
   const effectivePriceCents = showPromo ? promoPriceCents : priceCents;
 
   /* Оставащата наличност е жива: наличност − каквото вече е в количката. */

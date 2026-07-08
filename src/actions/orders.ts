@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql as rawSql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
   coupons,
@@ -18,6 +18,7 @@ import {
 import { clientIp } from "@/actions/cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
@@ -346,6 +347,9 @@ export async function createOrder(
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
+  /* Поръчката намали наличности → инвалидирай кеша на storefront-а (иначе
+     кешираните продуктови страници могат да показват „в наличност" за изчерпан). */
+  revalidateTag(shopCacheTag(shop.slug), "max");
   return ok({ orderId: created.orderId, token: created.publicToken });
 }
 
@@ -466,6 +470,7 @@ export async function createManualOrder(
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
+  revalidateTag(shopCacheTag(shop.slug), "max");
   return ok({ orderId: created.orderId });
 }
 
@@ -644,5 +649,7 @@ export async function updateOrderStatus(input: {
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
+  /* Отказ/връщане връща наличности → инвалидирай storefront кеша. */
+  revalidateTag(shopCacheTag(shop.slug), "max");
   return ok(null);
 }

@@ -130,6 +130,19 @@ export async function publishShop(): Promise<ActionResult> {
     return fail("Добави поне един продукт, преди да публикуваш магазина.");
   }
 
+  /* ЗЗП чл. 47 + Закон за е-търговията чл. 4: клиентът трябва да може да
+     идентифицира и да се свърже с търговеца. Изискваме поне един канал за връзка
+     + адрес за кореспонденция, преди магазинът да продава публично. */
+  const hasContact = Boolean(shop.phone?.trim() || shop.email?.trim());
+  const hasAddress = Boolean(shop.address?.trim());
+  if (!hasContact || !hasAddress) {
+    const missing = [
+      !hasContact && "телефон или имейл за връзка",
+      !hasAddress && "адрес",
+    ].filter(Boolean).join(" и ");
+    return fail(`Попълни ${missing} в настройките на магазина, преди да публикуваш (законово изискване).`);
+  }
+
   await db
     .update(shops)
     .set({ status: "published", updatedAt: new Date() })

@@ -568,7 +568,10 @@ export function CheckoutForm({
           {submitting ? "Изпращане..." : "Потвърди поръчката"}
         </button>
         <p className="text-xs text-(--sf-muted)">
-          С поръчката приемаш <a href={`${base}/terms`} className="underline">условията</a> на магазина.
+          С поръчката приемаш{" "}
+          <a href={`${base}/terms`} className="underline">условията</a> и{" "}
+          <a href={`${base}/terms#privacy`} className="underline">политиката за лични данни</a>.
+          Данните ти се обработват от магазина за изпълнение на поръчката (вкл. предаване на куриера).
         </p>
       </aside>
     </form>

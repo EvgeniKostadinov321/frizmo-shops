@@ -28,7 +28,12 @@ export function ProductCard({
   const cover = product.images[0];
   const hoverImage = product.images[1];
   const outOfStock = product.stock !== null && product.stock <= 0;
-  const promo = product.promoPriceCents;
+  /* Промо е валидно само ако реално е под редовната цена — иначе баджът показва
+     „−0%" / отрицателно (търговец е сложил промо ≥ цена по грешка). */
+  const promo =
+    product.promoPriceCents !== null && product.promoPriceCents < product.priceCents
+      ? product.promoPriceCents
+      : null;
 
   return (
     <Link
