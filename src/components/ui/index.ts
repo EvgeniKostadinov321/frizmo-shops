@@ -16,6 +16,7 @@ export { LinkButton } from "./link-button";
 export { Modal } from "./modal";
 export { PriceInput } from "./price-input";
 export { Select } from "./select";
+export { SelectCheckbox } from "./select-checkbox";
 export { Spinner } from "./spinner";
 export { Table, TBody, TCell, TH, THead, TRow } from "./table";
 export { TableRowLink } from "./table-row-link";

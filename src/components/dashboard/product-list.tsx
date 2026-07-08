@@ -11,11 +11,13 @@ import {
   Badge,
   Button,
   ConfirmDialog,
+  Drawer,
   EmptyState,
   Icon,
   Input,
   LinkButton,
   Select,
+  SelectCheckbox,
   Table,
   TBody,
   TCell,
@@ -32,9 +34,11 @@ interface ProductListProps {
   page: number;
   pageSize: number;
   categories: { value: string; label: string }[];
+  /** CSV експорт/импорт — inline на десктоп, в filter drawer-а на мобилно. */
+  csvTools?: React.ReactNode;
 }
 
-export function ProductList({ items, total, page, pageSize, categories }: ProductListProps) {
+export function ProductList({ items, total, page, pageSize, categories, csvTools }: ProductListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,6 +53,8 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
   const [pricePanelOpen, setPricePanelOpen] = useState(false);
   const [priceMode, setPriceMode] = useState<"percent" | "fixed">("percent");
   const [priceValueStr, setPriceValueStr] = useState("");
+  /* Мобилно: категория/статус/CSV зад filter икона (drawer). */
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const [navPending, startNavTransition] = useTransition();
@@ -134,7 +140,17 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
         toast.error(result.error);
         return;
       }
-      toast.success(`Готово — ${result.data.affected} ${result.data.affected === 1 ? "продукт" : "продукта"}.`);
+      const { affected, promosCleared = 0, dealsCleared = 0 } = result.data;
+      const cleared = promosCleared + dealsCleared;
+      const base = `Готово — ${affected} ${affected === 1 ? "продукт" : "продукта"}.`;
+      if (cleared > 0) {
+        /* Не тиха загуба: казваме колко промоции паднаха при новата цена. */
+        toast.success(
+          `${base} Премахнати ${cleared} ${cleared === 1 ? "промоция" : "промоции"} (промо цена/пакет вече по-висока от новата цена).`,
+        );
+      } else {
+        toast.success(base);
+      }
       setSelected(new Set());
       setPricePanelOpen(false);
       setPriceValueStr("");
@@ -154,38 +170,137 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
     );
   }
 
+  const categoryValue = searchParams.get("category") ?? "";
+  const statusValue = searchParams.get("status") ?? "";
+  /* Брой активни dropdown-филтри (за badge на мобилната filter икона). */
+  const activeFilterCount = (categoryValue ? 1 : 0) + (statusValue ? 1 : 0);
+
+  /* Първа опция „Всички …" (празна стойност) → връща филтъра към нулиран. */
+  const categorySelect = (
+    <Select
+      label="Категория"
+      hideLabel
+      options={[{ value: "", label: "Всички категории" }, ...categories]}
+      placeholder="Всички категории"
+      value={categoryValue}
+      onChange={(e) => setParam("category", e.target.value)}
+      disabled={navPending}
+    />
+  );
+  const statusSelect = (
+    <Select
+      label="Статус"
+      hideLabel
+      options={[
+        { value: "", label: "Всички статуси" },
+        { value: "active", label: "Активни" },
+        { value: "inactive", label: "Неактивни" },
+      ]}
+      placeholder="Всички статуси"
+      value={statusValue}
+      onChange={(e) => setParam("status", e.target.value)}
+      disabled={navPending}
+    />
+  );
+
+  /* Нулира всички dropdown-филтри наведнъж (search се пази отделно). */
+  function clearFilters() {
+    const params = new URLSearchParams(searchParams);
+    params.delete("category");
+    params.delete("status");
+    params.delete("page");
+    startNavTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Input
-          label="Търсене"
-          hideLabel
-          placeholder="Търси по име..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select
-          label="Категория"
-          hideLabel
-          options={categories}
-          placeholder="Всички категории"
-          value={searchParams.get("category") ?? ""}
-          onChange={(e) => setParam("category", e.target.value)}
-          disabled={navPending}
-        />
-        <Select
-          label="Статус"
-          hideLabel
-          options={[
-            { value: "active", label: "Активни" },
-            { value: "inactive", label: "Неактивни" },
-          ]}
-          placeholder="Всички статуси"
-          value={searchParams.get("status") ?? ""}
-          onChange={(e) => setParam("status", e.target.value)}
-          disabled={navPending}
-        />
+      {/* Мобилно: търсене + filter икона (drawer); десктоп: всичко inline */}
+      <div className="flex gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <Input
+            label="Търсене"
+            hideLabel
+            placeholder="Търси по име..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Мобилно: филтрите (категория/статус/CSV) зад икона */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          aria-label="Филтри и импорт/експорт"
+          className="relative flex size-11 shrink-0 items-center justify-center rounded-control border border-surface-300 bg-surface-0 text-ink-700 transition-colors hover:border-brand-500 sm:hidden"
+        >
+          <Icon name="filter" size={18} />
+          {activeFilterCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex min-w-4.5 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold leading-4 text-surface-0">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* Десктоп: dropdown-ите inline */}
+        <div className="hidden sm:block">{categorySelect}</div>
+        <div className="hidden sm:block">{statusSelect}</div>
       </div>
+
+      {/* Активни филтри като chips + „Изчисти всички" (десктоп и мобилно) —
+          всеки chip маха своя филтър, бутонът маха всички наведнъж. */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {categoryValue && (
+            <button
+              type="button"
+              onClick={() => setParam("category", "")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-surface-200 bg-surface-0 py-1 pl-3 pr-2 text-xs font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
+            >
+              {categoryLabels.get(categoryValue) ?? "Категория"}
+              <Icon name="x" size={13} className="text-ink-500" />
+            </button>
+          )}
+          {statusValue && (
+            <button
+              type="button"
+              onClick={() => setParam("status", "")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-surface-200 bg-surface-0 py-1 pl-3 pr-2 text-xs font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
+            >
+              {statusValue === "active" ? "Активни" : "Неактивни"}
+              <Icon name="x" size={13} className="text-ink-500" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-xs font-medium text-brand-600 hover:text-brand-700"
+          >
+            Изчисти всички
+          </button>
+        </div>
+      )}
+
+      {/* Мобилен drawer: категория, статус, CSV */}
+      <Drawer open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Филтри">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-ink-900">Категория</p>
+            {categorySelect}
+          </div>
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-ink-900">Статус</p>
+            {statusSelect}
+          </div>
+          {csvTools && (
+            <div className="border-t border-surface-200 pt-4">
+              <p className="mb-2 text-sm font-medium text-ink-900">Импорт / Експорт</p>
+              {csvTools}
+            </div>
+          )}
+        </div>
+      </Drawer>
 
       {lowStockFilter && (
         <div className="flex items-center gap-2">
@@ -200,55 +315,62 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
         </div>
       )}
 
-      {/* S7: action лента при селекция */}
+      {/* S7: action лента при селекция — sticky отдолу на мобилно (bulk pattern),
+          обикновена карта на десктоп. */}
       {selected.size > 0 && (
-        <div className="flex flex-col gap-3 rounded-card border border-brand-200 bg-brand-50 p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-sm font-medium text-ink-900">
-              Избрани: {selected.size}
-            </span>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={bulkBusy}
-              onClick={() => runBulk({ type: "activate" })}
-            >
-              Активирай
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={bulkBusy}
-              onClick={() => runBulk({ type: "deactivate" })}
-            >
-              Деактивирай
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={bulkBusy}
-              onClick={() => setPricePanelOpen((o) => !o)}
-            >
-              Промяна на цени
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={bulkBusy}
-              className="text-danger-600"
-              onClick={() => setConfirmBulkDelete(true)}
-            >
-              Изтрий
-            </Button>
-            <span className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setSelected(new Set())}
-              className="text-sm text-ink-500 underline hover:text-ink-900"
-            >
-              Откажи селекцията
-            </button>
-          </div>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-200 bg-brand-50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-float sm:static sm:rounded-card sm:border sm:p-3 sm:pb-3 sm:shadow-none">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3">
+            {/* Ред 1: брояч + „откажи" */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-ink-900">
+                Избрани: {selected.size}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelected(new Set())}
+                className="text-sm font-medium text-ink-500 hover:text-ink-900"
+              >
+                Откажи
+              </button>
+            </div>
+
+            {/* Ред 2: действията — на мобилно се разстилат равномерно (grid),
+                на десктоп са в ред. */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ type: "activate" })}
+              >
+                Активирай
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ type: "deactivate" })}
+              >
+                Деактивирай
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => setPricePanelOpen((o) => !o)}
+              >
+                Промяна на цени
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={bulkBusy}
+                className="text-danger-600"
+                onClick={() => setConfirmBulkDelete(true)}
+              >
+                Изтрий
+              </Button>
+            </div>
 
           {pricePanelOpen && (
             <div className="flex flex-wrap items-end gap-3 border-t border-brand-200 pt-3">
@@ -289,6 +411,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
               </p>
             </div>
           )}
+          </div>
         </div>
       )}
 
@@ -311,13 +434,13 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                 key={product.id}
                 className="flex gap-3 rounded-card border border-surface-200 bg-surface-0 p-3"
               >
-                <input
-                  type="checkbox"
-                  aria-label={`Избери „${product.name}“`}
-                  checked={selected.has(product.id)}
-                  onChange={() => toggleSelected(product.id)}
-                  className="size-5 shrink-0 self-center rounded accent-brand-600"
-                />
+                <span className="shrink-0 self-center">
+                  <SelectCheckbox
+                    aria-label={`Избери „${product.name}“`}
+                    checked={selected.has(product.id)}
+                    onChange={() => toggleSelected(product.id)}
+                  />
+                </span>
                 <Link
                   href={`/dashboard/products/${product.id}`}
                   className="relative size-16 shrink-0 overflow-hidden rounded-control border border-surface-200 bg-surface-50"
@@ -396,12 +519,11 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           <Table className="hidden md:block">
             <THead>
               <TH>
-                <input
-                  type="checkbox"
+                <SelectCheckbox
                   aria-label="Избери всички на страницата"
                   checked={allSelected}
+                  indeterminate={selected.size > 0 && !allSelected}
                   onChange={toggleAll}
-                  className="size-5 rounded accent-brand-600"
                 />
               </TH>
               <TH>Продукт</TH>
@@ -415,12 +537,10 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
               {items.map((product) => (
                 <TRow key={product.id}>
                   <TCell>
-                    <input
-                      type="checkbox"
+                    <SelectCheckbox
                       aria-label={`Избери „${product.name}“`}
                       checked={selected.has(product.id)}
                       onChange={() => toggleSelected(product.id)}
-                      className="size-5 rounded accent-brand-600"
                     />
                   </TCell>
                   <TCell>
@@ -527,6 +647,10 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           )}
         </div>
       )}
+
+      {/* Spacer под съдържанието когато sticky bulk лентата е активна (мобилно),
+          за да не крие последния ред. */}
+      {selected.size > 0 && <div aria-hidden className="h-24 sm:hidden" />}
 
       <ConfirmDialog
         open={toDelete !== null}

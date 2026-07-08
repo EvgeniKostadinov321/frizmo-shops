@@ -39,10 +39,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Заглавие + „Нов продукт" на един ред (и на мобилно, за да спести място);
+          CSV бутоните са само десктоп тук — на мобилно са във filter drawer-а. */}
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-ink-900">Продукти</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <ProductImportExport />
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:block">
+            <ProductImportExport />
+          </div>
           <LinkButton href="/dashboard/products/new">Нов продукт</LinkButton>
         </div>
       </div>
@@ -52,6 +56,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         page={result.page}
         pageSize={result.pageSize}
         categories={categoryOptions}
+        csvTools={<ProductImportExport stacked />}
       />
     </div>
   );

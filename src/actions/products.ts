@@ -242,13 +242,21 @@ const bulkSchema = z.object({
   ]),
 });
 
+export interface BulkResult {
+  affected: number;
+  /** Само при промяна на цени: премахнати невалидни промоции (промо цена + deal). */
+  promosCleared?: number;
+  dealsCleared?: number;
+}
+
 /**
  * Bulk операции върху продукти (S7). Tenant изолация: всяка операция е с
- * WHERE shop_id — чужди id-та тихо се игнорират. Връща броя засегнати.
+ * WHERE shop_id — чужди id-та тихо се игнорират. Връща броя засегнати; при
+ * промяна на цени — и броя премахнати невалидни промоции (за да не е тиха загуба).
  */
 export async function bulkProductAction(
   rawInput: unknown,
-): Promise<ActionResult<{ affected: number }>> {
+): Promise<ActionResult<BulkResult>> {
   const parsed = bulkSchema.safeParse(rawInput);
   if (!parsed.success) return zodFail(parsed.error);
   const { ids, op } = parsed.data;
@@ -256,16 +264,17 @@ export async function bulkProductAction(
   const { shop } = await requireShop();
   const owned = and(eq(products.shopId, shop.id), inArray(products.id, ids));
 
-  let affected = 0;
-
   if (op.type === "activate" || op.type === "deactivate") {
     const rows = await db
       .update(products)
       .set({ status: op.type === "activate" ? "active" : "inactive", updatedAt: new Date() })
       .where(owned)
       .returning({ id: products.id });
-    affected = rows.length;
-  } else if (op.type === "delete") {
+    revalidateAfterBulk(shop.slug);
+    return ok({ affected: rows.length });
+  }
+
+  if (op.type === "delete") {
     /* Първо снимките (нужни са пътищата), после реда — както единичното изтриване. */
     const rows = await db.query.products.findMany({ where: owned, columns: { id: true, images: true } });
     if (rows.length > 0) {
@@ -276,33 +285,71 @@ export async function bulkProductAction(
         await admin.storage.from(SHOP_MEDIA_BUCKET).remove(images);
       }
     }
-    affected = rows.length;
-  } else {
-    if (op.mode === "percent" && (op.value < -90 || op.value > 500)) {
-      return fail("Процентът трябва да е между −90 и +500.");
-    }
-    /* Върху РЕДОВНАТА цена; минимум 1 цент. Промото не се пипа, но ако новата
-       цена падне до/под промото, промото се маха (иначе промо ≥ редовна). */
-    const newPrice =
-      op.mode === "percent"
-        ? rawSql`greatest(1, round(${products.priceCents} * ${100 + op.value} / 100.0)::int)`
-        : rawSql`greatest(1, ${products.priceCents} + ${op.value})`;
-    const rows = await db
+    revalidateAfterBulk(shop.slug);
+    return ok({ affected: rows.length });
+  }
+
+  /* op.type === "price" */
+  if (op.mode === "percent" && (op.value < -90 || op.value > 500)) {
+    return fail("Процентът трябва да е между −90 и +500.");
+  }
+  /* Върху РЕДОВНАТА цена; минимум 1 цент. Промо цена ИЛИ количествен deal, който
+     стане невалиден спрямо новата цена, се маха (иначе промо/deal ≥ редовна =
+     нелогично, и единичното редактиране би го отхвърлило — crossValidate).
+     Броим премахнатите, за да ги докладваме (не тиха загуба). Всичко в една
+     транзакция — консистентно с останалите мутации. */
+  const newPrice =
+    op.mode === "percent"
+      ? rawSql`greatest(1, round(${products.priceCents} * ${100 + op.value} / 100.0)::int)`
+      : rawSql`greatest(1, ${products.priceCents} + ${op.value})`;
+
+  const result = await db.transaction(async (tx) => {
+    const rows = await tx
       .update(products)
       .set({ priceCents: newPrice as unknown as number, updatedAt: new Date() })
       .where(owned)
       .returning({ id: products.id });
-    await db
+
+    /* Промо цена ≥ новата редовна → маха се (returning брои колко). */
+    const clearedPromos = await tx
       .update(products)
       .set({ promoPriceCents: null })
-      .where(and(owned, rawSql`${products.promoPriceCents} >= ${products.priceCents}`));
-    affected = rows.length;
-  }
+      .where(and(owned, rawSql`${products.promoPriceCents} >= ${products.priceCents}`))
+      .returning({ id: products.id });
 
+    /* Количествен deal с обща цена ≥ quantity × новата единична цена → нелогичен,
+       маха се. Join към products за новата цена (deal-ите живеят в promotions). */
+    const clearedDeals = await tx
+      .delete(promotions)
+      .where(
+        and(
+          inArray(
+            promotions.productId,
+            tx.select({ id: products.id }).from(products).where(owned),
+          ),
+          rawSql`${promotions.totalPriceCents} >= ${promotions.quantity} * (
+            select ${products.priceCents} from ${products} where ${products.id} = ${promotions.productId}
+          )`,
+        ),
+      )
+      .returning({ id: promotions.id });
+
+    return {
+      affected: rows.length,
+      promosCleared: clearedPromos.length,
+      dealsCleared: clearedDeals.length,
+    };
+  });
+
+  revalidateAfterBulk(shop.slug);
+  return ok(result);
+}
+
+/** Обща кеш инвалидация след bulk операция. */
+function revalidateAfterBulk(slug: string) {
   revalidatePath("/dashboard/products");
   revalidatePath("/dashboard");
-  revalidateShop(shop.slug);
-  return ok({ affected });
+  revalidateShop(slug);
 }
 
 const CSV_HEADER = ["name", "slug", "description", "price", "promo_price", "stock", "category", "status"] as const;

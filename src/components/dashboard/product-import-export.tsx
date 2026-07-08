@@ -8,8 +8,10 @@ import { Button, Drawer, Icon } from "@/components/ui";
 
 const MAX_FILE_BYTES = 1_000_000;
 
-/** S8: „Експорт CSV" (route handler) + „Импорт CSV" (drawer с файл + резултат). */
-export function ProductImportExport() {
+/** S8: „Експорт CSV" (route handler) + „Импорт CSV" (drawer с файл + резултат).
+ *  `stacked` подрежда двата бутона вертикално и на цяла ширина (за мобилния
+ *  filter drawer); по подразбиране са в ред (десктоп toolbar). */
+export function ProductImportExport({ stacked = false }: { stacked?: boolean }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -66,16 +68,22 @@ export function ProductImportExport() {
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className={stacked ? "flex flex-col gap-2" : "flex gap-2"}>
         <a
           href="/dashboard/products/export"
           download
-          className="inline-flex h-11 items-center gap-1.5 rounded-control border border-surface-300 bg-surface-0 px-4 text-sm font-medium text-ink-900 transition-colors hover:border-brand-500"
+          className={`inline-flex h-11 items-center gap-1.5 rounded-control border border-surface-300 bg-surface-0 px-4 text-sm font-medium text-ink-900 transition-colors hover:border-brand-500 ${
+            stacked ? "justify-center" : ""
+          }`}
         >
           <Icon name="download" size={16} />
           Експорт CSV
         </a>
-        <Button variant="secondary" onClick={() => setOpen(true)}>
+        <Button
+          variant="secondary"
+          onClick={() => setOpen(true)}
+          className={stacked ? "w-full" : ""}
+        >
           Импорт CSV
         </Button>
       </div>
