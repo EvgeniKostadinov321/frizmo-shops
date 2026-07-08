@@ -62,6 +62,19 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-08 (3) · `cb0594d`→`b026851` (dev)** — **Група „Купувачът се връща"**
+  (спец `2026-07-08-buyer-retention-design.md`): **S10** любими — localStorage
+  per магазин (`favorites-storage`, useSyncExternalStore), сърце на карта +
+  продуктова страница, брояч в 3-те header варианта, `/s/{slug}/favorites`
+  (данните от сървъра, noindex) · **S14** back-in-stock — таблица `stock_alerts`
+  (db:push ✅), форма при stock=0, тригер 0→>0 в saveProduct + CSV импорт,
+  race-safe notifiedAt + имейл · **S1** ревюта — таблица `reviews`, публична
+  форма (pending, rate limit/honeypot), предварителна модерация в
+  `/dashboard/reviews` + nav badge, звезди на карти/страница + JSON-LD
+  aggregateRating. Потвърдени решения: модерация задължителна, ревю пише всеки,
+  S14 само имейл. **Чакащи тест (заедно): S12, S6, N11, S7, S8, S10, S14, S1**
+  — чек-списък в plan-а + спецовете.
+
 - **2026-07-08 (2) · `df3af79`→`4bc1e75` (dev)** — **Група „Търговски операции"**
   (спец `2026-07-08-merchant-ops-design.md`): **N11** ръчна поръчка „каса" —
   `/dashboard/orders/new`, `createManualOrder` (requireShop, същата транзакционна
