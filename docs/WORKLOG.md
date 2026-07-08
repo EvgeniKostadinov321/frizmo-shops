@@ -62,6 +62,25 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-09 · `4c3317f`→`4f50799` (dev, PUSH-нато на прод)** — **PRODUCTION
+  ОДИТ + фиксове.** 5-измерен одит на целия проект (сигурност/данни/операции/
+  право/frontend) → 19 находки, 12 оправени. **2 критични (верифицирани срещу
+  базата чрез `scripts/verify-order-concurrency.mjs`):** overselling
+  (getPricingProducts четеше извън tx + сляп декремент → сега conditional update
+  `where stock>=qty returning`, четене през tx); пореден номер (счупен retry в
+  abort-ната tx → `pg_advisory_xact_lock` per магазин). **XSS:** `jsonLdHtml()`
+  escape на JSON-LD (`</script>`+U+2028/9). **Идемпотентност на checkout:**
+  `orders.idempotency_key` + partial unique index (двоен клик/timeout не прави
+  дубъл). **Група А:** env fail-fast (`src/env.ts`+`instrumentation.ts`),
+  `revalidateTag` в order actions, ЗЗП контакт-guard в publishShop, GDPR privacy
+  линк на checkout, промо бадж само при promo<цена. **Група Б:** touch targets
+  ≥44px, canonical URL-и (storefront), error boundaries на всички route групи +
+  `global-error.tsx`. **Група В (дребни):** rate_limits opportunistic cleanup,
+  searchShops `DISTINCT ON` (край на N+1 fan-out). Нови DB колони приложени с
+  db:push (общата база = прод). Доклад-артефакт генериран.
+  **Остава (иска решение):** мониторинг (Sentry?), backup/PITR потвърждение,
+  inv.bg, self-service изтриване на акаунт, bounce handling.
+
 - **2026-07-09 · `86fc2a2` (dev, PUSH-нато на прод)** — **N9 подобрение +
   брандирани чекбокси.** Подаръчната опция вече е ДВЕ независими: „опаковка"
   (с такса) и „картичка" (безплатно) — собственикът избира от Доставка кои да
