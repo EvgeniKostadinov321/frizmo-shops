@@ -90,7 +90,7 @@ function ThemedDropdown({
           aria-expanded={open}
           disabled={pending}
           onClick={() => setOpen((o) => !o)}
-          className="flex h-9 items-center gap-2 rounded-full border border-(--sf-border) bg-(--sf-surface-raised) pl-3.5 pr-3 text-sm text-(--sf-text) transition-colors hover:border-(--sf-primary) disabled:opacity-60"
+          className="flex h-11 items-center gap-2 rounded-full border border-(--sf-border) bg-(--sf-surface-raised) pl-3.5 pr-3 text-sm text-(--sf-text) transition-colors hover:border-(--sf-primary) disabled:opacity-60"
         >
           <span className="max-w-40 truncate">{activeLabel}</span>
           <Icon
@@ -252,7 +252,7 @@ export function StorefrontProductToolbar({
       <div className={`flex items-center gap-3 ${stacked ? "pt-1" : ""}`}>
         <button
           type="submit"
-          className={`flex h-9 items-center justify-center rounded-full border border-(--sf-border) bg-(--sf-surface-raised) px-4 text-sm text-(--sf-text) transition-colors hover:border-(--sf-primary) ${
+          className={`flex h-11 items-center justify-center rounded-full border border-(--sf-border) bg-(--sf-surface-raised) px-4 text-sm text-(--sf-text) transition-colors hover:border-(--sf-primary) ${
             stacked ? "flex-1" : ""
           }`}
         >
@@ -289,7 +289,7 @@ export function StorefrontProductToolbar({
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Подредба и филтри"
-          className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-(--sf-border) bg-(--sf-surface-raised) text-(--sf-text) transition-colors hover:border-(--sf-primary)"
+          className="relative flex size-11 shrink-0 items-center justify-center rounded-full border border-(--sf-border) bg-(--sf-surface-raised) text-(--sf-text) transition-colors hover:border-(--sf-primary)"
         >
           <Icon name="filter" size={16} />
           {activeCount > 0 && (

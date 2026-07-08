@@ -36,7 +36,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const result = await getPublicShop(slug);
   if (!result) return {};
-  return { title: `Продукти — ${result.shop.name}` };
+  return {
+    title: `Продукти — ${result.shop.name}`,
+    /* Canonical към чистия каталог (без filter/sort/page query) — иначе всяка
+       комбинация филтри е отделен индексируем URL → дублирано съдържание. */
+    alternates: { canonical: `/s/${slug}/products` },
+  };
 }
 
 export default async function StorefrontProductsPage({ params, searchParams }: PageProps) {

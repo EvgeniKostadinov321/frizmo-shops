@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${product.name} — ${result.shop.name}`,
     description: product.description.slice(0, 160) || product.name,
+    alternates: { canonical: `/s/${slug}/p/${productSlug}` },
     openGraph: {
       title: product.name,
       ...(product.images[0] && { images: [publicImageUrl(product.images[0])] }),

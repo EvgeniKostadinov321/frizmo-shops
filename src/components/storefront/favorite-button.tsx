@@ -27,7 +27,7 @@ export function FavoriteButton({ shopId, productId, variant = "card" }: Favorite
 
   const base =
     variant === "card"
-      ? "absolute right-2.5 top-2.5 z-10 flex size-9 items-center justify-center rounded-full bg-(--sf-surface-raised)/90 shadow-(--sf-shadow) backdrop-blur-sm transition-transform hover:scale-110"
+      ? "absolute right-2 top-2 z-10 flex size-11 items-center justify-center rounded-full bg-(--sf-surface-raised)/90 shadow-(--sf-shadow) backdrop-blur-sm transition-transform hover:scale-110"
       : "flex size-11 items-center justify-center rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) transition-colors hover:border-(--sf-primary)";
 
   return (
