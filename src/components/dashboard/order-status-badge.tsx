@@ -9,6 +9,8 @@ export const ORDER_STATUS_LABELS: Record<
   shipped: { label: "Изпратена", tone: "neutral" },
   completed: { label: "Завършена", tone: "success" },
   cancelled: { label: "Отказана", tone: "danger" },
+  return_requested: { label: "Заявено връщане", tone: "warning" },
+  returned: { label: "Върната", tone: "danger" },
 };
 
 export function OrderStatusBadge({ status }: { status: string }) {

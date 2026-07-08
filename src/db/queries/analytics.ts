@@ -1,5 +1,6 @@
-import { and, eq, gte, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gte, lt, notInArray, sql } from "drizzle-orm";
 import { db, orderItems, orders, subscribers } from "@/db";
+import { EXCLUDED_FROM_REVENUE } from "@/db/queries/orders";
 
 export const ANALYTICS_PERIODS = [7, 30, 90] as const;
 export type AnalyticsPeriod = (typeof ANALYTICS_PERIODS)[number];
@@ -44,7 +45,7 @@ async function periodMetrics(shopId: string, from: Date, to: Date): Promise<Peri
       .where(
         and(
           eq(orders.shopId, shopId),
-          ne(orders.status, "cancelled"),
+          notInArray(orders.status, [...EXCLUDED_FROM_REVENUE]),
           gte(orders.createdAt, from),
           lt(orders.createdAt, to),
         ),
@@ -80,7 +81,7 @@ export async function getAnalytics(shopId: string, periodDays: AnalyticsPeriod):
 
   const notCancelledInPeriod = and(
     eq(orders.shopId, shopId),
-    ne(orders.status, "cancelled"),
+    notInArray(orders.status, [...EXCLUDED_FROM_REVENUE]),
     gte(orders.createdAt, from),
   );
 

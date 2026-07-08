@@ -1,7 +1,10 @@
-import { and, count, desc, eq, gte, ilike, ne, or, sql as rawSql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, notInArray, or, sql as rawSql, type SQL } from "drizzle-orm";
 import { db, orderItems, orders } from "@/db";
 
 export const ORDERS_PAGE_SIZE = 20;
+
+/** Статуси, които НЕ носят приход (отказ + прието връщане). Общ за всички сметки. */
+export const EXCLUDED_FROM_REVENUE = ["cancelled", "returned"] as const;
 
 export async function getOrders(
   shopId: string,
@@ -11,7 +14,7 @@ export async function getOrders(
   const conditions: SQL[] = [eq(orders.shopId, shopId)];
   if (
     filters.status &&
-    ["new", "confirmed", "shipped", "completed", "cancelled"].includes(filters.status)
+    ["new", "confirmed", "shipped", "completed", "cancelled", "return_requested", "returned"].includes(filters.status)
   ) {
     conditions.push(eq(orders.status, filters.status as typeof orders.status.enumValues[number]));
   }
@@ -64,7 +67,7 @@ export async function countNewOrders(shopId: string): Promise<number> {
   return row?.value ?? 0;
 }
 
-/** Приходи за текущия календарен месец (без отказаните). */
+/** Приходи за текущия календарен месец (без отказани и върнати). */
 export async function getMonthRevenue(shopId: string): Promise<number> {
   const [row] = await db
     .select({ value: rawSql<number>`coalesce(sum(total_cents), 0)` })
@@ -72,7 +75,7 @@ export async function getMonthRevenue(shopId: string): Promise<number> {
     .where(
       and(
         eq(orders.shopId, shopId),
-        ne(orders.status, "cancelled"),
+        notInArray(orders.status, [...EXCLUDED_FROM_REVENUE]),
         gte(orders.createdAt, rawSql`date_trunc('month', now())`),
       ),
     );
