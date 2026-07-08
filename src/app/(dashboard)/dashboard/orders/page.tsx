@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/dashboard/order-status-badge";
 import { OrderStatusFilter } from "@/components/dashboard/order-status-filter";
-import { EmptyState, Table, TBody, TCell, TH, THead, TRow } from "@/components/ui";
+import { EmptyState, Table, TBody, TCell, TCellLink, TH, THead, TRow } from "@/components/ui";
 import { getOrders } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
@@ -88,26 +88,28 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
               <TH>Статус</TH>
             </THead>
             <TBody>
-              {items.map((order) => (
-                <TRow key={order.id}>
-                  <TCell>
-                    <Link
+              {items.map((order) => {
+                const number = `#${String(order.orderNumber).padStart(4, "0")}`;
+                return (
+                  <TRow key={order.id}>
+                    <TCellLink
                       href={`/dashboard/orders/${order.id}`}
-                      className="font-medium hover:text-brand-600"
+                      label={`Отвори поръчка ${number}`}
+                      className="hover:text-brand-600"
                     >
-                      #{String(order.orderNumber).padStart(4, "0")}
-                    </Link>
-                  </TCell>
-                  <TCell className="text-ink-500">{dateFormat.format(order.createdAt)}</TCell>
-                  <TCell>
-                    <span className="block max-w-40 truncate">{order.customerName}</span>
-                  </TCell>
-                  <TCell className="font-medium">{formatPrice(order.totalCents)}</TCell>
-                  <TCell>
-                    <OrderStatusBadge status={order.status} />
-                  </TCell>
-                </TRow>
-              ))}
+                      {number}
+                    </TCellLink>
+                    <TCell className="text-ink-500">{dateFormat.format(order.createdAt)}</TCell>
+                    <TCell>
+                      <span className="block max-w-40 truncate">{order.customerName}</span>
+                    </TCell>
+                    <TCell className="font-medium">{formatPrice(order.totalCents)}</TCell>
+                    <TCell>
+                      <OrderStatusBadge status={order.status} />
+                    </TCell>
+                  </TRow>
+                );
+              })}
             </TBody>
           </Table>
 
