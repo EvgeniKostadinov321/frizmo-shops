@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition, type ReactNode } from "react";
+import { Spinner } from "./spinner";
 
 interface TransitionLinkProps {
   href: string;
@@ -23,6 +24,10 @@ interface TransitionLinkProps {
  * `useTransition` държи `isPending = true` през целия RSC round-trip (React
  * 19 знае кога route-ът реално е готов — за разлика от ръчен setState).
  * Докато е pending, нов клик тук се игнорира — решава двойните кликове.
+ *
+ * Индикаторът е spinner (не hover/cursor стил) — telefon/PWA няма показалец,
+ * `cursor-wait` там е невидим; текстът се заменя с spinner-а, за да е ясно
+ * видимо и на пипане, не само на мишка.
  */
 export function TransitionLink({
   href,
@@ -46,10 +51,18 @@ export function TransitionLink({
           router.push(href);
         });
       }}
-      className={`${className} ${pending ? "cursor-wait opacity-60" : ""}`}
+      className={`relative ${className} ${pending ? "pointer-events-none [&>*:not([data-pending-spinner])]:invisible" : ""}`}
       {...rest}
     >
       {children}
+      {pending && (
+        <span
+          data-pending-spinner
+          className="absolute inset-0 flex items-center justify-center"
+        >
+          <Spinner size="sm" />
+        </span>
+      )}
     </Link>
   );
 }
