@@ -16,6 +16,7 @@ import {
   getRelatedProducts,
 } from "@/db/queries/storefront";
 import { publicImageUrl } from "@/lib/storage";
+import { jsonLdHtml } from "@/lib/json-ld";
 
 interface PageProps {
   params: Promise<{ slug: string; productSlug: string }>;
@@ -67,7 +68,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdHtml({
             "@context": "https://schema.org",
             "@type": "Product",
             name: product.name,

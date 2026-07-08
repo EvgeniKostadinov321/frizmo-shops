@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -287,6 +288,10 @@ export const orders = pgTable(
     returnReason: text("return_reason").notNull().default(""),
     returnRequestedAt: timestamp("return_requested_at", { withTimezone: true }),
     totalCents: integer("total_cents").notNull(),
+    /* Идемпотентност на checkout: клиентът праща стабилен UUID per опит за поръчка.
+       Двоен клик / retry при timeout → същият ключ → връщаме съществуващата
+       поръчка вместо дубликат. NULL за ръчни поръчки (без риск от дубъл). */
+    idempotencyKey: uuid("idempotency_key"),
     /* Непубличен ключ за страницата с потвърждение: URL-ът носи token, не само
        id — иначе всеки с познат orderId (UUID) вижда личните данни на клиента. */
     publicToken: uuid("public_token").notNull().defaultRandom(),
@@ -298,6 +303,12 @@ export const orders = pgTable(
     uniqueIndex("orders_shop_number_idx").on(t.shopId, t.orderNumber),
     index("orders_shop_status_idx").on(t.shopId, t.status),
     index("orders_shop_created_idx").on(t.shopId, t.createdAt),
+    /* Partial unique: два опита със същия ключ в един магазин не могат да станат
+       две поръчки. WHERE idempotency_key IS NOT NULL → ръчните поръчки (NULL) не
+       се засягат. */
+    uniqueIndex("orders_idempotency_idx")
+      .on(t.shopId, t.idempotencyKey)
+      .where(sql`${t.idempotencyKey} is not null`),
   ],
 ).enableRLS();
 

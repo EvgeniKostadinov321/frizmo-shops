@@ -142,6 +142,18 @@ export async function createOrder(
     return fail("Магазинът не приема поръчки в момента.");
   }
 
+  /* Идемпотентност: ако тази заявка (двоен клик / retry при timeout) вече е
+     създала поръчка със същия ключ, връщаме нея — без дубликат, без нов
+     декремент, без втори имейл. Проверката е преди rate limit-а, за да не
+     наказва легитимен retry. */
+  if (input.idempotencyKey) {
+    const existing = await db.query.orders.findFirst({
+      where: and(eq(orders.shopId, shop.id), eq(orders.idempotencyKey, input.idempotencyKey)),
+      columns: { id: true, publicToken: true },
+    });
+    if (existing) return ok({ orderId: existing.id, token: existing.publicToken });
+  }
+
   const ip = await clientIp();
   if (!(await checkRateLimit(`order:${ip}:${shop.id}`, 5, 3600))) {
     return fail("Твърде много поръчки за кратко време. Опитай по-късно.");
@@ -279,6 +291,7 @@ export async function createOrder(
           giftNote: giftCard ? sanitizeText(input.giftNote, 200) : "",
           giftWrapFeeCents,
           totalCents: cart.totalCents,
+          idempotencyKey: input.idempotencyKey ?? null,
         },
         cart.lines,
       );
@@ -292,6 +305,16 @@ export async function createOrder(
     }
     if (msg === "COUPON_MIN") {
       return fail("Промо кодът не важи за тази сума. Премахни го или добави продукти.");
+    }
+    /* Concurrent дубликат: два request-а със същия idempotency key се разминаха с
+       проверката горе и вторият удари partial unique индекса (23505). Не е грешка
+       — първият е успял; връщаме неговата поръчка. */
+    if ((error as { code?: string }).code === "23505" && input.idempotencyKey) {
+      const winner = await db.query.orders.findFirst({
+        where: and(eq(orders.shopId, shop.id), eq(orders.idempotencyKey, input.idempotencyKey)),
+        columns: { id: true, publicToken: true },
+      });
+      if (winner) return ok({ orderId: winner.id, token: winner.publicToken });
     }
     console.error("createOrder се провали:", error);
     return fail("Поръчката не можа да бъде създадена. Опитай отново.");

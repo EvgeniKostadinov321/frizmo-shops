@@ -86,6 +86,32 @@ async function main() {
     const unique = new Set(nums);
     check("Фикс #2: 3 паралелни поръчки получават различни поредни номера", unique.size === 3, `номера: ${nums.join(", ")}`);
     check("Фикс #2: номерата са 3 последователни", nums[2] - nums[0] === 2, `${nums.join(", ")}`);
+
+    // ---- Фикс #3: идемпотентност (partial unique index върху idempotency_key) ----
+    /* Два insert-а със СЪЩИЯ ключ → вторият трябва да гръмне с unique violation
+       (23505), т.е. базата гарантира максимум 1 поръчка на ключ. */
+    const key = crypto.randomUUID();
+    const insertWithKey = async () => {
+      const [row] = await sql`
+        insert into orders (shop_id, order_number, idempotency_key, customer_name,
+          customer_phone, shipping_name, shipping_price_cents, payment_name,
+          payment_type, subtotal_cents, total_cents, status)
+        values (${shopId}, ${900000 + Math.floor(Math.random() * 90000)}, ${key},
+          '__ct_idem__', '+359888000000', 'Куриер', 0, 'Наложен платеж', 'cod',
+          1000, 1000, 'new')
+        returning id`;
+      return row.id;
+    };
+    const first = await insertWithKey();
+    testOrderIds.push(first);
+    let secondBlocked = false;
+    try {
+      const dup = await insertWithKey();
+      testOrderIds.push(dup);
+    } catch (e) {
+      secondBlocked = e.code === "23505";
+    }
+    check("Фикс #3: втора поръчка със същия idempotency key се блокира (unique)", secondBlocked);
   } finally {
     /* Чистим само каквото сме създали. */
     for (const id of testOrderIds) await sql`delete from orders where id = ${id}`;
@@ -93,7 +119,7 @@ async function main() {
   }
 
   await sql.end();
-  console.log(failures === 0 ? "\n✓ Двата фикса работят." : `\n✗ ${failures} проверки се провалиха.`);
+  console.log(failures === 0 ? "\n✓ Всички фикса работят." : `\n✗ ${failures} проверки се провалиха.`);
   process.exit(failures === 0 ? 0 : 1);
 }
 

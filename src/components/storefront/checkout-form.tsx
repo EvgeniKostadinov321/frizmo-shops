@@ -125,6 +125,11 @@ export function CheckoutForm({
 }: CheckoutFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  /* Стабилен идемпотентен ключ за живота на този checkout — праща се при submit,
+     за да не създаде двоен клик / retry две поръчки. Успешна поръчка навигира
+     към потвърждението (компонентът се unmount-ва) → следваща поръчка = нов ключ. */
+  const idempotencyKeyRef = useRef<string | null>(null);
+  if (idempotencyKeyRef.current == null) idempotencyKeyRef.current = crypto.randomUUID();
   const stored = useSyncExternalStore(
     (cb) => onCartChange(shopId, cb),
     () => getCartSnapshot(shopId),
@@ -271,6 +276,7 @@ export function CheckoutForm({
         giftWrap: giftWrapEnabled && giftWrap,
         giftCard: giftCardEnabled && giftCard,
         giftNote: giftCardEnabled && giftCard ? giftNote : "",
+        idempotencyKey: idempotencyKeyRef.current ?? undefined,
       });
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});

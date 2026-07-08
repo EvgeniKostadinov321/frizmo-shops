@@ -9,6 +9,7 @@ import {
 } from "@/db/queries/storefront";
 import { renderSections, type SectionContext } from "@/components/storefront/sections";
 import { publicImageUrl } from "@/lib/storage";
+import { jsonLdHtml } from "@/lib/json-ld";
 import type { Section } from "@/schemas/site-settings";
 
 interface PageProps {
@@ -107,7 +108,7 @@ export default async function StorefrontHomePage({ params }: PageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdHtml({
             "@context": "https://schema.org",
             "@type": "Store",
             name: shop.name,

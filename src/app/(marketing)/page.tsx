@@ -16,6 +16,7 @@ import { StepCard, type StepVisual } from "@/components/marketing/step-card";
 import { Accordion, Icon } from "@/components/ui";
 import { db, products, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
+import { jsonLdHtml } from "@/lib/json-ld";
 import { publicImageUrl } from "@/lib/storage";
 import { PRICING_PLANS, PRICING_TRUST, TRIAL_NOTE } from "@/lib/plans-content";
 
@@ -107,7 +108,7 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdHtml({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             name: "Frizmo Shops",
@@ -121,7 +122,7 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdHtml({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: FAQ.map((item) => ({

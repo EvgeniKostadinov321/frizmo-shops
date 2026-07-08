@@ -19,6 +19,8 @@ export const orderSchema = z.object({
   giftNote: z.string().trim().max(200, "Текстът за картичката е до 200 знака").default(""),
   /** Приложен промо код (празно = без). Препотвърждава се на сървъра. */
   couponCode: z.string().trim().max(40).default(""),
+  /** Идемпотентен ключ (client-генериран UUID) — дедупира двоен клик / retry. */
+  idempotencyKey: z.uuid().optional(),
   lines: z
     .array(
       z.object({
