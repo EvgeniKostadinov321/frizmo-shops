@@ -60,15 +60,17 @@ export function ManualOrderForm({
   const overrideCents = overrideStr.trim() ? toCents(overrideStr) : null;
   const overrideInvalid = overrideStr.trim() !== "" && overrideCents === null;
 
-  /* Преглед на сумите — същият pricing engine като сървъра. */
+  /* Преглед на сумите — същият pricing engine като сървъра (fee минава през
+     priceCart → cart.totalCents вече го включва, точно както на сървъра). */
+  const previewFeeCents = giftWrapEnabled && giftWrap ? giftWrapFeeCents : 0;
   const cart = useMemo(() => {
     if (lines.length === 0 || !shipping) return null;
     const option =
       overrideCents !== null
         ? { name: shipping.name, priceCents: overrideCents, freeOverCents: null }
         : shipping;
-    return priceCart(lines, productMap, option);
-  }, [lines, productMap, shipping, overrideCents]);
+    return priceCart(lines, productMap, option, undefined, previewFeeCents);
+  }, [lines, productMap, shipping, overrideCents, previewFeeCents]);
 
   function addLine() {
     if (!pickedProduct) return;
@@ -371,9 +373,7 @@ export function ManualOrderForm({
           <div className="mt-3 flex justify-between border-t border-surface-200 pt-3 font-bold text-ink-900">
             <span>Общо</span>
             <span className="tabular-nums">
-              {cart
-                ? formatPrice(cart.totalCents + (giftWrapEnabled && giftWrap ? giftWrapFeeCents : 0))
-                : "—"}
+              {cart ? formatPrice(cart.totalCents) : "—"}
             </span>
           </div>
         </div>
