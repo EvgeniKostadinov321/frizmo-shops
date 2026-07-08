@@ -107,7 +107,7 @@ export async function createOrder(
   if (!parsed.success) return zodFail(parsed.error);
   const input = parsed.data;
 
-  /* Honeypot: ботът получава "успех" и не научава нищо. */
+  /* Honeypot: ботът получава „успех“ и не научава нищо. */
   if (input.website !== "") return ok({ orderId: randomUUID(), token: randomUUID() });
 
   const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });

@@ -51,7 +51,8 @@ export function ProductImportExport({ stacked = false }: { stacked?: boolean }) 
         return;
       }
       setResult(res.data);
-      toast.success(`Импорт: ${res.data.created} създадени · ${res.data.updated} обновени.`);
+      /* Числото ПРЕДИ думата → без съгласуване на причастие (1/много еднакво). */
+      toast.success(`Импорт готов: нови ${res.data.created}, обновени ${res.data.updated}.`);
       router.refresh();
     } finally {
       setBusy(false);
@@ -128,9 +129,10 @@ export function ProductImportExport({ stacked = false }: { stacked?: boolean }) 
 
           {result && (
             <div className="rounded-card border border-surface-200 bg-surface-0 p-4 text-sm">
+              {/* Число ПРЕДИ думата → без съгласуване (нови 1 / нови 5 еднакво). */}
               <p className="font-medium text-ink-900">
-                {result.created} създадени · {result.updated} обновени ·{" "}
-                {result.skipped.length} пропуснати
+                Нови: {result.created} · Обновени: {result.updated} · Пропуснати:{" "}
+                {result.skipped.length}
               </p>
               {result.skipped.length > 0 && (
                 <ul className="mt-2 max-h-48 list-inside list-disc overflow-y-auto text-danger-600">

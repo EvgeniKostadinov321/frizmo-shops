@@ -156,9 +156,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                 <span className="min-w-0 flex-1 truncate font-medium text-ink-900">
                   {product.name}
                 </span>
-                <span className="text-sm text-ink-500">
-                  {product.quantity} {product.quantity === 1 ? "бр." : "бр."}
-                </span>
+                <span className="text-sm text-ink-500">{product.quantity} бр.</span>
                 <span className="w-24 text-right font-bold tabular-nums text-ink-900">
                   {formatPrice(product.revenueCents)}
                 </span>

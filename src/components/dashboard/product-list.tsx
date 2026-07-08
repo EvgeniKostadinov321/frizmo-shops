@@ -26,6 +26,7 @@ import {
   TRow,
 } from "@/components/ui";
 import { formatPrice, toCents } from "@/lib/money";
+import { count, NOUNS } from "@/lib/plural";
 import { publicImageUrl } from "@/lib/storage";
 
 interface ProductListProps {
@@ -142,11 +143,13 @@ export function ProductList({ items, total, page, pageSize, categories, csvTools
       }
       const { affected, promosCleared = 0, dealsCleared = 0 } = result.data;
       const cleared = promosCleared + dealsCleared;
-      const base = `Готово — ${affected} ${affected === 1 ? "продукт" : "продукта"}.`;
+      const base = `Готово — ${count(affected, NOUNS.product)}.`;
       if (cleared > 0) {
-        /* Не тиха загуба: казваме колко промоции паднаха при новата цена. */
+        /* Не тиха загуба: казваме колко промоции паднаха. Причастието
+           „премахната/и" се съгласува по число с промоция (ж.р.). */
+        const verb = cleared === 1 ? "Премахната" : "Премахнати";
         toast.success(
-          `${base} Премахнати ${cleared} ${cleared === 1 ? "промоция" : "промоции"} (промо цена/пакет вече по-висока от новата цена).`,
+          `${base} ${verb} ${count(cleared, NOUNS.promo)} — промо цената вече е по-висока от новата.`,
         );
       } else {
         toast.success(base);
@@ -656,7 +659,7 @@ export function ProductList({ items, total, page, pageSize, categories, csvTools
         open={toDelete !== null}
         onClose={() => setToDelete(null)}
         onConfirm={handleDelete}
-        message={`Изтриване на „${toDelete?.name}"? Действието е необратимо, снимките също ще бъдат изтрити.`}
+        message={`Изтриване на „${toDelete?.name}“? Действието е необратимо, снимките също ще бъдат изтрити.`}
       />
 
       <ConfirmDialog
