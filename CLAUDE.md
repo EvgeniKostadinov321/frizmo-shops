@@ -6,6 +6,8 @@ SaaS платформа за онлайн магазини (BG пазар, EUR).
 **Дизайн език:** `docs/superpowers/specs/2026-07-03-pazaren-den-design.md` („Пазарен ден")
 **Изпълнени планове 1–6 (резюме):** `docs/superpowers/plans/executed-plans-summary.md`
 **Какво следва:** `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`
+**Продуктов gap одит (2026-07-09, за преглед):** `docs/superpowers/plans/2026-07-09-product-gap-audit.md` — 5-измерен gap; нови високоефектни находки: product feed + abandoned cart; тегло-на-продукт е предусловие за Еконт/Спиди; S3 купувачески акаунт = overkill сега.
+**Production одит фиксове (2026-07-09, на прод):** 12/19 находки оправени — 2 критични concurrency бъга в поръчки (verify: `scripts/verify-order-concurrency.mjs`), XSS, идемпотентност, env fail-fast, error boundaries. Остава (иска решение): Sentry (чака DSN), backup/PITR, изтриване на акаунт (спец готов).
 **Website builder пътна карта (2026-07-06, в ход):** `docs/superpowers/plans/2026-07-06-builder-roadmap.md` — 4 вълни функционални фийчъра след одита; всяка вълна получава собствен спец преди имплементация.
 **Жив контекст (докъде сме + setup на нова машина):** `docs/WORKLOG.md` — ЗАДЪЛЖИТЕЛНО го обновявай в края на всяка сесия със смислена промяна (нов ред в „Дневник" + текущ commit). Чете се пръв при продължаване от друга машина (напр. Mac).
 
