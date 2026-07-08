@@ -26,5 +26,15 @@ export async function checkRateLimit(
   `);
 
   const count = Number((result as unknown as { count: number }[])[0]?.count ?? 0);
+
+  /* Опортюнистичен cleanup (без cron): ~1% от заявките трият записи с прозорец
+     по-стар от 1 ден. Ключовете иначе живеят вечно и таблицата расте
+     неограничено. Изпълнява се fire-and-forget — не бави отговора. */
+  if (Math.random() < 0.01) {
+    void db
+      .execute(rawSql`delete from rate_limits where window_start < now() - interval '1 day'`)
+      .catch((e) => console.error("rate_limits cleanup се провали:", e));
+  }
+
   return count <= max;
 }

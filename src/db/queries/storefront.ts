@@ -195,6 +195,10 @@ export interface CategoryCover {
 export async function getCategoryCovers(
   shopId: string,
 ): Promise<Record<string, CategoryCover>> {
+  /* Пълен scan на активните продукти е нужен ЗА БРОЯ per категория (productCount)
+     + rollup към родителя — не може да се сведе до 1 ред/категория без да
+     загубим count-а. Ограничено е до 2 колони и е per-магазин (не per-каталог),
+     затова е приемливо; при много голям каталог кандидат за SQL агрегат. */
   const [rows, cats] = await Promise.all([
     db.query.products.findMany({
       where: and(eq(products.shopId, shopId), eq(products.status, "active")),

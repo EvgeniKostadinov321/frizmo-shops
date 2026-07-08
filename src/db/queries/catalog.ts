@@ -5,7 +5,6 @@ import {
   desc,
   eq,
   ilike,
-  inArray,
   isNotNull,
   not,
   or,
@@ -68,19 +67,23 @@ export async function searchShops(filters: ShopFilters = {}) {
     db.select({ value: count() }).from(shops).where(where),
   ]);
 
-  /* Cover снимки — една заявка за всички магазини на страницата */
+  /* Cover снимки: DISTINCT ON връща ТОЧНО един ред на магазин (най-старият
+     активен продукт със снимка) — вместо да теглим всички продукти на всички
+     магазини само за първата снимка (N+1-подобен fan-out при голям каталог). */
   const coverByShopId = new Map<string, string>();
   if (rawItems.length) {
     const shopIds = rawItems.map((s) => s.id);
-    const shopProducts = await db.query.products.findMany({
-      where: and(inArray(products.shopId, shopIds), eq(products.status, "active")),
-      orderBy: [asc(products.createdAt)],
-    });
-    for (const product of shopProducts) {
-      const path = product.images[0];
-      if (path && !coverByShopId.has(product.shopId)) {
-        coverByShopId.set(product.shopId, publicImageUrl(path));
-      }
+    const covers = (await db.execute(sql`
+      select distinct on (${products.shopId}) ${products.shopId} as shop_id, ${products.images} as images
+      from ${products}
+      where ${products.shopId} in (${sql.join(shopIds, sql`, `)})
+        and ${products.status} = 'active'
+        and jsonb_array_length(${products.images}) > 0
+      order by ${products.shopId}, ${products.createdAt} asc
+    `)) as unknown as { shop_id: string; images: string[] }[];
+    for (const row of covers) {
+      const path = row.images[0];
+      if (path) coverByShopId.set(row.shop_id, publicImageUrl(path));
     }
   }
 
