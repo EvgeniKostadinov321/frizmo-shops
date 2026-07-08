@@ -124,6 +124,82 @@ export async function sendOrderEmails(shop: Shop, order: OrderEmailData): Promis
   }
 }
 
+/** Текст по статус за имейла до купувача при смяна на статус. */
+const STATUS_EMAIL: Record<
+  "confirmed" | "shipped" | "cancelled",
+  { subject: (n: string, shop: string) => string; title: string; body: string }
+> = {
+  confirmed: {
+    subject: (n, shop) => `Поръчка ${n} е потвърдена — ${shop}`,
+    title: "Поръчката ти е потвърдена",
+    body: "прие поръчката ти и я подготвя.",
+  },
+  shipped: {
+    subject: (n, shop) => `Поръчка ${n} е изпратена — ${shop}`,
+    title: "Поръчката ти е изпратена",
+    body: "изпрати поръчката ти — вече пътува към теб.",
+  },
+  cancelled: {
+    subject: (n, shop) => `Поръчка ${n} е отказана — ${shop}`,
+    title: "Поръчката ти е отказана",
+    body: "отказа поръчката ти.",
+  },
+};
+
+/**
+ * Имейл до купувача при смяна на статус (confirmed/shipped/cancelled). Прост
+ * статус + бутон към страницата на поръчката. Тихо се пропуска без имейл на
+ * купувача или без RESEND ключ — имейлът е странична дейност и не бива да чупи
+ * смяната на статус.
+ */
+export async function sendOrderStatusEmail(input: {
+  shop: Pick<Shop, "name" | "slug" | "phone" | "email">;
+  order: {
+    id: string;
+    orderNumber: number;
+    publicToken: string;
+    customerName: string;
+    customerEmail: string;
+  };
+  status: "confirmed" | "shipped" | "cancelled";
+}): Promise<void> {
+  if (!input.order.customerEmail) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — имейлът за статус е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const number = `#${String(input.order.orderNumber).padStart(4, "0")}`;
+  const meta = STATUS_EMAIL[input.status];
+  const orderUrl = `${BASE_URL}/s/${input.shop.slug}/order/${input.order.id}?t=${input.order.publicToken}`;
+  const contact = input.shop.phone || input.shop.email || "";
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.order.customerEmail,
+      subject: meta.subject(number, input.shop.name),
+      html: shell(
+        meta.title,
+        `<p style="font-size:14px;line-height:1.6;">
+          Здравей, ${esc(input.order.customerName)} — <strong>${esc(input.shop.name)}</strong> ${meta.body}
+          Поръчка <strong>${number}</strong>.
+        </p>
+        ${
+          input.status === "cancelled" && contact
+            ? `<p style="font-size:14px;">При въпроси: ${esc(contact)}</p>`
+            : ""
+        }
+        <p style="margin:24px 0;">
+          <a href="${orderUrl}" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Виж поръчката</a>
+        </p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Имейл за статус на поръчка се провали:", e);
+  }
+}
+
 /**
  * Потвърждаващ имейл за нюзлетър абонамент (double opt-in). Липсващ ключ →
  * логва warning (абонатът остава pending, потвърждава се при следващ опит).

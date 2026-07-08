@@ -20,7 +20,7 @@ import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
-import { sendOrderEmails } from "@/lib/email";
+import { sendOrderEmails, sendOrderStatusEmail } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
 import { sendNewOrderPush } from "@/lib/push";
@@ -323,6 +323,25 @@ export async function updateOrderStatus(input: {
       }
     }
   });
+
+  /* Известяваме купувача при ключовите статуси (ако е дал имейл). Неблокиращо —
+     имейлът не бива да бави отговора към търговеца, нито да чупи смяната. */
+  const newStatus = parsed.data.status;
+  if (newStatus !== "completed") {
+    void Promise.allSettled([
+      sendOrderStatusEmail({
+        shop,
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          publicToken: order.publicToken,
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+        },
+        status: newStatus,
+      }),
+    ]);
+  }
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
