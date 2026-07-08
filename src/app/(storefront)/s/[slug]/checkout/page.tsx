@@ -43,6 +43,8 @@ export default async function CheckoutPage({ params }: PageProps) {
           base={`/s/${shop.slug}`}
           shippingMethods={activeShipping}
           paymentMethods={activePayment}
+          giftWrapEnabled={shop.giftWrapEnabled}
+          giftWrapFeeCents={shop.giftWrapFeeCents}
         />
       )}
     </div>

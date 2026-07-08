@@ -13,6 +13,9 @@ export const orderSchema = z.object({
   note: z.string().trim().max(500).default(""),
   shippingMethodId: z.uuid("Избери доставка"),
   paymentMethodId: z.uuid("Избери плащане"),
+  /** N9: подаръчна опаковка — важи само ако магазинът я предлага (сървърна проверка). */
+  giftWrap: z.boolean().default(false),
+  giftNote: z.string().trim().max(200, "Текстът за картичката е до 200 знака").default(""),
   /** Приложен промо код (празно = без). Препотвърждава се на сървъра. */
   couponCode: z.string().trim().max(40).default(""),
   lines: z
@@ -49,6 +52,9 @@ export const manualOrderSchema = z.object({
   paymentMethodId: z.uuid("Избери плащане"),
   /** Ръчна цена на доставка в центове (null = цената на метода). */
   shippingOverrideCents: z.union([z.number().int().min(0).max(100_000), z.null()]).default(null),
+  /** N9: подаръчна опаковка (таксата на магазина се прилага на сървъра). */
+  giftWrap: z.boolean().default(false),
+  giftNote: z.string().trim().max(200).default(""),
   lines: z
     .array(
       z.object({

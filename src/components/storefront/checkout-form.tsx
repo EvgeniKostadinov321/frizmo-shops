@@ -21,6 +21,9 @@ interface CheckoutFormProps {
   base: string;
   shippingMethods: ShippingMethod[];
   paymentMethods: PaymentMethod[];
+  /** N9: подаръчна опаковка (настройка на магазина; таксата е преглед — сървърът я прилага). */
+  giftWrapEnabled?: boolean;
+  giftWrapFeeCents?: number;
 }
 
 /* Storefront полета — стилизирани със --sf-* променливите на темата. */
@@ -82,6 +85,8 @@ export function CheckoutForm({
   base,
   shippingMethods,
   paymentMethods,
+  giftWrapEnabled = false,
+  giftWrapFeeCents = 0,
 }: CheckoutFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -111,6 +116,9 @@ export function CheckoutForm({
   const [appliedCode, setAppliedCode] = useState("");
   const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [couponBusy, setCouponBusy] = useState(false);
+  /* N9: подаръчна опаковка */
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftNote, setGiftNote] = useState("");
 
   /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
      синхронно в effect чупи react-compiler lint-а). */
@@ -156,12 +164,14 @@ export function CheckoutForm({
     const free =
       shipping.freeOverCents !== null && cart.subtotalCents >= shipping.freeOverCents;
     const shippingCents = free ? 0 : shipping.priceCents;
+    const giftCents = giftWrapEnabled && giftWrap ? giftWrapFeeCents : 0;
     return {
       free,
       shippingCents,
-      totalCents: cart.subtotalCents - discountCents + shippingCents,
+      giftCents,
+      totalCents: cart.subtotalCents - discountCents + shippingCents + giftCents,
     };
-  }, [cart, shipping, discountCents]);
+  }, [cart, shipping, discountCents, giftWrap, giftWrapEnabled, giftWrapFeeCents]);
 
   if (stored.length === 0) {
     return (
@@ -222,6 +232,8 @@ export function CheckoutForm({
         ...form,
         lines: stored,
         couponCode: appliedCode,
+        giftWrap: giftWrapEnabled && giftWrap,
+        giftNote: giftWrap ? giftNote : "",
       });
       if (!result.ok) {
         setFieldErrors(result.fieldErrors ?? {});
@@ -360,6 +372,34 @@ export function CheckoutForm({
           </div>
         </Field>
 
+        {/* N9: подаръчна опаковка (само ако магазинът я предлага) */}
+        {giftWrapEnabled && (
+          <div className="flex flex-col gap-2 rounded-(--sf-radius) border border-(--sf-border) p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-(--sf-text)">
+              <input
+                type="checkbox"
+                checked={giftWrap}
+                onChange={(e) => setGiftWrap(e.target.checked)}
+              />
+              Опаковай като подарък
+              {giftWrapFeeCents > 0 && (
+                <span className="text-(--sf-muted)">(+{formatPrice(giftWrapFeeCents)})</span>
+              )}
+            </label>
+            {giftWrap && (
+              <Field label="Текст за картичка" error={fieldErrors.giftNote}>
+                <input
+                  className={inputClass}
+                  maxLength={200}
+                  value={giftNote}
+                  onChange={(e) => setGiftNote(e.target.value)}
+                  placeholder="Напр. Честит рожден ден!"
+                />
+              </Field>
+            )}
+          </div>
+        )}
+
         <Field label="Бележка към поръчката" error={fieldErrors.note}>
           <textarea
             className={`${inputClass} h-20 resize-y py-2`}
@@ -456,6 +496,12 @@ export function CheckoutForm({
           <div className="flex justify-between text-sm text-(--sf-muted)">
             <span>Доставка</span>
             <span>{totals.free ? "Безплатна" : formatPrice(totals.shippingCents)}</span>
+          </div>
+        )}
+        {totals && totals.giftCents > 0 && (
+          <div className="flex justify-between text-sm text-(--sf-muted)">
+            <span>Подаръчна опаковка</span>
+            <span>{formatPrice(totals.giftCents)}</span>
           </div>
         )}
         {totals && (

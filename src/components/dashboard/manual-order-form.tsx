@@ -13,13 +13,22 @@ interface ManualOrderFormProps {
   products: CartProductView[];
   shippingMethods: { id: string; name: string; priceCents: number; freeOverCents: number | null }[];
   paymentMethods: { id: string; name: string }[];
+  /** N9: подаръчна опаковка (настройката на магазина). */
+  giftWrapEnabled?: boolean;
+  giftWrapFeeCents?: number;
 }
 
 /**
  * Форма за ръчна поръчка. Клиентът праща само productId/variantKey/qty —
  * сумата тук е ПРЕГЛЕД (същият priceCart), финалната се смята на сървъра.
  */
-export function ManualOrderForm({ products, shippingMethods, paymentMethods }: ManualOrderFormProps) {
+export function ManualOrderForm({
+  products,
+  shippingMethods,
+  paymentMethods,
+  giftWrapEnabled = false,
+  giftWrapFeeCents = 0,
+}: ManualOrderFormProps) {
   const router = useRouter();
 
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -35,6 +44,8 @@ export function ManualOrderForm({ products, shippingMethods, paymentMethods }: M
   const [shippingMethodId, setShippingMethodId] = useState(shippingMethods[0]?.id ?? "");
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
   const [overrideStr, setOverrideStr] = useState("");
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftNote, setGiftNote] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -97,6 +108,8 @@ export function ManualOrderForm({ products, shippingMethods, paymentMethods }: M
         shippingMethodId,
         paymentMethodId,
         shippingOverrideCents: overrideCents,
+        giftWrap: giftWrapEnabled && giftWrap,
+        giftNote: giftWrap ? giftNote : "",
         lines,
       });
       if (!result.ok) {
@@ -293,6 +306,33 @@ export function ManualOrderForm({ products, shippingMethods, paymentMethods }: M
           error={fieldErrors.paymentMethodId}
         />
 
+        {giftWrapEnabled && (
+          <div className="flex flex-col gap-2">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={giftWrap}
+                onChange={(e) => setGiftWrap(e.target.checked)}
+                className="size-5 shrink-0 rounded accent-brand-600"
+              />
+              <span className="text-sm font-medium text-ink-900">
+                Подаръчна опаковка
+                {giftWrapFeeCents > 0 && (
+                  <span className="text-ink-500"> (+{formatPrice(giftWrapFeeCents)})</span>
+                )}
+              </span>
+            </label>
+            {giftWrap && (
+              <Input
+                label="Текст за картичка"
+                maxLength={200}
+                value={giftNote}
+                onChange={(e) => setGiftNote(e.target.value)}
+              />
+            )}
+          </div>
+        )}
+
         <div className="border-t border-surface-200 pt-4 text-sm">
           <div className="flex justify-between text-ink-700">
             <span>Междинна сума</span>
@@ -304,9 +344,19 @@ export function ManualOrderForm({ products, shippingMethods, paymentMethods }: M
               {cart?.shipping ? formatPrice(cart.shipping.priceCents) : "—"}
             </span>
           </div>
+          {giftWrapEnabled && giftWrap && giftWrapFeeCents > 0 && (
+            <div className="mt-1.5 flex justify-between text-ink-700">
+              <span>Подаръчна опаковка</span>
+              <span className="tabular-nums">{formatPrice(giftWrapFeeCents)}</span>
+            </div>
+          )}
           <div className="mt-3 flex justify-between border-t border-surface-200 pt-3 font-bold text-ink-900">
             <span>Общо</span>
-            <span className="tabular-nums">{cart ? formatPrice(cart.totalCents) : "—"}</span>
+            <span className="tabular-nums">
+              {cart
+                ? formatPrice(cart.totalCents + (giftWrapEnabled && giftWrap ? giftWrapFeeCents : 0))
+                : "—"}
+            </span>
           </div>
         </div>
 

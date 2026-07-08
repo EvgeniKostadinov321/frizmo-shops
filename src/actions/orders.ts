@@ -20,10 +20,10 @@ import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
-import { sendOrderEmails, sendOrderStatusEmail } from "@/lib/email";
+import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
-import { sendNewOrderPush } from "@/lib/push";
+import { sendNewOrderPush, sendPushToUser } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { variantKey as makeVariantKey } from "@/lib/variants";
@@ -146,7 +146,13 @@ export async function createOrder(
   const phone = parseBgPhone(input.customerPhone);
   if (!phone.ok) return fail("Невалиден телефонен номер.");
 
-  let created: { orderId: string; publicToken: string; orderNumber: number; cart: PricedCart };
+  let created: {
+    orderId: string;
+    publicToken: string;
+    orderNumber: number;
+    cart: PricedCart;
+    giftWrapFeeCents: number;
+  };
   try {
     created = await db.transaction(async (tx) => {
       /* Заключваме продуктите — двама за последната бройка е безопасно. */
@@ -213,6 +219,10 @@ export async function createOrder(
 
       await decrementStock(tx, input.lines);
 
+      /* N9: таксата за опаковка — от НАСТРОЙКАТА на магазина (не от клиента). */
+      const giftWrap = shop.giftWrapEnabled && input.giftWrap;
+      const giftWrapFeeCents = giftWrap ? shop.giftWrapFeeCents : 0;
+
       const inserted = await insertOrderWithNumber(
         tx,
         shop.id,
@@ -230,11 +240,14 @@ export async function createOrder(
           subtotalCents: cart.subtotalCents,
           couponCode: cart.appliedCouponCode,
           discountCents: cart.discountCents,
-          totalCents: cart.totalCents,
+          giftWrap,
+          giftNote: giftWrap ? sanitizeText(input.giftNote, 200) : "",
+          giftWrapFeeCents,
+          totalCents: cart.totalCents + giftWrapFeeCents,
         },
         cart.lines,
       );
-      return { ...inserted, cart };
+      return { ...inserted, cart, giftWrapFeeCents };
     });
   } catch (error) {
     const msg = (error as Error).message;
@@ -263,10 +276,13 @@ export async function createOrder(
       shippingPriceCents: created.cart.shipping?.priceCents ?? 0,
       paymentName: payment.name,
       paymentDetails: payment.details,
-      totalCents: created.cart.totalCents,
+      totalCents: created.cart.totalCents + created.giftWrapFeeCents,
       lines: created.cart.lines,
+      giftWrap: shop.giftWrapEnabled && input.giftWrap,
+      giftNote: sanitizeText(input.giftNote, 200),
+      giftWrapFeeCents: created.giftWrapFeeCents,
     }),
-    sendNewOrderPush(shop, created.orderNumber, created.cart.totalCents),
+    sendNewOrderPush(shop, created.orderNumber, created.cart.totalCents + created.giftWrapFeeCents),
   ]);
 
   revalidatePath("/dashboard/orders");
@@ -331,6 +347,10 @@ export async function createManualOrder(
 
       await decrementStock(tx, input.lines);
 
+      /* N9: таксата — от настройката на магазина. */
+      const giftWrap = shop.giftWrapEnabled && input.giftWrap;
+      const giftWrapFeeCents = giftWrap ? shop.giftWrapFeeCents : 0;
+
       const inserted = await insertOrderWithNumber(
         tx,
         shop.id,
@@ -346,7 +366,10 @@ export async function createManualOrder(
           paymentName: payment.name,
           paymentType: payment.type,
           subtotalCents: cart.subtotalCents,
-          totalCents: cart.totalCents,
+          giftWrap,
+          giftNote: giftWrap ? sanitizeText(input.giftNote, 200) : "",
+          giftWrapFeeCents,
+          totalCents: cart.totalCents + giftWrapFeeCents,
           status: "confirmed",
         },
         cart.lines,
@@ -381,14 +404,120 @@ export async function createManualOrder(
   return ok({ orderId: created.orderId });
 }
 
-/** Смяна на статус от търговеца; отказ връща наличностите. */
+/** N12: срокът за връщане (дни) в милисекунди. */
+const DAY_MS = 86_400_000;
+
+/**
+ * N12: купувачът заявява връщане — от публичната страница на поръчката (token
+ * линка). Само от „completed", в срока на магазина (returnWindowDays от
+ * последната промяна = завършването). Известява търговеца (имейл + push).
+ */
+export async function requestReturn(
+  shopSlug: string,
+  rawInput: unknown,
+): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      orderId: z.uuid(),
+      token: z.uuid(),
+      reason: z.string().trim().max(500).default(""),
+    })
+    .safeParse(rawInput);
+  if (!parsed.success) return fail("Невалидна заявка.");
+
+  const ip = await clientIp();
+  if (!(await checkRateLimit(`return:${ip}`, 5, 3600))) {
+    return fail("Твърде много заявки. Опитай по-късно.");
+  }
+
+  const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });
+  if (!shop) return fail("Магазинът не съществува.");
+
+  /* Token-ът е задължителен — само orderId не стига (IDOR защитата на страницата). */
+  const order = await db.query.orders.findFirst({
+    where: and(
+      eq(orders.id, parsed.data.orderId),
+      eq(orders.shopId, shop.id),
+      eq(orders.publicToken, parsed.data.token),
+    ),
+  });
+  if (!order) return fail("Поръчката не съществува.");
+  if (order.status !== "completed") {
+    return fail("Връщане може да се заяви само за завършена поръчка.");
+  }
+  if (Date.now() - order.updatedAt.getTime() > shop.returnWindowDays * DAY_MS) {
+    return fail(`Срокът за връщане (${shop.returnWindowDays} дни) е изтекъл.`);
+  }
+
+  const reason = sanitizeText(parsed.data.reason, 500);
+  await db
+    .update(orders)
+    .set({
+      status: "return_requested",
+      returnReason: reason,
+      returnRequestedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.id, order.id));
+
+  /* Търговецът научава веднага (неблокиращо). */
+  const number = `#${String(order.orderNumber).padStart(4, "0")}`;
+  void Promise.allSettled([
+    sendReturnRequestEmail({
+      shop,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      reason,
+    }),
+    sendPushToUser(shop.ownerId, {
+      title: `Заявено връщане за ${number}`,
+      body: reason ? `Причина: ${reason.slice(0, 80)}` : "Виж поръчката в панела.",
+      url: `/dashboard/orders/${order.id}`,
+    }),
+  ]);
+
+  revalidatePath("/dashboard/orders");
+  return ok(null);
+}
+
+/** Смяна на статус от търговеца; отказ/връщане възстановява наличностите.
+ *  N12: completed → return_requested е САМО купувачески преход (requestReturn). */
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   new: ["confirmed", "cancelled"],
   confirmed: ["shipped", "cancelled"],
   shipped: ["completed", "cancelled"],
   completed: [],
   cancelled: [],
+  return_requested: ["returned", "completed"],
+  returned: [],
 };
+
+/** Възстановява наличностите по редовете на поръчка (отказ/прието връщане). */
+async function restoreStock(tx: Tx, orderId: string) {
+  const items = await tx.query.orderItems.findMany({ where: eq(orderItems.orderId, orderId) });
+  for (const item of items) {
+    if (!item.productId) continue;
+    if (item.variantKey) {
+      const variants = await tx.query.productVariants.findMany({
+        where: eq(productVariants.productId, item.productId),
+      });
+      const variant = variants.find((v) => makeVariantKey(v.options) === item.variantKey);
+      if (variant && variant.stock !== null) {
+        await tx
+          .update(productVariants)
+          .set({ stock: variant.stock + item.quantity })
+          .where(eq(productVariants.id, variant.id));
+        continue;
+      }
+    }
+    await tx
+      .update(products)
+      .set({
+        stock: rawSql`case when stock is null then null else stock + ${item.quantity} end`,
+      })
+      .where(eq(products.id, item.productId));
+  }
+}
 
 export async function updateOrderStatus(input: {
   id: string;
@@ -397,7 +526,7 @@ export async function updateOrderStatus(input: {
   const parsed = z
     .object({
       id: z.uuid(),
-      status: z.enum(["confirmed", "shipped", "completed", "cancelled"]),
+      status: z.enum(["confirmed", "shipped", "completed", "cancelled", "returned"]),
     })
     .safeParse(input);
   if (!parsed.success) return fail("Невалидна заявка.");
@@ -416,40 +545,23 @@ export async function updateOrderStatus(input: {
       .set({ status: parsed.data.status, updatedAt: new Date() })
       .where(eq(orders.id, order.id));
 
-    /* Отказ → връщаме наличностите (симетрично на декремента). */
-    if (parsed.data.status === "cancelled") {
-      const items = await tx.query.orderItems.findMany({
-        where: eq(orderItems.orderId, order.id),
-      });
-      for (const item of items) {
-        if (!item.productId) continue;
-        if (item.variantKey) {
-          const variants = await tx.query.productVariants.findMany({
-            where: eq(productVariants.productId, item.productId),
-          });
-          const variant = variants.find((v) => makeVariantKey(v.options) === item.variantKey);
-          if (variant && variant.stock !== null) {
-            await tx
-              .update(productVariants)
-              .set({ stock: variant.stock + item.quantity })
-              .where(eq(productVariants.id, variant.id));
-            continue;
-          }
-        }
-        await tx
-          .update(products)
-          .set({
-            stock: rawSql`case when stock is null then null else stock + ${item.quantity} end`,
-          })
-          .where(eq(products.id, item.productId));
-      }
+    /* Отказ / прието връщане → връщаме наличностите (симетрично на декремента). */
+    if (parsed.data.status === "cancelled" || parsed.data.status === "returned") {
+      await restoreStock(tx, order.id);
     }
   });
 
   /* Известяваме купувача при ключовите статуси (ако е дал имейл). Неблокиращо —
-     имейлът не бива да бави отговора към търговеца, нито да чупи смяната. */
+     имейлът не бива да бави отговора към търговеца, нито да чупи смяната.
+     N12: return_requested → completed = отказано връщане (специален имейл). */
   const newStatus = parsed.data.status;
-  if (newStatus !== "completed") {
+  const emailStatus =
+    newStatus === "completed"
+      ? order.status === "return_requested"
+        ? ("return_rejected" as const)
+        : null
+      : newStatus;
+  if (emailStatus) {
     void Promise.allSettled([
       sendOrderStatusEmail({
         shop,
@@ -460,7 +572,7 @@ export async function updateOrderStatus(input: {
           customerName: order.customerName,
           customerEmail: order.customerEmail,
         },
-        status: newStatus,
+        status: emailStatus,
       }),
     ]);
   }

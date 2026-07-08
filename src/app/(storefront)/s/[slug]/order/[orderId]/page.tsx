@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { Icon } from "@/components/ui";
+import { ReturnRequest } from "@/components/storefront/return-request";
 import { db, orderItems, orders } from "@/db";
 import { getPublicShop } from "@/db/queries/storefront";
 import { formatPrice } from "@/lib/money";
@@ -14,6 +15,11 @@ interface PageProps {
 }
 
 export const metadata: Metadata = { title: "Поръчката е приета", robots: { index: false } };
+
+/** N12: в срока за връщане ли е поръчката (server render — времето е моментът на заявката). */
+function withinReturnWindow(completedAt: Date, windowDays: number): boolean {
+  return Date.now() - completedAt.getTime() <= windowDays * 86_400_000;
+}
 
 export default async function OrderConfirmationPage({ params, searchParams }: PageProps) {
   const { slug, orderId } = await params;
@@ -75,12 +81,39 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pa
           <span>Доставка ({order.shippingName})</span>
           <span>{formatPrice(order.shippingPriceCents)}</span>
         </div>
+        {order.giftWrap && (
+          <div className="flex justify-between text-sm text-(--sf-muted)">
+            <span>Подаръчна опаковка</span>
+            <span>{order.giftWrapFeeCents > 0 ? formatPrice(order.giftWrapFeeCents) : "Безплатна"}</span>
+          </div>
+        )}
         <div className="flex justify-between text-lg font-bold text-(--sf-text)">
           <span>Общо</span>
           <span>{formatPrice(order.totalCents)}</span>
         </div>
         <p className="text-sm text-(--sf-muted)">Плащане: {order.paymentName}</p>
       </div>
+
+      {/* N12: заявка за връщане — само „завършена" и в срока на магазина */}
+      {order.status === "completed" &&
+        withinReturnWindow(order.updatedAt, shop.returnWindowDays) && (
+          <ReturnRequest
+            shopSlug={shop.slug}
+            orderId={order.id}
+            token={token}
+            returnWindowDays={shop.returnWindowDays}
+          />
+        )}
+      {order.status === "return_requested" && (
+        <p className="mt-6 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4 text-center text-sm text-(--sf-text)">
+          Заявката ти за връщане чака преглед от магазина — ще получиш имейл.
+        </p>
+      )}
+      {order.status === "returned" && (
+        <p className="mt-6 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4 text-center text-sm text-(--sf-text)">
+          Връщането по тази поръчка е прието.
+        </p>
+      )}
 
       <p className="mt-6 text-center text-sm text-(--sf-muted)">
         {shop.name} ще се свърже с теб при нужда на {order.customerPhone}.

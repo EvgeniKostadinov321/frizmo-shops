@@ -40,6 +40,20 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
       <p className="text-sm text-ink-500">{dateFormat.format(order.createdAt)}</p>
 
+      {/* N12: причина за заявеното връщане */}
+      {(order.status === "return_requested" || order.status === "returned") && (
+        <div className="rounded-card border border-warning-600/30 bg-surface-0 p-4 text-sm">
+          <p className="font-bold text-ink-900">
+            {order.status === "return_requested" ? "Клиентът заяви връщане" : "Върната поръчка"}
+          </p>
+          <p className="mt-1 text-ink-700">
+            {order.returnReason ? `Причина: „${order.returnReason}“` : "Без посочена причина."}
+            {order.returnRequestedAt &&
+              ` · заявено на ${dateFormat.format(order.returnRequestedAt)}`}
+          </p>
+        </div>
+      )}
+
       <OrderActions orderId={order.id} status={order.status} />
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -64,6 +78,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
           {order.note && (
             <p className="mt-2 rounded-control bg-surface-50 p-2 text-ink-700">
               💬 {order.note}
+            </p>
+          )}
+          {order.giftWrap && (
+            <p className="mt-2 rounded-control bg-brand-50 p-2 font-medium text-brand-700">
+              Подаръчна опаковка{order.giftNote && ` — картичка: „${order.giftNote}“`}
             </p>
           )}
         </Card>
@@ -109,6 +128,12 @@ export default async function OrderDetailPage({ params }: PageProps) {
           <span>Доставка</span>
           <span>{formatPrice(order.shippingPriceCents)}</span>
         </div>
+        {order.giftWrap && order.giftWrapFeeCents > 0 && (
+          <div className="flex justify-between text-sm text-ink-500">
+            <span>Подаръчна опаковка</span>
+            <span>{formatPrice(order.giftWrapFeeCents)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-lg font-bold text-ink-900">
           <span>Общо</span>
           <span>{formatPrice(order.totalCents)}</span>

@@ -32,6 +32,10 @@ interface OrderEmailData {
   paymentDetails: string;
   totalCents: number;
   lines: PricedLine[];
+  /** N9: подаръчна опаковка (търговецът трябва да я види в имейла). */
+  giftWrap?: boolean;
+  giftNote?: string;
+  giftWrapFeeCents?: number;
 }
 
 const esc = (s: string) =>
@@ -72,7 +76,10 @@ export async function sendOrderEmails(shop: Shop, order: OrderEmailData): Promis
     name: order.shippingName,
     cents: order.shippingPriceCents,
   });
-  const totalRow = `<p style="font-size:16px;font-weight:bold;">Общо: ${formatPrice(order.totalCents)}</p>`;
+  const giftRow = order.giftWrap
+    ? `<p style="font-size:14px;color:#b45309;font-weight:600;">Подаръчна опаковка${(order.giftWrapFeeCents ?? 0) > 0 ? ` (+${formatPrice(order.giftWrapFeeCents!)})` : ""}${order.giftNote ? ` — картичка: „${esc(order.giftNote)}“` : ""}</p>`
+    : "";
+  const totalRow = `${giftRow}<p style="font-size:16px;font-weight:bold;">Общо: ${formatPrice(order.totalCents)}</p>`;
 
   const sends: Promise<unknown>[] = [];
 
@@ -125,8 +132,15 @@ export async function sendOrderEmails(shop: Shop, order: OrderEmailData): Promis
 }
 
 /** Текст по статус за имейла до купувача при смяна на статус. */
+export type StatusEmailKey =
+  | "confirmed"
+  | "shipped"
+  | "cancelled"
+  | "returned"
+  | "return_rejected";
+
 const STATUS_EMAIL: Record<
-  "confirmed" | "shipped" | "cancelled",
+  StatusEmailKey,
   { subject: (n: string, shop: string) => string; title: string; body: string }
 > = {
   confirmed: {
@@ -143,6 +157,17 @@ const STATUS_EMAIL: Record<
     subject: (n, shop) => `Поръчка ${n} е отказана — ${shop}`,
     title: "Поръчката ти е отказана",
     body: "отказа поръчката ти.",
+  },
+  /* N12 */
+  returned: {
+    subject: (n, shop) => `Връщането по поръчка ${n} е прието — ${shop}`,
+    title: "Връщането е прието",
+    body: "прие заявката ти за връщане.",
+  },
+  return_rejected: {
+    subject: (n, shop) => `Заявката за връщане по поръчка ${n} — ${shop}`,
+    title: "Заявката за връщане не е приета",
+    body: "прегледа заявката ти за връщане и не я прие — поръчката остава завършена.",
   },
 };
 
@@ -161,7 +186,7 @@ export async function sendOrderStatusEmail(input: {
     customerName: string;
     customerEmail: string;
   };
-  status: "confirmed" | "shipped" | "cancelled";
+  status: StatusEmailKey;
 }): Promise<void> {
   if (!input.order.customerEmail) return;
   if (!process.env.RESEND_API_KEY) {
@@ -186,7 +211,7 @@ export async function sendOrderStatusEmail(input: {
           Поръчка <strong>${number}</strong>.
         </p>
         ${
-          input.status === "cancelled" && contact
+          (input.status === "cancelled" || input.status === "return_rejected") && contact
             ? `<p style="font-size:14px;">При въпроси: ${esc(contact)}</p>`
             : ""
         }
@@ -197,6 +222,42 @@ export async function sendOrderStatusEmail(input: {
     });
   } catch (e) {
     console.error("Имейл за статус на поръчка се провали:", e);
+  }
+}
+
+/** N12: заявено връщане → имейл до търговеца (причината + линк към панела). */
+export async function sendReturnRequestEmail(input: {
+  shop: Pick<Shop, "name" | "email">;
+  orderNumber: number;
+  customerName: string;
+  reason: string;
+}): Promise<void> {
+  if (!input.shop.email) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — имейлът за връщане е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const number = `#${String(input.orderNumber).padStart(4, "0")}`;
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.shop.email,
+      subject: `Заявено връщане за поръчка ${number}`,
+      html: shell(
+        `Заявено връщане — ${number}`,
+        `<p style="font-size:14px;line-height:1.6;">
+          ${esc(input.customerName)} заяви връщане по поръчка <strong>${number}</strong>.
+          ${input.reason ? `<br/>Причина: „${esc(input.reason)}“` : ""}
+        </p>
+        <p style="font-size:14px;">Приеми или откажи връщането от панела — при приемане наличностите се възстановяват автоматично.</p>
+        <p style="margin:24px 0;">
+          <a href="${BASE_URL}/dashboard/orders" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Виж в панела</a>
+        </p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Имейлът за заявено връщане се провали:", e);
   }
 }
 

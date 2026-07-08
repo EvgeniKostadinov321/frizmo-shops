@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import { db, paymentMethods, shippingMethods } from "@/db";
+import { db, paymentMethods, shippingMethods, shops } from "@/db";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
@@ -15,6 +15,36 @@ function revalidate(slug: string) {
   revalidateTag(shopCacheTag(slug), "max");
   revalidatePath("/dashboard/fulfillment");
   revalidatePath(`/s/${slug}`, "layout");
+}
+
+const orderSettingsSchema = z.object({
+  giftWrapEnabled: z.boolean(),
+  /** EUR текст ("2,50"); празно при изключена опаковка = 0. */
+  giftWrapFee: z.string().trim().max(10).default(""),
+  returnWindowDays: z.union([z.literal(14), z.literal(30), z.literal(45)]),
+});
+
+/** N9+N12: настройки на поръчките — подаръчна опаковка + срок за връщане. */
+export async function saveOrderSettings(input: unknown): Promise<ActionResult> {
+  const parsed = orderSettingsSchema.safeParse(input);
+  if (!parsed.success) return zodFail(parsed.error);
+
+  const { shop } = await requireShop();
+  const feeCents = parsed.data.giftWrapFee ? toCents(parsed.data.giftWrapFee) : 0;
+  if (feeCents === null) return fail("Невалидна такса за опаковка.");
+
+  await db
+    .update(shops)
+    .set({
+      giftWrapEnabled: parsed.data.giftWrapEnabled,
+      giftWrapFeeCents: parsed.data.giftWrapEnabled ? feeCents : 0,
+      returnWindowDays: parsed.data.returnWindowDays,
+      updatedAt: new Date(),
+    })
+    .where(eq(shops.id, shop.id));
+
+  revalidate(shop.slug);
+  return ok(null);
 }
 
 export async function saveShippingMethod(

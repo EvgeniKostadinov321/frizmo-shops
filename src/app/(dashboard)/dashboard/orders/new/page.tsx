@@ -40,6 +40,8 @@ export default async function NewOrderPage() {
           .filter((m) => m.active)
           .map((m) => ({ id: m.id, name: m.name, priceCents: m.priceCents, freeOverCents: m.freeOverCents }))}
         paymentMethods={payment.filter((m) => m.active).map((m) => ({ id: m.id, name: m.name }))}
+        giftWrapEnabled={shop.giftWrapEnabled}
+        giftWrapFeeCents={shop.giftWrapFeeCents}
       />
     </div>
   );

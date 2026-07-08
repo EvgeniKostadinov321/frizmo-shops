@@ -50,6 +50,11 @@ export const shops = pgTable(
     email: text("email"),
     workingHours: jsonb("working_hours"),
     socialLinks: jsonb("social_links"),
+    /** N9: подаръчна опаковка (настройка на търговеца, такса snapshot-ва се в поръчката). */
+    giftWrapEnabled: boolean("gift_wrap_enabled").notNull().default(false),
+    giftWrapFeeCents: integer("gift_wrap_fee_cents").notNull().default(0),
+    /** N12: срок за заявка на връщане в дни (14/30/45, валидира се в Zod). */
+    returnWindowDays: integer("return_window_days").notNull().default(14),
     status: shopStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -181,6 +186,9 @@ export const orderStatusEnum = pgEnum("order_status", [
   "shipped",
   "completed",
   "cancelled",
+  /* N12: връщания — заявено от купувача → прието (върната) / отказано (обратно completed). */
+  "return_requested",
+  "returned",
 ]);
 
 export const shippingMethods = pgTable(
@@ -268,6 +276,13 @@ export const orders = pgTable(
     /* Приложен промо код (snapshot) + спестена сума; празно/0 = без купон. */
     couponCode: text("coupon_code").notNull().default(""),
     discountCents: integer("discount_cents").notNull().default(0),
+    /* N9: подаръчна опаковка (snapshot на таксата към момента). */
+    giftWrap: boolean("gift_wrap").notNull().default(false),
+    giftNote: text("gift_note").notNull().default(""),
+    giftWrapFeeCents: integer("gift_wrap_fee_cents").notNull().default(0),
+    /* N12: заявено връщане от купувача (причина + кога, за срока/одита). */
+    returnReason: text("return_reason").notNull().default(""),
+    returnRequestedAt: timestamp("return_requested_at", { withTimezone: true }),
     totalCents: integer("total_cents").notNull(),
     /* Непубличен ключ за страницата с потвърждение: URL-ът носи token, не само
        id — иначе всеки с познат orderId (UUID) вижда личните данни на клиента. */

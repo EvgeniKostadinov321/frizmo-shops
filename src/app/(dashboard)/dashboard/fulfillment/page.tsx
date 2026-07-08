@@ -1,4 +1,5 @@
 import { FulfillmentManager } from "@/components/dashboard/fulfillment-manager";
+import { OrderSettings } from "@/components/dashboard/order-settings";
 import {
   ensureDefaultMethods,
   getPaymentMethods,
@@ -17,5 +18,14 @@ export default async function FulfillmentPage() {
     getPaymentMethods(shop.id),
   ]);
 
-  return <FulfillmentManager shipping={shipping} payment={payment} />;
+  return (
+    <div className="flex flex-col gap-6">
+      <FulfillmentManager shipping={shipping} payment={payment} />
+      <OrderSettings
+        giftWrapEnabled={shop.giftWrapEnabled}
+        giftWrapFeeCents={shop.giftWrapFeeCents}
+        returnWindowDays={shop.returnWindowDays}
+      />
+    </div>
+  );
 }
