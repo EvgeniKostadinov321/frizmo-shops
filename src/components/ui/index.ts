@@ -20,5 +20,6 @@ export { Spinner } from "./spinner";
 export { Table, TBody, TCell, TH, THead, TRow } from "./table";
 export { TableRowLink } from "./table-row-link";
 export { Textarea } from "./textarea";
+export { TransitionLink } from "./transition-link";
 export { TimeSelect } from "./time-select";
 export { Tooltip } from "./tooltip";

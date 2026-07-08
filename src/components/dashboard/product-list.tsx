@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { bulkProductAction, deleteProduct, toggleProductStatus } from "@/actions/products";
 import type { Product } from "@/db";
@@ -51,13 +51,16 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
   const [priceValueStr, setPriceValueStr] = useState("");
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [navPending, startNavTransition] = useTransition();
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams);
     if (value) params.set(key, value);
     else params.delete(key);
     if (key !== "page") params.delete("page");
-    router.replace(`${pathname}?${params.toString()}`);
+    startNavTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
   }
 
   /* Търсене с debounce през URL-а */
@@ -168,6 +171,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           placeholder="Всички категории"
           value={searchParams.get("category") ?? ""}
           onChange={(e) => setParam("category", e.target.value)}
+          disabled={navPending}
         />
         <Select
           label="Статус"
@@ -179,6 +183,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           placeholder="Всички статуси"
           value={searchParams.get("status") ?? ""}
           onChange={(e) => setParam("status", e.target.value)}
+          disabled={navPending}
         />
       </div>
 
@@ -295,7 +300,10 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           action={<LinkButton href="/dashboard/products/new">Добави продукт</LinkButton>}
         />
       ) : (
-        <>
+        <div
+          aria-busy={navPending || undefined}
+          className={navPending ? "opacity-60 transition-opacity" : "transition-opacity"}
+        >
           {/* Мобилно: карти (таблицата е за десктоп) */}
           <ul className="flex flex-col gap-3 md:hidden">
             {items.map((product) => (
@@ -499,7 +507,7 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={page <= 1}
+                disabled={page <= 1 || navPending}
                 onClick={() => setParam("page", String(page - 1))}
               >
                 ← Предишна
@@ -510,14 +518,14 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={page >= totalPages}
+                disabled={page >= totalPages || navPending}
                 onClick={() => setParam("page", String(page + 1))}
               >
                 Следваща →
               </Button>
             </div>
           )}
-        </>
+        </div>
       )}
 
       <ConfirmDialog

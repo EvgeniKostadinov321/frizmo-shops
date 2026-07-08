@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Icon } from "@/components/ui";
+import { Icon, TransitionLink } from "@/components/ui";
 import { PriceStockFilter } from "@/components/price-stock-filter";
 import { toCents } from "@/lib/money";
 import { MascotState } from "@/components/storefront/mascot";
@@ -44,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /** Чип-линк за филтри/сортиране — 36px висок, pill, активен = плътен primary. */
 function Chip({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
   return (
-    <Link
+    <TransitionLink
       href={href}
       aria-current={active ? "true" : undefined}
       className={`flex h-9 items-center rounded-full border px-3.5 text-sm transition-colors ${
@@ -54,7 +53,7 @@ function Chip({ href, active, children }: { href: string; active: boolean; child
       }`}
     >
       {children}
-    </Link>
+    </TransitionLink>
   );
 }
 
@@ -153,13 +152,13 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
               className="h-11 w-full rounded-full border border-(--sf-border) bg-(--sf-surface-raised) pl-10 pr-10 text-(--sf-text) shadow-(--sf-shadow) transition-colors placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
             />
             {sp.search && (
-              <Link
+              <TransitionLink
                 href={pageUrl({ search: undefined, page: undefined })}
                 aria-label="Изчисти търсенето"
                 className="absolute inset-y-0 right-1 flex w-10 items-center justify-center text-(--sf-muted) hover:text-(--sf-text)"
               >
                 <Icon name="x" size={16} />
-              </Link>
+              </TransitionLink>
             )}
           </form>
 
@@ -234,12 +233,12 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
             Приложи
           </button>
           {(sp.min || sp.max || inStock) && (
-            <Link
+            <TransitionLink
               href={pageUrl({ min: undefined, max: undefined, inStock: undefined, page: undefined })}
               className="text-sm text-(--sf-muted) underline hover:text-(--sf-text)"
             >
               Изчисти
-            </Link>
+            </TransitionLink>
           )}
         </form>
       </div>
@@ -258,12 +257,12 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
           }
           action={
             hasFilters ? (
-              <Link
+              <TransitionLink
                 href={`${base}/products`}
                 className="inline-flex h-11 items-center rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) px-5 font-medium text-(--sf-text) transition-colors hover:border-(--sf-primary)"
               >
                 Изчисти филтрите
-              </Link>
+              </TransitionLink>
             ) : undefined
           }
         />
@@ -283,12 +282,12 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
       {(page > 1 || hasMore) && (
         <nav aria-label="Страници" className="mt-10 flex items-center justify-center gap-3">
           {page > 1 ? (
-            <Link
+            <TransitionLink
               href={pageUrl({ page: page === 2 ? undefined : String(page - 1) })}
               className="inline-flex h-11 items-center gap-1.5 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) px-4 font-medium text-(--sf-text) transition-colors hover:border-(--sf-primary)"
             >
               ← Предишна
-            </Link>
+            </TransitionLink>
           ) : (
             <span className="inline-flex h-11 items-center rounded-(--sf-radius) border border-(--sf-border) px-4 text-(--sf-muted) opacity-50">
               ← Предишна
@@ -296,12 +295,12 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
           )}
           <span className="px-2 text-sm text-(--sf-muted)">Страница {page}</span>
           {hasMore ? (
-            <Link
+            <TransitionLink
               href={pageUrl({ page: String(page + 1) })}
               className="inline-flex h-11 items-center gap-1.5 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) px-4 font-medium text-(--sf-text) transition-colors hover:border-(--sf-primary)"
             >
               Следваща →
-            </Link>
+            </TransitionLink>
           ) : (
             <span className="inline-flex h-11 items-center rounded-(--sf-radius) border border-(--sf-border) px-4 text-(--sf-muted) opacity-50">
               Следваща →

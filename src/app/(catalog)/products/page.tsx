@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CatalogProductCard } from "@/components/marketing/catalog-product-card";
-import { Button, Icon, Input, Select } from "@/components/ui";
+import { Button, Icon, Input, Select, TransitionLink } from "@/components/ui";
 import { PriceStockFilter } from "@/components/price-stock-filter";
 import { type ProductSort, searchCatalogProducts } from "@/db/queries/catalog";
 import { toCents } from "@/lib/money";
@@ -133,7 +132,7 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
 
       {/* Само промоции — toggle */}
       <div className="mt-4">
-        <Link
+        <TransitionLink
           href={pageUrl({ promo: promoOnly ? undefined : "1", page: undefined })}
           className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors ${
             promoOnly
@@ -143,7 +142,7 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
         >
           <Icon name="trending-up" size={15} />
           Само промоции
-        </Link>
+        </TransitionLink>
       </div>
 
       {/* Активни филтри + брой резултати */}
@@ -157,21 +156,21 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
               ·
             </span>
             {activeChips.map((chip) => (
-              <Link
+              <TransitionLink
                 key={chip.label}
                 href={chip.remove}
                 className="inline-flex items-center gap-1.5 rounded-full border border-surface-200 bg-surface-0 py-1 pl-3 pr-2 text-xs font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
               >
                 {chip.label}
                 <Icon name="x" size={13} className="text-ink-500" />
-              </Link>
+              </TransitionLink>
             ))}
-            <Link
+            <TransitionLink
               href="/products"
               className="text-xs font-medium text-brand-600 hover:text-brand-700"
             >
               Изчисти всички
-            </Link>
+            </TransitionLink>
           </>
         )}
       </div>
@@ -185,12 +184,12 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
             <p className="font-bold text-ink-900">Няма продукти по тези критерии</p>
             <p className="mt-1 text-sm text-ink-500">Опитай с други филтри или изчисти търсенето.</p>
           </div>
-          <Link
+          <TransitionLink
             href="/products"
             className="inline-flex h-11 items-center rounded-full bg-ink-900 px-6 text-sm font-bold text-surface-0 transition-transform hover:-translate-y-0.5"
           >
             Изчисти филтрите
-          </Link>
+          </TransitionLink>
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
@@ -203,12 +202,12 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
       {totalPages > 1 && (
         <div className="mt-12 flex items-center justify-between border-t border-surface-200 pt-6 text-sm">
           {page > 1 ? (
-            <Link
+            <TransitionLink
               className="inline-flex h-10 items-center gap-1.5 rounded-full border border-surface-200 bg-surface-0 px-4 font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
               href={pageUrl({ page: String(page - 1) })}
             >
               ← Предишна
-            </Link>
+            </TransitionLink>
           ) : (
             <span />
           )}
@@ -216,12 +215,12 @@ export default async function ProductsCatalogPage({ searchParams }: PageProps) {
             Страница {page} от {totalPages}
           </span>
           {page < totalPages ? (
-            <Link
+            <TransitionLink
               className="inline-flex h-10 items-center gap-1.5 rounded-full border border-surface-200 bg-surface-0 px-4 font-medium text-ink-700 transition-colors hover:border-surface-300 hover:text-ink-900"
               href={pageUrl({ page: String(page + 1) })}
             >
               Следваща →
-            </Link>
+            </TransitionLink>
           ) : (
             <span />
           )}

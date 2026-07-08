@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ReviewsManager } from "@/components/dashboard/reviews-manager";
+import { TransitionLink } from "@/components/ui";
 import { getShopReviews } from "@/db/queries/reviews";
 import { requireShop } from "@/lib/auth";
 
@@ -47,7 +47,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
         {FILTERS.map((f) => {
           const active = (status ?? "") === f.value;
           return (
-            <Link
+            <TransitionLink
               key={f.value}
               href={filterUrl(f.value)}
               aria-current={active ? "true" : undefined}
@@ -58,7 +58,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
               }`}
             >
               {f.label}
-            </Link>
+            </TransitionLink>
           );
         })}
       </div>
@@ -68,12 +68,12 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           {page > 1 ? (
-            <Link
+            <TransitionLink
               href={filterUrl(status ?? "", page - 1)}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
               ← Предишна
-            </Link>
+            </TransitionLink>
           ) : (
             <span />
           )}
@@ -81,12 +81,12 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
             Страница {page} от {totalPages}
           </span>
           {page < totalPages ? (
-            <Link
+            <TransitionLink
               href={filterUrl(status ?? "", page + 1)}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
               Следваща →
-            </Link>
+            </TransitionLink>
           ) : (
             <span />
           )}

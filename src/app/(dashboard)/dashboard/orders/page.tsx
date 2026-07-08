@@ -2,7 +2,17 @@ import Link from "next/link";
 import { OrderStatusBadge, ORDER_STATUS_LABELS } from "@/components/dashboard/order-status-badge";
 import { OrderSearch } from "@/components/dashboard/order-search";
 import { OrderStatusFilter } from "@/components/dashboard/order-status-filter";
-import { EmptyState, LinkButton, Table, TableRowLink, TBody, TCell, TH, THead } from "@/components/ui";
+import {
+  EmptyState,
+  LinkButton,
+  Table,
+  TableRowLink,
+  TBody,
+  TCell,
+  TH,
+  THead,
+  TransitionLink,
+} from "@/components/ui";
 import { getOrders } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
@@ -146,9 +156,9 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
           {totalPages > 1 && (
             <div className="flex items-center justify-between text-sm">
               {page > 1 ? (
-                <Link className="text-brand-600 hover:underline" href={pageQuery(page - 1)}>
+                <TransitionLink className="text-brand-600 hover:underline" href={pageQuery(page - 1)}>
                   ← Предишна
-                </Link>
+                </TransitionLink>
               ) : (
                 <span />
               )}
@@ -156,9 +166,9 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                 Страница {page} от {totalPages}
               </span>
               {page < totalPages ? (
-                <Link className="text-brand-600 hover:underline" href={pageQuery(page + 1)}>
+                <TransitionLink className="text-brand-600 hover:underline" href={pageQuery(page + 1)}>
                   Следваща →
-                </Link>
+                </TransitionLink>
               ) : (
                 <span />
               )}

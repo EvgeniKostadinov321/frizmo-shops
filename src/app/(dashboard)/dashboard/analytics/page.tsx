@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { Icon } from "@/components/ui";
+import { Icon, TransitionLink } from "@/components/ui";
 import {
   ANALYTICS_PERIODS,
   getAnalytics,
@@ -81,7 +80,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         </div>
         <div className="flex gap-2">
           {ANALYTICS_PERIODS.map((p) => (
-            <Link
+            <TransitionLink
               key={p}
               href={p === 30 ? "/dashboard/analytics" : `/dashboard/analytics?period=${p}`}
               aria-current={period === p ? "true" : undefined}
@@ -92,7 +91,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               }`}
             >
               {p} дни
-            </Link>
+            </TransitionLink>
           ))}
         </div>
       </div>
