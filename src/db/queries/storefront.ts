@@ -188,23 +188,31 @@ export interface CategoryCover {
 }
 
 /**
- * Корици за категорийните карти: две леки заявки (по 2–3 колони),
- * агрегирани в JS — без N+1 per категория. Продукт в подкатегория се брои
- * и към родителската категория (родителят се показва в category-grid).
+ * Корици за категорийните карти. SQL агрегира per категория (брой + cover от
+ * най-новия продукт със снимка) — вместо да тегли ВСЕКИ активен продукт и да
+ * брои в JS. После rollup-ва към родителската категория (родителят се показва в
+ * category-grid), избирайки по-новата снимка при merge.
  */
 export async function getCategoryCovers(
   shopId: string,
 ): Promise<Record<string, CategoryCover>> {
-  /* Пълен scan на активните продукти е нужен ЗА БРОЯ per категория (productCount)
-     + rollup към родителя — не може да се сведе до 1 ред/категория без да
-     загубим count-а. Ограничено е до 2 колони и е per-магазин (не per-каталог),
-     затова е приемливо; при много голям каталог кандидат за SQL агрегат. */
-  const [rows, cats] = await Promise.all([
-    db.query.products.findMany({
-      where: and(eq(products.shopId, shopId), eq(products.status, "active")),
-      orderBy: [desc(products.createdAt)],
-      columns: { categoryId: true, images: true },
-    }),
+  const [agg, cats] = await Promise.all([
+    /* Per категория: count + снимка на най-новия продукт, който има снимка
+       (DISTINCT ON + подредба по created_at desc). latestAt се връща, за да
+       изберем по-новия cover при rollup към родителя. */
+    db.execute(sql`
+      select
+        p.category_id as category_id,
+        count(*)::int as product_count,
+        (array_agg(p.images ->> 0 order by p.created_at desc)
+           filter (where jsonb_array_length(p.images) > 0))[1] as cover,
+        max(p.created_at) filter (where jsonb_array_length(p.images) > 0) as cover_at
+      from ${products} p
+      where p.shop_id = ${shopId} and p.status = 'active' and p.category_id is not null
+      group by p.category_id
+    `) as unknown as Promise<
+      { category_id: string; product_count: number; cover: string | null; cover_at: string | null }[]
+    >,
     db.query.categories.findMany({
       where: eq(categories.shopId, shopId),
       columns: { id: true, parentId: true },
@@ -212,19 +220,27 @@ export async function getCategoryCovers(
   ]);
   const parentOf = new Map(cats.map((c) => [c.id, c.parentId]));
 
-  const covers: Record<string, CategoryCover> = {};
-  function add(categoryId: string, imagePath: string | undefined) {
-    const entry = (covers[categoryId] ??= { imagePath: null, productCount: 0 });
-    entry.productCount += 1;
-    /* редовете са от най-нов към най-стар → първата намерена снимка печели */
-    if (!entry.imagePath && imagePath) entry.imagePath = imagePath;
+  /* Вътрешен акумулатор с cover_at, за да изберем по-новата снимка при merge. */
+  const acc: Record<string, { imagePath: string | null; productCount: number; coverAt: number }> = {};
+  function add(categoryId: string, count: number, cover: string | null, coverAt: string | null) {
+    const entry = (acc[categoryId] ??= { imagePath: null, productCount: 0, coverAt: 0 });
+    entry.productCount += count;
+    const at = coverAt ? new Date(coverAt).getTime() : 0;
+    if (cover && at >= entry.coverAt) {
+      entry.imagePath = cover;
+      entry.coverAt = at;
+    }
   }
 
-  for (const row of rows) {
-    if (!row.categoryId) continue;
-    add(row.categoryId, row.images[0]);
-    const parent = parentOf.get(row.categoryId);
-    if (parent) add(parent, row.images[0]);
+  for (const row of agg) {
+    add(row.category_id, row.product_count, row.cover, row.cover_at);
+    const parent = parentOf.get(row.category_id);
+    if (parent) add(parent, row.product_count, row.cover, row.cover_at);
+  }
+
+  const covers: Record<string, CategoryCover> = {};
+  for (const [id, e] of Object.entries(acc)) {
+    covers[id] = { imagePath: e.imagePath, productCount: e.productCount };
   }
   return covers;
 }
