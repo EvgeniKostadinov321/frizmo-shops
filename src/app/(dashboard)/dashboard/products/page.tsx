@@ -1,3 +1,4 @@
+import { ProductImportExport } from "@/components/dashboard/product-import-export";
 import { ProductList } from "@/components/dashboard/product-list";
 import { LinkButton } from "@/components/ui";
 import { getCategoriesTree } from "@/db/queries/categories";
@@ -38,9 +39,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-ink-900">Продукти</h1>
-        <LinkButton href="/dashboard/products/new">Нов продукт</LinkButton>
+        <div className="flex flex-wrap items-center gap-2">
+          <ProductImportExport />
+          <LinkButton href="/dashboard/products/new">Нов продукт</LinkButton>
+        </div>
       </div>
       <ProductList
         items={result.items}

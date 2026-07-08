@@ -15,7 +15,9 @@ import {
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
+import { parseCsv } from "@/lib/csv";
 import { toCents } from "@/lib/money";
+import { slugify } from "@/lib/slug";
 import { getShopPlan, PLAN_LIMITS } from "@/lib/plan";
 import { generateUniqueProductSlug } from "@/lib/product-slug";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
@@ -297,6 +299,151 @@ export async function bulkProductAction(
   revalidatePath("/dashboard");
   revalidateShop(shop.slug);
   return ok({ affected });
+}
+
+const CSV_HEADER = ["name", "slug", "description", "price", "promo_price", "stock", "category", "status"] as const;
+const CSV_MAX_ROWS = 500;
+
+export interface CsvImportResult {
+  created: number;
+  updated: number;
+  /** Съобщения за пропуснатите редове (напр. „ред 5: невалидна цена"). */
+  skipped: string[];
+}
+
+/**
+ * S8: импорт на продукти от CSV (форматът на експорта). Match по slug:
+ * съществуващ → update, нов → create. Невалидните редове се пропускат и
+ * докладват; системна грешка → нищо не се записва (една транзакция).
+ * Снимки/варианти НЕ участват.
+ */
+export async function importProductsCsv(rawInput: unknown): Promise<ActionResult<CsvImportResult>> {
+  const parsed = z.object({ csv: z.string().min(1).max(1_000_000) }).safeParse(rawInput);
+  if (!parsed.success) return fail("Невалиден файл (до 1MB).");
+
+  const { shop } = await requireShop();
+
+  const rows = parseCsv(parsed.data.csv);
+  if (rows.length < 2) return fail("Файлът няма редове с данни.");
+  if (rows.length - 1 > CSV_MAX_ROWS) return fail(`До ${CSV_MAX_ROWS} реда на импорт.`);
+
+  /* Колоните се откриват по header имената (редът им е без значение). */
+  const header = rows[0]!.map((h) => h.trim().toLowerCase());
+  const col: Partial<Record<(typeof CSV_HEADER)[number], number>> = {};
+  for (const name of CSV_HEADER) {
+    const idx = header.indexOf(name);
+    if (idx >= 0) col[name] = idx;
+  }
+  if (col.name === undefined || col.price === undefined) {
+    return fail("Липсват задължителните колони „name“ и „price“ (виж експорта за формата).");
+  }
+  const cell = (row: string[], key: (typeof CSV_HEADER)[number]) =>
+    col[key] === undefined ? "" : (row[col[key]!] ?? "").trim();
+
+  const [existing, cats] = await Promise.all([
+    db.query.products.findMany({
+      where: eq(products.shopId, shop.id),
+      columns: { id: true, slug: true },
+    }),
+    db.query.categories.findMany({ where: eq(categories.shopId, shop.id) }),
+  ]);
+  const bySlug = new Map(existing.map((p) => [p.slug, p.id]));
+  const categoryByName = new Map(cats.map((c) => [c.name.toLowerCase(), c.id]));
+
+  /* Плановият лимит важи и за импорта (скрит бутон не е защита). */
+  const plan = await getShopPlan(shop.id);
+  const maxProducts = PLAN_LIMITS[plan].maxProducts;
+  let productCount = existing.length;
+
+  const result: CsvImportResult = { created: 0, updated: 0, skipped: [] };
+
+  await db.transaction(async (tx) => {
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i]!;
+      const lineNo = i + 1;
+
+      const name = sanitizeText(cell(row, "name"), 120);
+      if (name.length < 2) {
+        result.skipped.push(`ред ${lineNo}: липсва име`);
+        continue;
+      }
+      const priceCents = toCents(cell(row, "price").replace(",", "."));
+      if (priceCents === null || priceCents < 1) {
+        result.skipped.push(`ред ${lineNo}: невалидна цена „${cell(row, "price")}“`);
+        continue;
+      }
+      const promoRaw = cell(row, "promo_price");
+      const promoPriceCents = promoRaw ? toCents(promoRaw.replace(",", ".")) : null;
+      if (promoRaw && (promoPriceCents === null || promoPriceCents >= priceCents)) {
+        result.skipped.push(`ред ${lineNo}: невалидна промо цена „${promoRaw}“`);
+        continue;
+      }
+      const stockRaw = cell(row, "stock");
+      const stock = stockRaw === "" ? null : Number(stockRaw);
+      if (stock !== null && (!Number.isInteger(stock) || stock < 0 || stock > 1_000_000)) {
+        result.skipped.push(`ред ${lineNo}: невалидна наличност „${stockRaw}“`);
+        continue;
+      }
+      const statusRaw = cell(row, "status").toLowerCase();
+      if (statusRaw && statusRaw !== "active" && statusRaw !== "inactive") {
+        result.skipped.push(`ред ${lineNo}: невалиден статус „${cell(row, "status")}“`);
+        continue;
+      }
+      const status = (statusRaw || "active") as "active" | "inactive";
+
+      /* Категория по име: съществуваща се закача, нова → създава се (корен). */
+      let categoryId: string | null = null;
+      const categoryName = sanitizeText(cell(row, "category"), 60);
+      if (categoryName) {
+        const found = categoryByName.get(categoryName.toLowerCase());
+        if (found) {
+          categoryId = found;
+        } else {
+          const [created] = await tx
+            .insert(categories)
+            .values({ shopId: shop.id, name: categoryName })
+            .returning({ id: categories.id });
+          categoryId = created!.id;
+          categoryByName.set(categoryName.toLowerCase(), created!.id);
+        }
+      }
+
+      const values = {
+        name,
+        description: sanitizeMultiline(cell(row, "description"), 10_000),
+        priceCents,
+        promoPriceCents,
+        stock,
+        status,
+        categoryId,
+        updatedAt: new Date(),
+      };
+
+      const slug = slugify(cell(row, "slug")) || slugify(name) || "produkt";
+      const existingId = bySlug.get(slug);
+      if (existingId) {
+        await tx.update(products).set(values).where(eq(products.id, existingId));
+        result.updated++;
+      } else {
+        if (productCount >= maxProducts) {
+          result.skipped.push(`ред ${lineNo}: достигнат лимит продукти за плана`);
+          continue;
+        }
+        const [created] = await tx
+          .insert(products)
+          .values({ ...values, shopId: shop.id, slug })
+          .returning({ id: products.id });
+        bySlug.set(slug, created!.id); /* дубликат по-надолу във файла → update */
+        productCount++;
+        result.created++;
+      }
+    }
+  });
+
+  revalidatePath("/dashboard/products");
+  revalidatePath("/dashboard");
+  revalidateShop(shop.slug);
+  return ok(result);
 }
 
 export async function toggleProductStatus(input: { id: string }): Promise<ActionResult> {
