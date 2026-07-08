@@ -11,6 +11,7 @@ interface ProductsPageProps {
     search?: string;
     category?: string;
     status?: string;
+    stock?: string;
     page?: string;
   }>;
 }
@@ -24,6 +25,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       search: params.search,
       categoryId: params.category,
       status: params.status === "active" || params.status === "inactive" ? params.status : undefined,
+      stock: params.stock === "low" ? "low" : undefined,
       page: params.page ? Number(params.page) : 1,
     }),
     getCategoriesTree(shop.id),

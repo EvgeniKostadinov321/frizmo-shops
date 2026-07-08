@@ -82,6 +82,17 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
   }
 
   const categoryLabels = new Map(categories.map((c) => [c.value, c.label]));
+  const lowStockFilter = searchParams.get("stock") === "low";
+
+  /* Складов badge: 0 = изчерпан, 1–3 = нисък; null (не следи) и >3 → без badge. */
+  function stockBadge(stock: number | null) {
+    if (stock === null || stock > 3) return null;
+    return stock === 0 ? (
+      <Badge tone="danger">Изчерпан</Badge>
+    ) : (
+      <Badge tone="warning">Нисък склад</Badge>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,6 +124,19 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
           onChange={(e) => setParam("status", e.target.value)}
         />
       </div>
+
+      {lowStockFilter && (
+        <div className="flex items-center gap-2">
+          <Badge tone="warning">Само нисък/нулев склад</Badge>
+          <button
+            type="button"
+            onClick={() => setParam("stock", "")}
+            className="text-sm text-brand-600 underline hover:text-brand-700"
+          >
+            Изчисти филтъра
+          </button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptyState
@@ -169,6 +193,9 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                     )}
                     <span className="text-ink-500"> · {product.stock ?? "—"} бр.</span>
                   </span>
+                  {stockBadge(product.stock) && (
+                    <span className="mt-0.5">{stockBadge(product.stock)}</span>
+                  )}
                   <div className="mt-1 flex items-center gap-2">
                     <button
                       type="button"
@@ -252,7 +279,12 @@ export function ProductList({ items, total, page, pageSize, categories }: Produc
                       formatPrice(product.priceCents)
                     )}
                   </TCell>
-                  <TCell>{product.stock ?? "—"}</TCell>
+                  <TCell>
+                    <span className="flex items-center gap-2">
+                      {product.stock ?? "—"}
+                      {stockBadge(product.stock)}
+                    </span>
+                  </TCell>
                   <TCell>
                     <button
                       type="button"

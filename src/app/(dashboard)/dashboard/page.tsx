@@ -5,7 +5,7 @@ import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { countCategories } from "@/db/queries/categories";
 import { countNewOrders, getMonthRevenue, getOrders } from "@/db/queries/orders";
-import { countProducts } from "@/db/queries/products";
+import { countLowStock, countProducts } from "@/db/queries/products";
 import { getOwnShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
 
@@ -20,13 +20,15 @@ export default async function DashboardPage() {
     return <DashboardWelcome />;
   }
 
-  const [productCount, categoryCount, newOrders, monthRevenue, recentOrders] = await Promise.all([
-    countProducts(shop.id),
-    countCategories(shop.id),
-    countNewOrders(shop.id),
-    getMonthRevenue(shop.id),
-    getOrders(shop.id),
-  ]);
+  const [productCount, categoryCount, newOrders, monthRevenue, recentOrders, lowStock] =
+    await Promise.all([
+      countProducts(shop.id),
+      countCategories(shop.id),
+      countNewOrders(shop.id),
+      getMonthRevenue(shop.id),
+      getOrders(shop.id),
+      countLowStock(shop.id),
+    ]);
 
   const isDraft = shop.status === "draft";
   const latest = recentOrders.items.slice(0, 5);
@@ -63,12 +65,22 @@ export default async function DashboardPage() {
         />
         <StatTile label="Приходи този месец" value={formatPrice(monthRevenue)} icon="trending-up" />
         <StatTile label="Продукти" value={productCount} icon="store" href="/dashboard/products" />
-        <StatTile
-          label="Категории"
-          value={categoryCount}
-          icon="palette"
-          href="/dashboard/categories"
-        />
+        {lowStock > 0 ? (
+          <StatTile
+            label="Нисък склад"
+            value={lowStock}
+            icon="bell"
+            href="/dashboard/products?stock=low"
+            accent
+          />
+        ) : (
+          <StatTile
+            label="Категории"
+            value={categoryCount}
+            icon="palette"
+            href="/dashboard/categories"
+          />
+        )}
       </div>
 
       {/* Две колони: последни поръчки (голямо) + следващи стъпки (тясно) */}

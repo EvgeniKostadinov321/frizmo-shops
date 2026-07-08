@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, isNotNull, lte, type SQL } from "drizzle-orm";
 import {
   db,
   productAttributes,
@@ -10,10 +10,19 @@ import {
 
 export const PRODUCTS_PAGE_SIZE = 20;
 
+/** Праг за „нисък склад" аларма (включва 0 = изчерпан). */
+export const LOW_STOCK_THRESHOLD = 3;
+
+/** Условие „нисък/нулев склад": следи наличност (не null) и е ≤ прага. */
+const lowStockCondition = () =>
+  and(isNotNull(products.stock), lte(products.stock, LOW_STOCK_THRESHOLD))!;
+
 export interface ProductFilters {
   search?: string;
   categoryId?: string;
   status?: "active" | "inactive";
+  /** "low" → само продукти с нисък/нулев склад. */
+  stock?: "low";
   page?: number;
 }
 
@@ -23,6 +32,7 @@ export async function getProducts(shopId: string, filters: ProductFilters = {}) 
   if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));
   if (filters.categoryId) conditions.push(eq(products.categoryId, filters.categoryId));
   if (filters.status) conditions.push(eq(products.status, filters.status));
+  if (filters.stock === "low") conditions.push(lowStockCondition());
   const where = and(...conditions);
 
   const [items, [total]] = await Promise.all([
@@ -43,6 +53,15 @@ export async function countProducts(shopId: string): Promise<number> {
     .select({ value: count() })
     .from(products)
     .where(eq(products.shopId, shopId));
+  return row?.value ?? 0;
+}
+
+/** Брой активни продукти с нисък/нулев склад (за таблото аларма). */
+export async function countLowStock(shopId: string): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(products)
+    .where(and(eq(products.shopId, shopId), eq(products.status, "active"), lowStockCondition()));
   return row?.value ?? 0;
 }
 
