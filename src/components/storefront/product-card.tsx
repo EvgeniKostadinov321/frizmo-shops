@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui";
+import { FavoriteButton } from "@/components/storefront/favorite-button";
 import type { Product } from "@/db";
 import { formatPrice } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
@@ -67,6 +68,7 @@ export function ProductCard({
             −{discountPercent(product.priceCents, promo)}%
           </span>
         )}
+        <FavoriteButton shopId={product.shopId} productId={product.id} variant="card" />
         {outOfStock && (
           <span className="absolute inset-x-0 bottom-0 bg-(--sf-text)/85 py-1.5 text-center text-xs font-medium text-(--sf-bg)">
             Изчерпано

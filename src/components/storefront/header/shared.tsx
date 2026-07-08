@@ -349,3 +349,4 @@ export function MenuButton({ onOpen, expanded }: { onOpen: () => void; expanded:
 }
 
 export { CartButton };
+export { FavoritesButton } from "../favorites-button";

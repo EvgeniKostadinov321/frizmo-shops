@@ -16,6 +16,7 @@ import { publicImageUrl } from "@/lib/storage";
 import { variantKey } from "@/lib/variants";
 import { Icon } from "@/components/ui";
 import { openCartDrawer } from "@/components/storefront/cart-drawer";
+import { FavoriteButton } from "@/components/storefront/favorite-button";
 import { discountPercent } from "@/components/storefront/product-card";
 
 interface VariantPickerProps {
@@ -340,6 +341,7 @@ export function VariantPicker({
             >
               Добави в количката
             </button>
+            <FavoriteButton shopId={shopId} productId={productId} variant="page" />
           </div>
         )}
       </div>
