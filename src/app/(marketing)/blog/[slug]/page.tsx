@@ -112,7 +112,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             Готов да продаваш онлайн?
           </h2>
           <p className="mx-auto mt-2 max-w-md text-brand-surface-muted">
-            Създай магазина си за минути — 30 дни безплатно с пълен Pro достъп, без карта.
+            Създай магазина си за минути — 30 дни безплатно с пълен Pro достъп, плащане чак след 30 дни.
           </p>
           <Link
             href="/auth/register"

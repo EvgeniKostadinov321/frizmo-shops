@@ -30,7 +30,7 @@ const STEPS: { number: string; title: string; text: string; visual: StepVisual }
   {
     number: "01",
     title: "Регистрирай се",
-    text: "Име на магазина, категория — и си вътре. Без карта, без договори.",
+    text: "Име на магазина, категория — и си вътре. Без ангажимент, без договори.",
     visual: "register",
   },
   {
@@ -182,7 +182,7 @@ export default async function LandingPage() {
                 <InstallAppButton />
               </div>
               <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-3 text-sm text-ink-500">
-                {["30 дни безплатно", "Без карта", "Готов за 15 минути", "Без комисиона"].map(
+                {["30 дни безплатно", "Плащане след 30 дни", "Готов за 15 минути", "Без комисиона"].map(
                   (item) => (
                     <li key={item} className="flex items-center gap-2">
                       <Icon name="check" size={15} className="shrink-0 text-brand-600" />
@@ -344,7 +344,7 @@ export default async function LandingPage() {
                         className={`mt-2 flex items-center gap-1.5 text-xs font-medium ${dark ? "text-brand-surface-muted" : "text-brand-600"}`}
                       >
                         <Icon name="check" size={13} className="shrink-0" />
-                        30 дни безплатно · без карта
+                        30 дни безплатно · плащане след 30 дни
                       </p>
                     </div>
                     <ul

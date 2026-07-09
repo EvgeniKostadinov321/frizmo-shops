@@ -15,7 +15,7 @@ interface AuthFormProps {
 const PROOFS = [
   "Без комисиона от продажбите",
   "Готов магазин за минути",
-  "30 дни безплатно, без карта",
+  "30 дни безплатно, плащане след 30 дни",
 ];
 
 export function AuthForm({ mode, action }: AuthFormProps) {
@@ -78,7 +78,7 @@ export function AuthForm({ mode, action }: AuthFormProps) {
               </h1>
               <p className="max-w-xs text-pretty text-ink-500">
                 {isRegister
-                  ? "Няколко полета и си готов да продаваш. Без карта, без договори."
+                  ? "Няколко полета и си готов да продаваш. Без ангажимент, без договори."
                   : "Радваме се да те видим отново."}
               </p>
             </div>
@@ -97,7 +97,7 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             </h1>
             <p className="text-pretty text-ink-500">
               {isRegister
-                ? "Няколко полета и си готов да продаваш. Без карта, без договори."
+                ? "Няколко полета и си готов да продаваш. Без ангажимент, без договори."
                 : "Радваме се да те видим отново."}
             </p>
           </div>
