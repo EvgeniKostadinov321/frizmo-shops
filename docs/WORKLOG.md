@@ -62,6 +62,29 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-10 · `ba276b3`…`5e1204b` (dev, PUSH-нато)** — **Stripe billing (План 6 Фаза Б).**
+  Пълна billing интеграция чрез Subagent-Driven Development (9 задачи + финален
+  broad review). Нови таблици `subscriptions` (billing статус ос: trialing/active/
+  past_due/suspended/canceled — ОТДЕЛНА от модерацията `shops.status`) + `stripe_events`
+  (webhook dedup); `db:push` изпълнен. `src/lib/stripe.ts` (lazy Proxy клиент — `new
+  Stripe('')` хвърля синхронно на празен ключ, чупеше build; API `2026-06-24.dahlia`),
+  `priceIdForPlan`, `STRIPE_APP_TAG`. `plan.ts`: `resolvePlan`/`billingAllowsSelling`
+  (чисти, 13 теста) + `getShopPlan`/`isShopActive`; магазин без subscription = 30-дневен
+  signup trial по `createdAt`. Actions (`billing.ts`): checkout (mode:subscription,
+  trial 30д, промо FRIZMO50 -50% еднократно, idempotent customer), portal, status.
+  Webhook (`/api/webhooks/stripe`): raw body + подпис + dedup + `metadata.app` изолация
+  (споделен Stripe акаунт с frizmo-tech!) + status синх + 500 при липсващ secret +
+  revalidatePath. Публичен `createOrder` gated от `isShopActive` (спрян билинг →
+  „временно затворено"); storefront банер + checkout блок. Billing страница (dashboard,
+  wallet nav) + панел (абониране/промо/портал). Landing: махнат неверният „без карта".
+  **E2e тестван на живо (Stripe test mode)**: checkout→webhook[200]→subscription→портал,
+  FRIZMO50 даде 5€ първи месец. Дев базата изчистена (43 боклук e2e магазина, останаха
+  11 = 9 демо + 2 test). Спец: `specs/2026-07-10-stripe-billing-design.md`, план:
+  `plans/2026-07-10-stripe-billing-plan.md`. **ВАЖНО за истинско пускане:** Vercel prod
+  env vars липсват (STRIPE_SECRET_KEY live `rk_`, STRIPE_WEBHOOK_SECRET от истински
+  endpoint, STRIPE_PRICE_* live) + пресъздаване на ресурсите в live mode + Redeploy;
+  до тогава билингът е „спящ" на Vercel (env.ts warnings, lazy клиент — не гърми).
+
 - **2026-07-10 · `f8d3018`+`dbd74ea` (dev, PUSH-нато на прод)** — **доставка UX.**
   Преименуване „Локална доставка" → „Доставка от производителя" (беше подвеждащо).
   Ново: опционално **време за доставка per метод** (`shipping_methods.delivery_hours`
