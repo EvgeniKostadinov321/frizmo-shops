@@ -17,6 +17,7 @@ import {
 } from "@/db/queries/storefront";
 import { publicImageUrl } from "@/lib/storage";
 import { jsonLdHtml } from "@/lib/json-ld";
+import { formatNetQuantity } from "@/lib/money";
 
 interface PageProps {
   params: Promise<{ slug: string; productSlug: string }>;
@@ -90,6 +91,9 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
                 reviewCount: rating.count,
               },
             }),
+            ...(product.weightGrams !== null && {
+              weight: { "@type": "QuantitativeValue", value: product.weightGrams, unitCode: "GRM" },
+            }),
           }),
         }}
       />
@@ -149,7 +153,9 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
         </div>
       )}
 
-      {(product.description || product.attributes.length > 0) && (
+      {(product.description ||
+        product.attributes.length > 0 ||
+        product.netQuantityValue !== null) && (
         <div className="mt-14 grid gap-10 border-t border-(--sf-border) pt-10 md:grid-cols-2 md:gap-10">
           {product.description && (
             <div className="flex max-w-prose flex-col gap-3">
@@ -159,10 +165,18 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
               </div>
             </div>
           )}
-          {product.attributes.length > 0 && (
+          {(product.attributes.length > 0 || product.netQuantityValue !== null) && (
             <div>
               <h2 className="mb-3 text-2xl text-(--sf-text)">Характеристики</h2>
               <dl className="divide-y divide-(--sf-border) rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised)">
+                {product.netQuantityValue !== null && (
+                  <div className="flex justify-between gap-4 px-4 py-3 text-sm">
+                    <dt className="text-(--sf-muted)">Количество</dt>
+                    <dd className="text-right font-medium text-(--sf-text)">
+                      {formatNetQuantity(product.netQuantityValue, product.netQuantityUnit ?? "g")}
+                    </dd>
+                  </div>
+                )}
                 {product.attributes.map((attr) => (
                   <div key={attr.id} className="flex justify-between gap-4 px-4 py-3 text-sm">
                     <dt className="text-(--sf-muted)">{attr.name}</dt>
