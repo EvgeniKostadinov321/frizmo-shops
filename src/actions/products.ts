@@ -338,7 +338,22 @@ function revalidateAfterBulk(slug: string) {
   revalidateShop(slug);
 }
 
-const CSV_HEADER = ["name", "slug", "description", "price", "promo_price", "stock", "category", "status"] as const;
+const CSV_HEADER = [
+  "name",
+  "slug",
+  "description",
+  "price",
+  "promo_price",
+  "stock",
+  "category",
+  "status",
+  "weight_grams",
+  "length_cm",
+  "width_cm",
+  "height_cm",
+  "net_quantity",
+  "net_quantity_unit",
+] as const;
 const CSV_MAX_ROWS = 500;
 
 export interface CsvImportResult {
