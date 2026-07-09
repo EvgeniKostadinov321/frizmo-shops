@@ -1,8 +1,5 @@
-/**
- * До План 6 (Stripe) няма subscriptions таблица: всеки магазин е в trial,
- * а trial = пълен Pro достъп (спец §10). Това е ЕДИНСТВЕНОТО място, което
- * План 6 ще замени с реална проверка по subscriptions.
- */
+import { getSubscription } from "@/db/queries/subscriptions";
+
 export type PlanId = "starter" | "pro";
 
 export const PLAN_LIMITS = {
@@ -10,6 +7,39 @@ export const PLAN_LIMITS = {
   pro: { maxProducts: Infinity },
 } as const;
 
-export async function getShopPlan(_shopId: string): Promise<PlanId> {
-  return "pro";
+const TRIAL_DAYS = 30;
+const DAY_MS = 86_400_000;
+
+type SubShape = { plan?: PlanId; status: string } | null;
+
+/** В trial ли е магазин без subscription (по дата на създаване)? */
+function inSignupTrial(createdAt: Date): boolean {
+  return Date.now() < createdAt.getTime() + TRIAL_DAYS * DAY_MS;
+}
+
+/** Чиста функция — планът от subscription статуса (тествана). */
+export function resolvePlan(sub: SubShape, shopCreatedAt: Date): PlanId {
+  if (!sub) return inSignupTrial(shopCreatedAt) ? "pro" : "starter";
+  if (sub.status === "trialing" || sub.status === "active" || sub.status === "past_due") {
+    return sub.plan ?? "pro";
+  }
+  return "starter"; // suspended / canceled → fallback лимити
+}
+
+/** Чиста функция — billing позволява ли продажби (тествана). */
+export function billingAllowsSelling(sub: SubShape, shopCreatedAt: Date): boolean {
+  if (!sub) return inSignupTrial(shopCreatedAt);
+  return sub.status === "trialing" || sub.status === "active" || sub.status === "past_due";
+}
+
+/** Реалният план на магазина (заменя stub-а). Единственото място за плановата логика. */
+export async function getShopPlan(shopId: string, shopCreatedAt: Date): Promise<PlanId> {
+  const sub = await getSubscription(shopId);
+  return resolvePlan(sub, shopCreatedAt);
+}
+
+/** Billing позволява ли магазинът да продава (checkout gate). */
+export async function isShopActive(shopId: string, shopCreatedAt: Date): Promise<boolean> {
+  const sub = await getSubscription(shopId);
+  return billingAllowsSelling(sub, shopCreatedAt);
 }

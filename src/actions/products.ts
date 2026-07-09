@@ -162,7 +162,7 @@ export async function saveProduct(
   }
 
   if (productId === null) {
-    const plan = await getShopPlan(shop.id);
+    const plan = await getShopPlan(shop.id, shop.createdAt);
     const existing = await countProducts(shop.id);
     if (existing >= PLAN_LIMITS[plan].maxProducts) {
       return fail("Достигнат е лимитът продукти за твоя план.");
@@ -405,7 +405,7 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
   const restockedIds: string[] = [];
 
   /* Плановият лимит важи и за импорта (скрит бутон не е защита). */
-  const plan = await getShopPlan(shop.id);
+  const plan = await getShopPlan(shop.id, shop.createdAt);
   const maxProducts = PLAN_LIMITS[plan].maxProducts;
   let productCount = existing.length;
 
