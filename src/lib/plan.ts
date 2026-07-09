@@ -13,7 +13,7 @@ const DAY_MS = 86_400_000;
 type SubShape = { plan?: PlanId; status: string } | null;
 
 /** В trial ли е магазин без subscription (по дата на създаване)? */
-function inSignupTrial(createdAt: Date): boolean {
+export function inSignupTrial(createdAt: Date): boolean {
   return Date.now() < createdAt.getTime() + TRIAL_DAYS * DAY_MS;
 }
 

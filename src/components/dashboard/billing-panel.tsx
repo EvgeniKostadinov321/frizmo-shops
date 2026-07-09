@@ -13,6 +13,7 @@ interface BillingPanelProps {
 
 const STATUS_LABEL: Record<string, string> = {
   trial: "Пробен период",
+  trial_expired: "Пробният период изтече",
   trialing: "Пробен период",
   active: "Активен",
   past_due: "Забавено плащане",
@@ -20,11 +21,14 @@ const STATUS_LABEL: Record<string, string> = {
   canceled: "Отказан",
 };
 
+/* Статусите без Stripe subscription — показваме формата за абониране, не портала. */
+const NO_SUBSCRIPTION = new Set(["trial", "trial_expired"]);
+
 export function BillingPanel({ status, plan, currentPeriodEnd }: BillingPanelProps) {
   const [busy, setBusy] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(plan === "pro" ? "pro" : "starter");
   const [promo, setPromo] = useState("");
-  const hasSubscription = status !== "trial";
+  const hasSubscription = !NO_SUBSCRIPTION.has(status);
 
   async function subscribe() {
     setBusy(true);

@@ -9,6 +9,7 @@ import { PreviewListener } from "@/components/storefront/preview-listener";
 import { AnnouncementSection } from "@/components/storefront/sections/announcement";
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicCategories, getPublicShop } from "@/db/queries/storefront";
+import { isShopActive } from "@/lib/plan";
 import { THEME_PRESETS, themeStyle } from "@/lib/themes";
 
 interface StorefrontLayoutProps {
@@ -35,10 +36,14 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
   const { shop, settings, viewerIsOwner, viewingDraft } = result;
   /* Основните категории влизат в навигацията на header-а (ако са до 4);
      прагът за безплатна доставка — за прогреса в mini-cart drawer-а. */
-  const [categories, shippingMethods] = await Promise.all([
+  const [categories, shippingMethods, sellingAllowed] = await Promise.all([
     getPublicCategories(shop.id),
     getShippingMethods(shop.id),
+    isShopActive(shop.id, shop.createdAt),
   ]);
+  /* Спрян билинг → „временно затворено" (видимо за всеки, не само собственика).
+     checkout е блокиран отделно на сървъра (createOrder) + на checkout страницата. */
+  const billingClosed = !sellingAllowed;
   const rootCategories = categories.filter((c) => c.parentId === null);
   const freeThresholds = shippingMethods
     .filter((m) => m.active && m.freeOverCents !== null)
@@ -108,6 +113,18 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
           <Link href="/dashboard/website" className="underline">
             Към редактора
           </Link>
+        </div>
+      )}
+      {billingClosed && (
+        <div className="bg-warning-600 px-4 py-2.5 text-center text-sm font-medium text-white">
+          {viewerIsOwner
+            ? "Магазинът е временно затворен — абонаментът е спрян. Поднови го, за да приемаш поръчки. "
+            : "Магазинът временно не приема поръчки."}
+          {viewerIsOwner && (
+            <Link href="/dashboard/billing" className="underline">
+              Към абонамента
+            </Link>
+          )}
         </div>
       )}
       {announcement?.type === "announcement" && (

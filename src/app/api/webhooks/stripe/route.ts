@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { db, subscriptions, stripeEvents } from "@/db";
 import { stripe, STRIPE_APP_TAG } from "@/lib/stripe";
 
@@ -23,13 +24,22 @@ function planFromPrice(priceId: string | undefined): "starter" | "pro" | null {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  /* Липсващ secret на прод → всеки event тихо би паднал като „невалиден подпис".
+     Явен лог + 500, за да е видимо в логовете при go-live (виж CLAUDE.md: env
+     промяна изисква Redeploy), вместо мълчаливо да не се синхронизира билингът. */
+  if (!webhookSecret) {
+    console.error("Stripe webhook: липсва STRIPE_WEBHOOK_SECRET — билингът няма да се синхронизира.");
+    return new Response("Webhook not configured", { status: 500 });
+  }
+
   const body = await req.text(); // RAW — никога req.json() преди верификация
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new Response("Missing signature", { status: 400 });
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET ?? "");
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch {
     return new Response("Invalid signature", { status: 400 });
   }
@@ -105,4 +115,7 @@ async function upsertFromSubscription(shopId: string, sub: Stripe.Subscription):
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.shopId, shopId));
+
+  /* Билинг страницата да отрази новия статус веднага (без ръчен refresh). */
+  revalidatePath("/dashboard/billing");
 }

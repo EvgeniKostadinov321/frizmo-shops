@@ -5,6 +5,7 @@ import { requireShop } from "@/lib/auth";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { stripe, priceIdForPlan, STRIPE_APP_TAG } from "@/lib/stripe";
 import { getSubscription } from "@/db/queries/subscriptions";
+import { inSignupTrial } from "@/lib/plan";
 import { z } from "zod";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://frizmo-shops.vercel.app";
@@ -95,7 +96,17 @@ export async function getBillingStatus(): Promise<
 > {
   const { shop } = await requireShop();
   const sub = await getSubscription(shop.id);
-  if (!sub) return ok({ status: "trial", plan: "pro", currentPeriodEnd: null });
+  /* Без subscription: статусът зависи от signup trial-а. В trial → пробен/pro;
+     изтекъл → „trial_expired" (продажбите са спрени, планът реално е starter) —
+     съгласувано с resolvePlan/billingAllowsSelling, за да не подвежда страницата. */
+  if (!sub) {
+    const inTrial = inSignupTrial(shop.createdAt);
+    return ok({
+      status: inTrial ? "trial" : "trial_expired",
+      plan: inTrial ? "pro" : "starter",
+      currentPeriodEnd: null,
+    });
+  }
   return ok({
     status: sub.status,
     plan: sub.plan,

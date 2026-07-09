@@ -4,6 +4,7 @@ import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { PageHeader } from "@/components/storefront/page-header";
 import { getPaymentMethods, getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicShop } from "@/db/queries/storefront";
+import { isShopActive } from "@/lib/plan";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -22,9 +23,10 @@ export default async function CheckoutPage({ params }: PageProps) {
   if (!result) notFound();
   const { shop } = result;
 
-  const [shipping, payment] = await Promise.all([
+  const [shipping, payment, sellingAllowed] = await Promise.all([
     getShippingMethods(shop.id),
     getPaymentMethods(shop.id),
+    isShopActive(shop.id, shop.createdAt),
   ]);
   const activeShipping = shipping.filter((m) => m.active);
   const activePayment = payment.filter((m) => m.active);
@@ -32,7 +34,11 @@ export default async function CheckoutPage({ params }: PageProps) {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:py-10">
       <PageHeader kicker="Поръчка" title="Завършване на поръчката" />
-      {activeShipping.length === 0 || activePayment.length === 0 ? (
+      {!sellingAllowed ? (
+        <p className="py-16 text-center text-(--sf-muted)">
+          Магазинът временно не приема поръчки.
+        </p>
+      ) : activeShipping.length === 0 || activePayment.length === 0 ? (
         <p className="py-16 text-center text-(--sf-muted)">
           Магазинът все още не е настроил методи за доставка и плащане.
         </p>
