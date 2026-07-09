@@ -62,6 +62,22 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-10 · `59193bc`…`a92d3d0` (dev, НЕ push-нато още)** — **Product feed (Google
+  Merchant / Facebook каталог) — 2-ра „pure code" функция.** Спец
+  (`docs/superpowers/specs/2026-07-10-product-feed-design.md`) → план
+  (`docs/superpowers/plans/2026-07-10-product-feed.md`) → inline изпълнение (6 задачи, TDD).
+  Route `/s/{slug}/feed.xml` (dynamic + ISR `revalidate=3600`, инвалидира се при продуктова
+  мутация чрез съществуващия `revalidateShop`); само published магазини, иначе 404. Билдът
+  потвърди, че `.xml` в динамичен сегмент работи в Next 16. `src/lib/product-feed.ts`:
+  `buildProductFeed`/`escapeXml`/`plainText` (чисти, тествани — 15 теста). RSS 2.0 + Google
+  namespace; **нула конфиг** за нетехничния търговец: `identifier_exists=no`, `g:brand`=име на
+  магазина, `g:condition=new`, един ред на продукт. Тегло→`shipping_weight`, промо→`sale_price`,
+  наличност→`in_stock`/`out_of_stock`, продукт без снимка се пропуска. Заявки `getFeedProducts`
+  + `getShopCategoryNames` (storefront.ts). Discovery: ред „Product feed за реклами" + нов
+  `CopyButton` в `/dashboard/store` (само published). `pnpm check` минава (223 теста).
+  **Остава (2026-07-11):** ръчна проверка (feed в браузър, UI ред, мобилно) + push (заедно с
+  функция №1, при разрешение).
+
 - **2026-07-10 · `a58aab5`…`bdcd244` (dev, НЕ push-нато още)** — **Тегло/размери/количество
   на продукт (чисто в кода, 1-ва от 7 „pure code" функции).** Спец
   (`docs/superpowers/specs/2026-07-10-product-weight-design.md`) → план
