@@ -69,6 +69,46 @@ export const shops = pgTable(
   ],
 ).enableRLS();
 
+export const planEnum = pgEnum("plan", ["starter", "pro"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "trialing",
+  "active",
+  "past_due",
+  "suspended",
+  "canceled",
+]);
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    stripeCustomerId: text("stripe_customer_id").notNull(),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    plan: planEnum("plan").notNull().default("starter"),
+    status: subscriptionStatusEnum("status").notNull().default("trialing"),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("subscriptions_shop_idx").on(t.shopId),
+    uniqueIndex("subscriptions_customer_idx").on(t.stripeCustomerId),
+  ],
+).enableRLS();
+
+/** Webhook идемпотентност: Stripe праща at-least-once → PK dedup. */
+export const stripeEvents = pgTable("stripe_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();
+
+export type Subscription = typeof subscriptions.$inferSelect;
+
 export const productStatusEnum = pgEnum("product_status", ["active", "inactive"]);
 
 export const categories = pgTable(
