@@ -6,10 +6,27 @@ import Stripe from "stripe";
  * SDK ъпдейти). Ключът е Restricted API Key (rk_), не secret — минимални права.
  * Споделен акаунт с другия Frizmo проект: изолацията е през metadata.app +
  * отделен webhook secret + отделни Price-ове.
+ *
+ * Ленива инициализация: `next build` импортира route/action модулите за
+ * page-data collection дори без да ги изпълнява — `new Stripe()` хвърля
+ * синхронно, ако ключът липсва (напр. локален build без STRIPE_SECRET_KEY).
+ * Proxy-то отлага конструирането до първия реален достъп по runtime.
  */
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-06-24.dahlia",
-  appInfo: { name: "frizmo-shops" },
+let stripeClient: Stripe | undefined;
+function getStripeClient(): Stripe {
+  if (!stripeClient) {
+    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+      apiVersion: "2026-06-24.dahlia",
+      appInfo: { name: "frizmo-shops" },
+    });
+  }
+  return stripeClient;
+}
+
+export const stripe: Stripe = new Proxy({} as Stripe, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getStripeClient(), prop, receiver);
+  },
 });
 
 /** Metadata таг на всеки Stripe обект — за изолация в споделения акаунт. */
