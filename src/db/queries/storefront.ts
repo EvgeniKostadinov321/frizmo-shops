@@ -244,3 +244,37 @@ export async function getCategoryCovers(
   }
   return covers;
 }
+
+/** Активните продукти на магазина за product feed — само нужните колони, без пагинация. */
+export async function getFeedProducts(shopId: string) {
+  const rows = await db.query.products.findMany({
+    where: and(eq(products.shopId, shopId), eq(products.status, "active")),
+    orderBy: [desc(products.createdAt)],
+    columns: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      priceCents: true,
+      promoPriceCents: true,
+      stock: true,
+      images: true,
+      weightGrams: true,
+      categoryId: true,
+    },
+    limit: 10_000,
+  });
+  if (rows.length >= 10_000) {
+    console.warn(JSON.stringify({ event: "product_feed_limit_hit", shopId }));
+  }
+  return rows;
+}
+
+/** Имена на категориите на магазина (за g:product_type). */
+export async function getShopCategoryNames(shopId: string): Promise<Map<string, string>> {
+  const rows = await db.query.categories.findMany({
+    where: eq(categories.shopId, shopId),
+    columns: { id: true, name: true },
+  });
+  return new Map(rows.map((c) => [c.id, c.name]));
+}
