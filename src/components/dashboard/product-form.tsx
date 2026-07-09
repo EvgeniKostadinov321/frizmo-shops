@@ -39,6 +39,12 @@ export interface ProductFormInitial {
   options: OptionAxis[];
   variants: VariantDraft[];
   deal: { quantity: string; totalPrice: string } | null;
+  weight: string;
+  length: string;
+  width: string;
+  height: string;
+  netQuantityValue: string;
+  netQuantityUnit: string;
 }
 
 interface ProductFormProps {
@@ -63,6 +69,12 @@ const emptyInitial: ProductFormInitial = {
   options: [],
   variants: [],
   deal: null,
+  weight: "",
+  length: "",
+  width: "",
+  height: "",
+  netQuantityValue: "",
+  netQuantityUnit: "g",
 };
 
 export function ProductForm({
@@ -85,6 +97,12 @@ export function ProductForm({
   const [axes, setAxes] = useState<OptionAxis[]>(initial.options);
   const [variants, setVariants] = useState<VariantDraft[]>(initial.variants);
   const [deal, setDeal] = useState(initial.deal);
+  const [weight, setWeight] = useState(initial.weight);
+  const [length, setLength] = useState(initial.length);
+  const [width, setWidth] = useState(initial.width);
+  const [height, setHeight] = useState(initial.height);
+  const [netQuantityValue, setNetQuantityValue] = useState(initial.netQuantityValue);
+  const [netQuantityUnit, setNetQuantityUnit] = useState(initial.netQuantityUnit);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -129,6 +147,14 @@ export function ProductForm({
           imagePaths,
         })),
         deal: deal ? { quantity: deal.quantity, totalPrice: deal.totalPrice } : null,
+        weight,
+        length,
+        width,
+        height,
+        netQuantity:
+          netQuantityValue.trim() === ""
+            ? null
+            : { value: netQuantityValue, unit: netQuantityUnit || "g" },
       });
 
       if (!result.ok) {
@@ -241,6 +267,95 @@ export function ProductForm({
 
       {!simple && (
         <>
+          <Card className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-lg font-bold text-ink-900">Тегло и размер</h2>
+              <p className="text-sm text-ink-500">
+                По избор. Попълни тегло и размери, за да смятаме автоматично цена за
+                доставка с Еконт и Спиди по-късно. Иначе ползвай фиксирана цена на доставка.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1 sm:max-w-xs">
+              <Input
+                label="Тегло (грамове)"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                error={fieldErrors.weight}
+              />
+              {Number(weight) >= 1000 && (
+                <p className="text-sm text-ink-500">
+                  = {(Number(weight) / 1000).toFixed(1).replace(".", ",")} кг
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-ink-900">Размери (см, по избор)</span>
+              <div className="grid grid-cols-3 gap-2">
+                <Input
+                  label="Дължина"
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={length}
+                  onChange={(e) => setLength(e.target.value)}
+                  error={fieldErrors.length}
+                />
+                <Input
+                  label="Ширина"
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={width}
+                  onChange={(e) => setWidth(e.target.value)}
+                  error={fieldErrors.width}
+                />
+                <Input
+                  label="Височина"
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  error={fieldErrors.height}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-ink-900">Количество (по избор)</span>
+              <div className="grid gap-2 sm:grid-cols-2 sm:max-w-md">
+                <Input
+                  label="Стойност"
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={netQuantityValue}
+                  onChange={(e) => setNetQuantityValue(e.target.value)}
+                />
+                <Select
+                  label="Единица"
+                  options={[
+                    { value: "mg", label: "милиграм (мг)" },
+                    { value: "g", label: "грам (г)" },
+                    { value: "kg", label: "килограм (кг)" },
+                    { value: "ml", label: "милилитър (мл)" },
+                    { value: "l", label: "литър (л)" },
+                  ]}
+                  value={netQuantityUnit}
+                  onChange={(e) => setNetQuantityUnit(e.target.value)}
+                />
+              </div>
+              <p className="text-sm text-ink-500">
+                Показва се на страницата на продукта, напр. „500 мл“.
+              </p>
+            </div>
+          </Card>
+
           <Card className="flex flex-col gap-4">
             <h2 className="text-lg font-bold text-ink-900">Промоция „купи повече“</h2>
             <Checkbox
