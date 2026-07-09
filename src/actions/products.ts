@@ -27,6 +27,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { countProducts } from "@/db/queries/products";
 import { productSchema, type ProductInput } from "@/schemas/product";
 import { productValues } from "./product-values";
+import { parseCsvMeasures } from "./csv-measures";
 
 /** Инвалидира публичния кеш + layout пътя на магазина. */
 function revalidateShop(slug: string) {
@@ -463,6 +464,19 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
         }
       }
 
+      const measures = parseCsvMeasures({
+        weight_grams: cell(row, "weight_grams"),
+        length_cm: cell(row, "length_cm"),
+        width_cm: cell(row, "width_cm"),
+        height_cm: cell(row, "height_cm"),
+        net_quantity: cell(row, "net_quantity"),
+        net_quantity_unit: cell(row, "net_quantity_unit"),
+      });
+      if (!measures.ok) {
+        result.skipped.push(`ред ${lineNo}: ${measures.error}`);
+        continue;
+      }
+
       const values = {
         name,
         description: sanitizeMultiline(cell(row, "description"), 10_000),
@@ -471,6 +485,7 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
         stock,
         status,
         categoryId,
+        ...measures.values,
         updatedAt: new Date(),
       };
 
