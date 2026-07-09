@@ -93,12 +93,16 @@ src/db/queries/subscriptions.ts            → четене на subscription п
 
 ### Env vars (нови — server-only, никога NEXT_PUBLIC_)
 
-- `STRIPE_SECRET_KEY` — общ за акаунта (същият като другия Frizmo проект)
-- `STRIPE_WEBHOOK_SECRET` — НОВ, за Frizmo webhook endpoint-а
-- `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PRO` — Price ID-тата (нови Products в Stripe)
+- `STRIPE_SECRET_KEY` — **Restricted API Key (`rk_`), НЕ secret key (`sk_`)**.
+  Stripe best-practice: RAK с минимални права (Customers, Subscriptions, Checkout,
+  Billing Portal, Prices/Products read) → ако изтече, щетата е ограничена. Особено
+  важно при споделен акаунт (Вариант 2). Отделен RAK за Frizmo Shops vs другия проект.
+- `STRIPE_WEBHOOK_SECRET` — НОВ, за Frizmo webhook endpoint-а.
+- `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PRO` — Price ID-тата (нови Products в Stripe).
 
-Добавят се в `src/env.ts` валидацията (препоръчани, не критични — билингът
-деградира грациозно ако липсват в dev). Във Vercel prod → Redeploy.
+Отделни ключове за test vs live среда (blast radius). Добавят се в `src/env.ts`
+валидацията (препоръчани, не критични — билингът деградира грациозно ако липсват
+в dev). Във Vercel prod → Redeploy. Кодът никога не логва ключове.
 
 ---
 
@@ -114,6 +118,12 @@ src/db/queries/subscriptions.ts            → четене на subscription п
     subscription_data: { trial_period_days: 30 }, discounts, metadata: {app, shopId},
     success_url, cancel_url })`.
   - Redirect към Stripe hosted Checkout (картата се въвежда там — PCI на Stripe).
+  - **⚠️ Stripe best-practice (от stripe-best-practices skill):** НЕ подавай
+    `payment_method_types` — Stripe динамично избира методите от dashboard
+    настройките; хардкоднат `['card']` блокира други методи (SEPA, Revolut Pay),
+    които вдигат конверсията. Пропусни параметъра изцяло.
+  - **Данъци:** за recurring плащания настрой Stripe Tax / tax collection
+    (свързано с ЗДДС въпроса — виж отворените въпроси). Не пропускай.
 - Промо кодът е Stripe **Coupon** (`percent_off: 50, duration: once`) + **Promotion
   Code** (човешкия код FRIZMO50). Създава се веднъж в Stripe dashboard; кодът от
   формата се валидира от Stripe при checkout (невалиден → Stripe го отхвърля).
