@@ -147,6 +147,16 @@ export const products = pgTable(
     images: jsonb("images").$type<string[]>().notNull().default([]),
     status: productStatusEnum("status").notNull().default("active"),
     stock: integer("stock"),
+    /** Тегло в грамове (за product feed + бъдеща Еконт/Спиди тарифа). null = не е зададено. */
+    weightGrams: integer("weight_grams"),
+    /** Размери в милиметри (UI приема см, пази мм за десетичен вход без float). null = не е зададено. */
+    lengthMm: integer("length_mm"),
+    widthMm: integer("width_mm"),
+    heightMm: integer("height_mm"),
+    /** Количество за показване, съхранено като стойност × 1000 (0.5 → 500). null = не е зададено. */
+    netQuantityValue: integer("net_quantity_value"),
+    /** Единица на количеството: 'mg' | 'g' | 'kg' | 'ml' | 'l'. Винаги заедно с netQuantityValue. */
+    netQuantityUnit: text("net_quantity_unit"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
