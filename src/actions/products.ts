@@ -26,6 +26,7 @@ import { SHOP_MEDIA_BUCKET } from "@/lib/storage";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { countProducts } from "@/db/queries/products";
 import { productSchema, type ProductInput } from "@/schemas/product";
+import { productValues } from "./product-values";
 
 /** Инвалидира публичния кеш + layout пътя на магазина. */
 function revalidateShop(slug: string) {
@@ -75,21 +76,6 @@ function crossValidate(input: ProductInput, shopId: string): string | null {
   }
 
   return null;
-}
-
-function productValues(input: ProductInput, shopId: string) {
-  return {
-    shopId,
-    categoryId: input.categoryId || null,
-    name: sanitizeText(input.name, 120),
-    description: sanitizeMultiline(input.description, 10_000),
-    priceCents: toCents(input.price)!,
-    promoPriceCents: input.promoPrice ? toCents(input.promoPrice) : null,
-    stock: input.stock === "" ? null : input.stock,
-    status: input.status,
-    images: input.images,
-    updatedAt: new Date(),
-  };
 }
 
 async function insertRelations(
