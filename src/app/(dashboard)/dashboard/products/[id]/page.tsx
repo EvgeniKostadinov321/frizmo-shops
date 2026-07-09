@@ -3,7 +3,7 @@ import { ProductForm } from "@/components/dashboard/product-form";
 import { getCategoriesTree } from "@/db/queries/categories";
 import { getProductWithRelations } from "@/db/queries/products";
 import { requireShop } from "@/lib/auth";
-import { centsToInput } from "@/lib/money";
+import { centsToInput, scaledToInput } from "@/lib/money";
 
 export const metadata = { title: "Редакция на продукт — Frizmo Shops" };
 
@@ -54,6 +54,13 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
                 totalPrice: centsToInput(product.promotion.totalPriceCents),
               }
             : null,
+          weight: product.weightGrams !== null ? String(product.weightGrams) : "",
+          length: product.lengthMm !== null ? scaledToInput(product.lengthMm, 10) : "",
+          width: product.widthMm !== null ? scaledToInput(product.widthMm, 10) : "",
+          height: product.heightMm !== null ? scaledToInput(product.heightMm, 10) : "",
+          netQuantityValue:
+            product.netQuantityValue !== null ? scaledToInput(product.netQuantityValue, 1000) : "",
+          netQuantityUnit: product.netQuantityUnit ?? "g",
         }}
       />
     </div>
