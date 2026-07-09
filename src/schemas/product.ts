@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { toCents } from "@/lib/money";
+import { cmToMm, toCents, toMilliQuantity } from "@/lib/money";
 
 const priceString = z
   .string()
@@ -9,6 +9,37 @@ const priceString = z
 const optionalPriceString = z.union([priceString, z.literal("")]);
 
 const optionalStock = z.union([z.coerce.number().int().min(0, "Невалидна наличност"), z.literal("")]);
+
+const optionalWeight = z.union([
+  z.coerce.number().int().min(1, "Минимум 1 грам").max(200_000, "Максимум 200000 г"),
+  z.literal(""),
+]);
+
+const optionalDimension = z.union([
+  z.string().trim().refine((s) => {
+    const mm = cmToMm(s);
+    return mm !== null && mm >= 1 && mm <= 5000;
+  }, "Невалиден размер в см (пример: 30 или 30,5)"),
+  z.literal(""),
+]);
+
+const NET_UNITS = ["mg", "g", "kg", "ml", "l"] as const;
+
+const netQuantity = z
+  .union([
+    z.object({
+      value: z
+        .string()
+        .trim()
+        .refine((s) => {
+          const m = toMilliQuantity(s);
+          return m !== null && m > 0;
+        }, "Невалидно количество (пример: 0,5)"),
+      unit: z.enum(NET_UNITS),
+    }),
+    z.null(),
+  ])
+  .default(null);
 
 export const productSchema = z.object({
   name: z.string().trim().min(2, "Въведи име").max(120),
@@ -59,6 +90,11 @@ export const productSchema = z.object({
       z.null(),
     ])
     .default(null),
+  weight: optionalWeight.default(""),
+  length: optionalDimension.default(""),
+  width: optionalDimension.default(""),
+  height: optionalDimension.default(""),
+  netQuantity,
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
