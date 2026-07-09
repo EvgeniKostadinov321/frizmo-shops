@@ -206,6 +206,9 @@ export const shippingMethods = pgTable(
     priceCents: integer("price_cents").notNull().default(0),
     /** Безплатна доставка при subtotal ≥ тази стойност (null = никога). */
     freeOverCents: integer("free_over_cents"),
+    /** Опционално работно време за доставка (дни + часове) — само информация за
+       клиента. Формат: WorkingHours ({ days: [{closed,open,close}×7] }). null = не се показва. */
+    deliveryHours: jsonb("delivery_hours"),
     active: boolean("active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

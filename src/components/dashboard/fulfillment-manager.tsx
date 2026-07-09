@@ -16,6 +16,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   ConfirmDialog,
   Drawer,
   Icon,
@@ -26,13 +27,27 @@ import {
 } from "@/components/ui";
 import { centsToInput, formatPrice } from "@/lib/money";
 import { PAYMENT_TYPES, SHIPPING_TYPES } from "@/schemas/fulfillment";
+import { WorkingHoursEditor } from "@/components/dashboard/working-hours-editor";
+import {
+  defaultWorkingDays,
+  parseWorkingHours,
+  type WorkingDay,
+} from "@/lib/working-hours";
 
 interface FulfillmentManagerProps {
   shipping: ShippingMethod[];
   payment: PaymentMethod[];
 }
 
-type ShippingDraft = { id: string | null; type: string; name: string; price: string; freeOver: string };
+type ShippingDraft = {
+  id: string | null;
+  type: string;
+  name: string;
+  price: string;
+  freeOver: string;
+  /** null = не се показва време за доставка; масив = включено. */
+  deliveryHours: WorkingDay[] | null;
+};
 type PaymentDraft = { id: string | null; type: string; name: string; details: string };
 
 export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProps) {
@@ -61,7 +76,10 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
     setSaving(true);
     setErrors({});
     try {
-      const result = await saveShippingMethod(shippingDraft.id, shippingDraft);
+      const result = await saveShippingMethod(shippingDraft.id, {
+        ...shippingDraft,
+        deliveryHours: shippingDraft.deliveryHours ? { days: shippingDraft.deliveryHours } : null,
+      });
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         toast.error(result.error);
@@ -105,7 +123,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
             size="sm"
             variant="secondary"
             onClick={() =>
-              setShippingDraft({ id: null, type: "courier", name: "", price: "", freeOver: "" })
+              setShippingDraft({ id: null, type: "courier", name: "", price: "", freeOver: "", deliveryHours: null })
             }
           >
             + Добави
@@ -147,6 +165,7 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                     name: m.name,
                     price: centsToInput(m.priceCents),
                     freeOver: centsToInput(m.freeOverCents),
+                    deliveryHours: m.deliveryHours ? parseWorkingHours(m.deliveryHours) : null,
                   })
                 }
               >
@@ -262,6 +281,27 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 error={errors.freeOver}
                 hint="Празно = никога"
               />
+            </div>
+
+            {/* Опционално време за доставка — само инфо за клиента на checkout. */}
+            <div className="flex flex-col gap-3 border-t border-surface-100 pt-4">
+              <Checkbox
+                label="Задай време за доставка"
+                hint="Клиентът вижда в кои дни и часове доставяш. По избор."
+                checked={shippingDraft.deliveryHours !== null}
+                onChange={(e) =>
+                  setShippingDraft({
+                    ...shippingDraft,
+                    deliveryHours: e.target.checked ? defaultWorkingDays() : null,
+                  })
+                }
+              />
+              {shippingDraft.deliveryHours !== null && (
+                <WorkingHoursEditor
+                  value={shippingDraft.deliveryHours}
+                  onChange={(days) => setShippingDraft({ ...shippingDraft, deliveryHours: days })}
+                />
+              )}
             </div>
           </div>
         )}

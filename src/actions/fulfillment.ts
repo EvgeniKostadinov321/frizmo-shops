@@ -62,6 +62,7 @@ export async function saveShippingMethod(
     name: sanitizeText(parsed.data.name, 60),
     priceCents: toCents(parsed.data.price)!,
     freeOverCents: parsed.data.freeOver ? toCents(parsed.data.freeOver) : null,
+    deliveryHours: parsed.data.deliveryHours,
     updatedAt: new Date(),
   };
 

@@ -13,6 +13,7 @@ import {
   onCartChange,
 } from "@/lib/cart-storage";
 import { formatPrice } from "@/lib/money";
+import { deliveryHoursLines } from "@/lib/working-hours";
 import type { PricedCart } from "@/lib/pricing";
 
 interface CheckoutFormProps {
@@ -341,22 +342,30 @@ export function CheckoutForm({
             {shippingMethods.map((m) => (
               <label
                 key={m.id}
-                className={`flex cursor-pointer items-center justify-between gap-2 rounded-(--sf-radius) border p-3 ${
+                className={`flex cursor-pointer items-start justify-between gap-2 rounded-(--sf-radius) border p-3 ${
                   form.shippingMethodId === m.id
                     ? "border-(--sf-primary)"
                     : "border-(--sf-border)"
                 }`}
               >
-                <span className="flex items-center gap-2 text-sm text-(--sf-text)">
+                <span className="flex items-start gap-2 text-sm text-(--sf-text)">
                   <input
                     type="radio"
                     name="shipping"
+                    className="mt-0.5"
                     checked={form.shippingMethodId === m.id}
                     onChange={() => set("shippingMethodId", m.id)}
                   />
-                  {m.name}
+                  <span className="flex flex-col gap-0.5">
+                    <span>{m.name}</span>
+                    {deliveryHoursLines(m.deliveryHours).map((line, i) => (
+                      <span key={i} className="text-xs text-(--sf-muted)">
+                        {line}
+                      </span>
+                    ))}
+                  </span>
                 </span>
-                <span className="text-sm font-medium text-(--sf-text)">
+                <span className="shrink-0 text-sm font-medium text-(--sf-text)">
                   {m.freeOverCents !== null && cart && cart.subtotalCents >= m.freeOverCents
                     ? "Безплатна"
                     : formatPrice(m.priceCents)}

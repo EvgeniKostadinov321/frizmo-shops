@@ -55,6 +55,18 @@ export function parseWorkingHours(value: unknown): WorkingDay[] {
   return parsed.success ? parsed.data.days : defaultWorkingDays();
 }
 
+/**
+ * Форматирани редове за показване на време за доставка от jsonb стойност.
+ * null/невалидно → празен масив (нищо не се показва). Ползва се на checkout и
+ * order страницата за shipping метод с delivery_hours.
+ */
+export function deliveryHoursLines(value: unknown): string[] {
+  if (value == null) return [];
+  const parsed = workingHoursSchema.safeParse(value);
+  if (!parsed.success) return [];
+  return formatWorkingHours(parsed.data.days);
+}
+
 const DAY_SHORT = ["Пон", "Вт", "Ср", "Четв", "Пет", "Съб", "Нед"] as const;
 
 /**
