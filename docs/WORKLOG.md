@@ -62,6 +62,24 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-10 · `a58aab5`…`bdcd244` (dev, НЕ push-нато още)** — **Тегло/размери/количество
+  на продукт (чисто в кода, 1-ва от 7 „pure code" функции).** Спец
+  (`docs/superpowers/specs/2026-07-10-product-weight-design.md`) → план
+  (`docs/superpowers/plans/2026-07-10-product-weight.md`) → inline изпълнение (10 задачи, TDD).
+  6 нови **nullable** колони на `products` (`weight_grams`, `length_mm/width_mm/height_mm`,
+  `net_quantity_value`, `net_quantity_unit`) — всичко ПО ИЗБОР, без backfill/NOT NULL
+  (доставката вече работи с фиксирана цена `shipping_methods.priceCents`, тегло не е
+  предусловие). `db:push` изпълнен на прод базата. Helpers в `money.ts`: `parseScaled`
+  (общ, симетричен на `toCents`) + `cmToMm`(×10)/`toMilliQuantity`(×1000)/`formatNetQuantity`/
+  `scaledToInput`. **Модел на количеството: винаги ×1000** (потвърдено с потребителя —
+  спецът имаше непоследователни примери, поправен). Zod: `optionalWeight`/`optionalDimension`/
+  `netQuantity` (всички по избор). `productValues` изнесен в `src/actions/product-values.ts`
+  (чист, тестван). Форма: секция „Тегло и размер" (в `!simple` блока — onboarding остава
+  опростен). Публична страница: количество като първи ред в „Характеристики"; условен `weight`
+  в Product JSON-LD (GRM); тегло/размери СКРИТИ за купувача. CSV: 6 колони експорт (route.ts) +
+  импорт (`parseCsvMeasures`, тестван — празно=NULL, невалидно пропуска реда). `pnpm check`
+  минава (208 теста). Остава: ръчна визуална проверка от потребителя + push разрешение.
+
 - **2026-07-10 · `ba276b3`…`5e1204b` (dev, PUSH-нато)** — **Stripe billing (План 6 Фаза Б).**
   Пълна billing интеграция чрез Subagent-Driven Development (9 задачи + финален
   broad review). Нови таблици `subscriptions` (billing статус ос: trialing/active/
