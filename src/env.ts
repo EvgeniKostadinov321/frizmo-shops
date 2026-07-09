@@ -49,6 +49,10 @@ export function validateEnv(): void {
     warnings.push("NEXT_PUBLIC_SITE_URL — имейл линковете ще ползват fallback домейн.");
   if (!process.env.PLATFORM_ADMIN_EMAILS)
     warnings.push("PLATFORM_ADMIN_EMAILS — /admin ще е недостъпен.");
+  if (!process.env.STRIPE_SECRET_KEY) warnings.push("STRIPE_SECRET_KEY — билингът е изключен.");
+  if (!process.env.STRIPE_WEBHOOK_SECRET) warnings.push("STRIPE_WEBHOOK_SECRET — Stripe webhook няма да работи.");
+  if (!process.env.STRIPE_PRICE_STARTER || !process.env.STRIPE_PRICE_PRO)
+    warnings.push("STRIPE_PRICE_* — Stripe Price ID-тата липсват (билинг checkout ще гърми).");
   if (warnings.length > 0) {
     console.warn(`[env] Липсват препоръчани ключове:\n${warnings.map((w) => `  • ${w}`).join("\n")}`);
   }
