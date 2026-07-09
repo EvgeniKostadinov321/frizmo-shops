@@ -23,6 +23,7 @@ import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
+import { isShopActive } from "@/lib/plan";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
 import { sendNewOrderPush, sendPushToUser } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -141,6 +142,12 @@ export async function createOrder(
   const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });
   if (!shop || shop.status !== "published") {
     return fail("Магазинът не приема поръчки в момента.");
+  }
+
+  /* Billing gate: неплатен/спрян абонамент → магазинът не приема поръчки
+     („временно затворено"). Отделно от модерацията (shop.status). */
+  if (!(await isShopActive(shop.id, shop.createdAt))) {
+    return fail("Магазинът временно не приема поръчки.");
   }
 
   /* Идемпотентност: ако тази заявка (двоен клик / retry при timeout) вече е
