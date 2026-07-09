@@ -26,34 +26,34 @@ function DayRow({
   onChange: (patch: Partial<WorkingDay>) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-control border border-surface-200 p-3 sm:flex-row sm:items-center">
-      <span className="w-40 shrink-0 text-sm font-medium text-ink-900">{label}</span>
-      <div className="flex flex-1 items-center gap-3">
-        {day.closed ? (
-          <span className="flex-1 text-sm text-ink-500">Почивен ден</span>
-        ) : (
-          <div className="flex flex-1 items-center gap-2">
-            <TimeSelect
-              label={`${label} — отваря`}
-              value={day.open}
-              onChange={(v) => onChange({ open: v })}
-              className="max-w-28"
-            />
-            <span className="text-ink-500">–</span>
-            <TimeSelect
-              label={`${label} — затваря`}
-              value={day.close}
-              onChange={(v) => onChange({ close: v })}
-              className="max-w-28"
-            />
-          </div>
-        )}
+    <div className="flex flex-col gap-2.5 rounded-control border border-surface-200 p-3">
+      {/* Заглавие на реда + „Почивен" винаги един до друг — компактно и без
+          хоризонтален скрол в тесни контейнери (drawer). Часовете са отдолу. */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-medium text-ink-900">{label}</span>
         <Checkbox
           label="Почивен"
           checked={day.closed}
           onChange={(e) => onChange({ closed: e.target.checked })}
         />
       </div>
+      {!day.closed && (
+        <div className="flex items-center gap-2">
+          <TimeSelect
+            label={`${label} — отваря`}
+            value={day.open}
+            onChange={(v) => onChange({ open: v })}
+            className="flex-1"
+          />
+          <span className="shrink-0 text-ink-500">–</span>
+          <TimeSelect
+            label={`${label} — затваря`}
+            value={day.close}
+            onChange={(v) => onChange({ close: v })}
+            className="flex-1"
+          />
+        </div>
+      )}
     </div>
   );
 }
