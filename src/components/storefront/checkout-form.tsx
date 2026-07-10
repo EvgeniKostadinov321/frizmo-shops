@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { cloneElement, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { saveAbandonedCart } from "@/actions/abandoned-cart";
 import { priceCartAction } from "@/actions/cart";
 import { validateCoupon } from "@/actions/coupons";
 import { createOrder } from "@/actions/orders";
@@ -161,6 +162,8 @@ export function CheckoutForm({
   const [giftWrap, setGiftWrap] = useState(false);
   const [giftCard, setGiftCard] = useState(false);
   const [giftNote, setGiftNote] = useState("");
+  /* Abandoned cart: opt-in „Напомни ми" (GDPR). Улавя количка+имейл на сървъра. */
+  const [remindMe, setRemindMe] = useState(false);
 
   /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
      синхронно в effect чупи react-compiler lint-а). */
@@ -193,6 +196,20 @@ export function CheckoutForm({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, storedKey, appliedCode]);
+
+  /* Abandoned cart: при валиден имейл + отметка „Напомни ми" + непразна количка
+     улавяме количката на сървъра (дебоунс 800ms). Махнат checkbox → трие. */
+  useEffect(() => {
+    const email = form.customerEmail.trim();
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailValid || stored.length === 0) return;
+
+    const t = setTimeout(() => {
+      void saveAbandonedCart({ shopSlug: slug, email, remind: remindMe, lines: stored });
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remindMe, form.customerEmail, storedKey, slug]);
 
   /* Отстъпката идва от cart.discountCents, но само ако приложеният код още
      съвпада с cart-а (при смяна на количката cart се презарежда без купон). */
@@ -336,6 +353,10 @@ export function CheckoutForm({
             />
           </Field>
         </div>
+
+        <SfCheckbox checked={remindMe} onChange={setRemindMe}>
+          Напомни ми с имейл, ако не завърша поръчката
+        </SfCheckbox>
 
         <Field label="Доставка" required error={fieldErrors.shippingMethodId}>
           <div className="flex flex-col gap-2">
