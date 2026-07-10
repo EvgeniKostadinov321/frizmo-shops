@@ -48,3 +48,8 @@ next-env.d.ts
 
 # Visual brainstorming companion (superpowers)
 .superpowers/
+
+# Agent skill symlinks (локални; истинските файлове са в .agents/skills, което Е в git).
+# .claude/ и .continue/ съдържат symlink-ове с абсолютни пътища → чупят се на друга машина.
+.claude/
+.continue/
