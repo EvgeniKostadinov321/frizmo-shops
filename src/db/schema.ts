@@ -512,6 +512,47 @@ export const stockAlerts = pgTable(
   ],
 ).enableRLS();
 
+/** Изоставена количка (recovery имейл). State машина: уловена → изпратена → конвертирала. */
+export const abandonedCartStatusEnum = pgEnum("abandoned_cart_status", [
+  "pending",
+  "sent",
+  "converted",
+]);
+
+/** Snapshot на един ред в изоставена количка (рендерируем в имейла). */
+export interface AbandonedLine {
+  productId: string;
+  variantKey: string | null;
+  qty: number;
+  name: string;
+  priceCents: number;
+  imagePath: string | null;
+  productSlug: string;
+}
+
+export const abandonedCarts = pgTable(
+  "abandoned_carts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    lines: jsonb("lines").$type<AbandonedLine[]>().notNull(),
+    subtotalCents: integer("subtotal_cents").notNull(),
+    status: abandonedCartStatusEnum("status").notNull().default("pending"),
+    remindedAt: timestamp("reminded_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("abandoned_carts_shop_email_idx").on(t.shopId, t.email),
+    index("abandoned_carts_status_updated_idx").on(t.status, t.updatedAt),
+  ],
+).enableRLS();
+
+export type AbandonedCart = typeof abandonedCarts.$inferSelect;
+
 /** S1: ревюта — предварителна модерация (pending не се вижда публично). */
 export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved"]);
 
