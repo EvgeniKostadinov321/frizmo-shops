@@ -24,6 +24,7 @@ import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
+import { parseOrderNumber } from "@/lib/order-number";
 import { isShopActive } from "@/lib/plan";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
 import { sendNewOrderPush, sendPushToUser } from "@/lib/push";
@@ -665,4 +666,49 @@ export async function updateOrderStatus(input: {
   /* Отказ/връщане връща наличности → инвалидирай storefront кеша. */
   revalidateTag(shopCacheTag(shop.slug), "max");
   return ok(null);
+}
+
+const ORDER_LOOKUP_GENERIC = "Няма поръчка с този номер и телефон. Провери ги и опитай пак.";
+
+const lookupSchema = z.object({
+  orderNumber: z.string().min(1).max(20),
+  phone: z.string().min(1).max(30),
+});
+
+/**
+ * Публична проверка на поръчка от купувача (номер + телефон). Номерът е
+ * пореден (познаваем) → телефонът е тайната → строг rate-limit + обща грешка
+ * (не разкрива дали номер съществува). При съвпадение връща path към готовата
+ * confirmation страница (клиентът навигира — както createOrder).
+ */
+export async function lookupOrder(
+  shopSlug: string,
+  rawInput: unknown,
+): Promise<ActionResult<{ path: string }>> {
+  const parsed = lookupSchema.safeParse(rawInput);
+  if (!parsed.success) return fail(ORDER_LOOKUP_GENERIC);
+
+  const ip = await clientIp();
+  if (!(await checkRateLimit(`order-lookup:${ip}`, 5, 900))) {
+    return fail("Твърде много опити. Опитай по-късно.");
+  }
+
+  const n = parseOrderNumber(parsed.data.orderNumber);
+  const phone = parseBgPhone(parsed.data.phone);
+  if (n === null || !phone.ok) return fail(ORDER_LOOKUP_GENERIC);
+
+  const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });
+  if (!shop || shop.status !== "published") return fail(ORDER_LOOKUP_GENERIC);
+
+  const order = await db.query.orders.findFirst({
+    where: and(
+      eq(orders.shopId, shop.id),
+      eq(orders.orderNumber, n),
+      eq(orders.customerPhone, phone.e164),
+    ),
+    columns: { id: true, publicToken: true },
+  });
+  if (!order) return fail(ORDER_LOOKUP_GENERIC);
+
+  return ok({ path: `/s/${shopSlug}/order/${order.id}?t=${order.publicToken}` });
 }
