@@ -14,7 +14,14 @@
    - Frizmo Shops: `EvgeniKostadinov321/frizmo-shops`
    - Saas (Frizmo booking): второто repo на потребителя
 2. **Пренеси `.env.local`** — той НЕ е в git (и не трябва да е). Копирай го сигурно (password manager / rar с парола), не по чист имейл. Сложи го в корена на `frizmo-shop/`.
-   Нужни ключове (виж и `CLAUDE.md`): Supabase URL/publishable/secret, `DATABASE_URL` (:6543, transaction pooler) / `DATABASE_URL_MIGRATIONS` (:5432, session pooler), `NEXT_PUBLIC_HERE_API_KEY`, `RESEND_API_KEY`, VAPID двойка + subject, `PLATFORM_ADMIN_EMAILS`.
+   **Пълният шаблон с всички ключове е `.env.example`** (в git) — 17 ключа. Реалните стойности са само в твоя `.env.local`:
+   - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY`
+   - Postgres: `DATABASE_URL` (:6543 transaction pooler) / `DATABASE_URL_MIGRATIONS` (:5432 session, само за db:push/seed)
+   - `NEXT_PUBLIC_HERE_API_KEY`, `RESEND_API_KEY`
+   - VAPID: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` + `VAPID_SUBJECT`
+   - `PLATFORM_ADMIN_EMAILS`, `NEXT_PUBLIC_SITE_URL` (по избор — има fallback)
+   - Stripe (billing, test mode локално): `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_WEBHOOK_SECRET`
+   - `CRON_SECRET` (abandoned cart cron гард; произволен низ, `openssl rand -hex 32`; текущата стойност е и във Vercel prod)
 3. **Инсталирай и стартирай:**
    ```bash
    pnpm install
@@ -30,21 +37,30 @@
 
 ---
 
-## Текущо състояние (2026-07-08)
+## Текущо състояние (2026-07-10)
 
-- **Клонове:** `dev` = preview · `main` = production. Push към `main` само при изрична заявка. Последно голямо качване на prod: `46a8cbf` (2026-07-07). Одит-поправките (07-07(3)) + кеш подготовката са на **dev**.
-- **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅**. Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
-- **`getShopPlan()` е stub** (src/lib/plan.ts) → всички магазини са "pro". План 6 Фаза Б (Stripe) = **M2** в post-audit roadmap-а.
+- **Клонове:** **`dev` = Vercel PRODUCTION** (потвърдено 2026-07-08 от Deployments таба: `dev` носи Production badge). Работим и качваме САМО на `dev`. **`main` НЕ се ползва** (стара грешна презумпция „main=prod"). Push към `dev` (=prod): агентът ПИТА преди качване, качва само при изрично разрешение.
+- **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
+- **`getShopPlan()` е stub** (src/lib/plan.ts) → всички магазини са "pro" до прод активиране на билинга.
 - **Website builder Вълни 1–3Б ✅** (dev+prod, тествани). Остава Вълна 4 (undo/версии, домейн, i18n).
-- **Одит цикъл ✅** (2026-07-07): 4 одита (security/a11y/perf/UX), 20 находки 0 критични, поправени на dev. `docs/superpowers/audits/`.
-- **Продуктов gap одит ✅** (2026-07-07): пълен must/should/nice спрямо e-commerce стандартите → `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`. + social login спец (`docs/2026-07-08-social-login/`).
+- **Одит цикли ✅**: 4 одита 2026-07-07 (security/a11y/perf/UX) + production readiness одит 2026-07-09 (12/19 оправени, 2 критични concurrency бъга фикснати). `docs/superpowers/audits/`.
+
+### „Pure code" функции (2026-07-10) — 3 завършени, чакат ръчна проверка + push
+
+Три чисто-кодови функции имплементирани inline (spec→plan→TDD код), `pnpm check` минава, **commit-нати само локално на dev, НЕ push-нати** (към момента на писане — ако е push-нато, виж git log):
+
+1. **Тегло/размери/количество на продукт** — 6 nullable колони на `products`, всичко по избор; `db:push` изпълнен. Спец `2026-07-10-product-weight-design.md`, план `2026-07-10-product-weight.md`.
+2. **Product feed** (Google Merchant/FB) — `/s/{slug}/feed.xml` (ISR), нула конфиг. Спец/план `2026-07-10-product-feed*`.
+3. **Abandoned cart recovery имейл** — таблица `abandoned_carts` + opt-in checkbox + Vercel Cron (`CRON_SECRET`). `db:push` изпълнен. Спец/план `2026-07-10-abandoned-cart*`. **⚠️ След push на prod → Vercel Redeploy** (за да се приложи `CRON_SECRET`).
+
+**Остават 4 „pure code" функции** (от 7): изтриване на акаунт (GDPR, спец готов), тогъл „Бързо/Детайлно" форма (нова идея), зони за доставка, S13 фактури/N-функции. Виж `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`.
 
 **Открити нишки (не спешни):**
-- Кеш архитектура — отложена (пълно решение = Next `cacheComponents`, собствен цикъл). Анализ + готова инфраструктура: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
-- `orders.public_token` — `db:push` срещу prod ако някога има ОТДЕЛНА prod база (най-вероятно е една обща).
-- Vercel prod env: липсват `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (push) + `NEXT_PUBLIC_SITE_URL` (имейл линкове, има fallback). Добавяне → Redeploy.
+- Кеш архитектура — отложена (пълно решение = Next `cacheComponents`). Анализ: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
+- Sentry — чака DSN. Backup/PITR — за преценка.
+- **Vercel prod env vars при push:** увери се, че `CRON_SECRET` е там (за cron) + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `NEXT_PUBLIC_SITE_URL`; всяко добавяне → **Redeploy**.
 
-**Какво следва:** `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md` (продуктови gap-ове) + `2026-07-06-builder-roadmap.md` (Вълна 4).
+**Какво следва:** ръчна проверка на 3-те pure-code функции → push → после №4. + `2026-07-07-post-audit-roadmap.md` + `2026-07-06-builder-roadmap.md` (Вълна 4).
 
 ---
 
@@ -56,7 +72,7 @@
 - Дизайн токени, без хардкоднати стойности; reusable компоненти в `src/components/ui/`.
 - Magnific генериране: единично, с план + одобрение + обосновка на модела преди всяко.
 - Потребителят тества визуално сам; Claude прави `pnpm check` + commit.
-- Push към `main` (prod): питай + качи само при разрешение.
+- **`dev` = Vercel production.** Push към `dev`: питай + качи само при разрешение. `main` не се ползва.
 
 ---
 
