@@ -63,6 +63,7 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
       { href: `${base}/about`, label: "За нас" },
       { href: `${base}/contact`, label: "Контакти" },
       { href: `${base}/terms`, label: "Условия" },
+      { href: `${base}/order-status`, label: "Провери поръчка" },
       ...socials.map((s) => ({ href: s.href, label: s.label, external: true })),
     ];
     return (
@@ -151,6 +152,11 @@ export function StorefrontFooter({ shop, settings }: StorefrontFooterProps) {
             <li>
               <Link href={`${base}/terms`} className="inline-flex min-h-10 items-center opacity-80 transition-opacity hover:opacity-100">
                 Условия за пазаруване
+              </Link>
+            </li>
+            <li>
+              <Link href={`${base}/order-status`} className="inline-flex min-h-10 items-center opacity-80 transition-opacity hover:opacity-100">
+                Провери поръчка
               </Link>
             </li>
           </ul>
