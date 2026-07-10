@@ -62,6 +62,21 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-10 · `e367ac7`…`51ace8c` (dev, НЕ push-нато още)** — **Abandoned cart recovery
+  имейл — 3-та „pure code" функция.** Спец
+  (`docs/superpowers/specs/2026-07-10-abandoned-cart-design.md`) → план
+  (`docs/superpowers/plans/2026-07-10-abandoned-cart.md`) → inline изпълнение (9 задачи, TDD).
+  Нова таблица `abandoned_carts` (state pending/sent/converted, unique (shopId,email) upsert
+  дедуп); `db:push` изпълнен. Количката е клиентска (localStorage) → улавяне на сървъра става
+  на checkout: **opt-in checkbox „Напомни ми"** (GDPR, неотметнат default) + дебоунснат
+  тригер → `saveAbandonedCart` action (snapshot през `priceCart`, сървърни цени). Прозорец:
+  изоставена 1ч → **1 имейл**, никога повторно. `sendAbandonedCartEmail` (Resend, общ shell/esc).
+  **Vercel Cron** `/api/cron/abandoned-carts` всеки час (`0 * * * *`), гард `CRON_SECRET`;
+  `vercel.json` нов. Завършена поръчка (`createOrder`) → `converted` (не и `createManualOrder`).
+  `dueAbandonedCarts` чиста логика + тестове. `pnpm check` минава (229 теста). **Единствена
+  външна настройка:** `CRON_SECRET` (добавен локално + Vercel от потребителя). **Остава:**
+  ръчна проверка + push (заедно с №1/№2) + **Vercel Redeploy** след push (за CRON_SECRET).
+
 - **2026-07-10 · `59193bc`…`a92d3d0` (dev, НЕ push-нато още)** — **Product feed (Google
   Merchant / Facebook каталог) — 2-ра „pure code" функция.** Спец
   (`docs/superpowers/specs/2026-07-10-product-feed-design.md`) → план
