@@ -38,3 +38,8 @@ export function priceIdForPlan(plan: "starter" | "pro"): string {
   if (!id) throw new Error(`Липсва Stripe Price ID за план ${plan}`);
   return id;
 }
+
+/** Дали Stripe е конфигуриран (има secret ключ). Гард за „спящ" билинг. */
+export function isStripeConfigured(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}
