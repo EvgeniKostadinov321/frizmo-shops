@@ -16,6 +16,7 @@ import {
   shops,
 } from "@/db";
 import { clientIp } from "@/actions/cart";
+import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
 import { shopCacheTag } from "@/db/queries/storefront";
@@ -351,6 +352,11 @@ export async function createOrder(
     }),
     sendNewOrderPush(shop, created.orderNumber, created.cart.totalCents),
   ]);
+
+  /* Купил човек → изоставената му количка е converted (не получава напомняне). */
+  if (input.customerEmail.trim() !== "") {
+    void markConvertedByEmail(shop.id, input.customerEmail.trim().toLowerCase());
+  }
 
   revalidatePath("/dashboard/orders");
   revalidatePath("/dashboard");
