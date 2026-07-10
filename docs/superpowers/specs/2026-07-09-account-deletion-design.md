@@ -7,6 +7,10 @@
 изтриване. Реализуемо е и днес „ръчно по имейл", но self-service е по-чисто и
 сваля оперативна тежест.
 
+**Сверено със схемата на 2026-07-11:** билинг (`subscriptions`) и `abandoned_carts`
+таблиците са добавени след първата версия — каскадата към `shops` ги покрива;
+добавен е best-effort отказ на Stripe абонамента преди триене (виж по-долу).
+
 ## Обхват (какво влиза)
 
 Търговец от настройките си може да изтрие **необратимо** акаунта си — заедно с
@@ -22,27 +26,41 @@
 
 ## Данни за чистене (ред на изпълнение има значение)
 
-Открития от схемата:
-- `shops.ownerId → profiles.id` **НЯМА** `onDelete: cascade` (за разлика от 12-те
-  таблици, които каскадят към `shops`). Значи триенето на profile НЕ трие
-  автоматично shop-а — трябва изричен ред.
-- 12 таблици каскадят при триене на **shop** (products, orders, order_items,
-  categories, coupons, reviews, campaigns, push_subscriptions, site_settings,
-  shipping/payment methods, stock_alerts…). → триене на shop чисти всичко под него.
+Открития от схемата (сверено 2026-07-11):
+- `shops.ownerId → profiles.id` **НЯМА** `onDelete: cascade`. Значи триенето на
+  profile НЕ трие автоматично shop-а И не може да стане, докато shop-ът съществува
+  (FK RESTRICT) → редът е задължително shop ПЪРВО, после profile.
+- **~19 таблици каскадят при триене на `shop`** (products + attributes/options/
+  variants, orders, order_items, categories, promotions, coupons, reviews, campaigns,
+  subscribers, site_settings, shipping/payment methods, stock_alerts, **subscriptions**,
+  **abandoned_carts**…). → триене на shop чисти всичко под него, ВКЛ. новите таблици
+  от билинга и abandoned cart.
+- **`push_subscriptions` каскадят към `profiles`, НЕ към `shop`** — чистят се на
+  стъпка „триене на profile", не на „триене на shop". Крайният резултат пак е пълно.
+- **`subscriptions`** носи `stripeSubscriptionId`/`stripeCustomerId`. DB редът пада с
+  каскадата, НО абонаментът остава жив ОТ СТРАНАТА НА Stripe → best-effort отказ ПРЕДИ
+  триене. Днес билингът е спящ (без live ключове) → стъпката се пропуска тихо; кодът е
+  готов за когато се активира.
+- Глобални таблици без account PII (`rate_limits`, `stripe_events`) — не се пипат.
 - `profiles.id` = Supabase auth user id (1:1).
 - Storage: `shops/{shopId}/…` файлове (лого, продуктови снимки) — НЕ се трият от
   DB каскада; трябва изрично изтриване от bucket-а.
 
-**Ред на изтриване (в една транзакция, където е възможно):**
-1. Изтрий Storage файловете под `shops/{shopId}/` (best-effort — провал не блокира).
-2. `delete from shops where id = {shopId}` → каскадно трие всичките 12 зависими
-   таблици (продукти, поръчки, снимки-пътища, настройки…).
-3. `delete from profiles where id = {userId}`.
-4. Supabase Admin: `auth.admin.deleteUser(userId)` → маха auth записа (не може
+**Ред на изтриване:**
+1. **Прочети** `subscriptions.stripeSubscriptionId` за магазина; ако има И Stripe е
+   конфигуриран (`STRIPE_SECRET_KEY` наличен) → best-effort `stripe.subscriptions.cancel()`
+   (провал само се логва, не блокира — правото на изтриване е над всичко). Прави се ПРЕДИ
+   стъпка 3, защото после губим id-то с каскадата. Спящ билинг → пропуска се тихо.
+2. Изтрий Storage файловете под `shops/{shopId}/` (best-effort — провал не блокира).
+3. `delete from shops where id = {shopId}` → каскадно трие всичките ~19 зависими
+   таблици (продукти, поръчки, subscriptions, abandoned_carts, настройки…).
+4. `delete from profiles where id = {userId}` → каскадно трие и `push_subscriptions`.
+5. Supabase Admin: `auth.admin.deleteUser(userId)` → маха auth записа (не може
    повече да влиза).
 
-Ако 4 се провали след 2–3 → акаунтът е без данни, но auth записът виси; логваме
-за ръчна намеса (не оставяме частично състояние тихо).
+Стъпки 3→4→5 не могат в една DB транзакция (auth delete е отделен Supabase Admin API) →
+секвенциално с логване при частичен провал. Ако 5 се провали след 3–4 → акаунтът е без
+данни, но auth записът виси; логваме за ръчна намеса (не оставяме частично тихо).
 
 ## Поток (UI)
 
@@ -62,7 +80,8 @@
 - Приема `{ confirmName: string }` — трябва да съвпада с `shop.name` (защита срещу
   CSRF/случайно; сървърна проверка, не само клиентска).
 - Rate limit не е нужен (authenticated, рядко действие), но логваме изпълнението.
-- Storage cleanup → shop delete (каскада) → profile delete → auth deleteUser.
+- Stripe cancel (best-effort, guarded) → Storage cleanup → shop delete (каскада) →
+  profile delete (каскадно и push_subscriptions) → auth deleteUser.
 - Връща `ok()`; клиентът прави signOut + redirect.
 
 ## Крайни случаи
@@ -73,14 +92,19 @@
   идемпотентно (втори опит → „акаунтът вече не съществува", тих успех).
 - **Storage провал** — best-effort, логва се; orphan файлове не са лична данна
   критична (могат да се чистят отделно), затова не блокират изтриването.
+- **Активен Stripe абонамент** — отказва се best-effort ПРЕДИ триене; ако Stripe не е
+  конфигуриран (спящ билинг) стъпката се пропуска тихо. Провал в отказа не блокира
+  изтриването (логва се за ръчен отказ в Stripe Dashboard).
 - **Admin акаунт** — ако търговецът е и в `PLATFORM_ADMIN_EMAILS`, изтриването на
   auth записа не пипа env списъка (той е конфигурация, не данна) — приемливо.
 
 ## Тестване
 
 - Обективен verification скрипт (както verify-order-concurrency): създай тестов
-  магазин + продукт + поръчка → извикай изтриването → провери, че всички редове
-  във всичките зависими таблици са изчезнали и profile/auth са премахнати.
+  магазин + продукт + поръчка + subscription ред + abandoned_cart ред + push
+  subscription → извикай изтриването → провери, че редовете във ВСИЧКИ зависими
+  таблици (вкл. subscriptions, abandoned_carts, push_subscriptions) са изчезнали и
+  profile/auth са премахнати.
 - Гейт `pnpm check`.
 
 ## Не-цели / решения
