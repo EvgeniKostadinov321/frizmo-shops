@@ -1,5 +1,6 @@
 import { updateShop } from "@/actions/shop";
 import { CopyButton } from "@/components/dashboard/copy-button";
+import { DeleteAccountSection } from "@/components/dashboard/delete-account-section";
 import { ShopForm } from "@/components/dashboard/shop-form";
 import { Badge, Card } from "@/components/ui";
 import { requireShop } from "@/lib/auth";
@@ -78,6 +79,8 @@ export default async function StorePage() {
           viber: socialLinks.viber ?? "",
         }}
       />
+
+      <DeleteAccountSection shopName={shop.name} />
     </div>
   );
 }
