@@ -3,6 +3,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import Image from "next/image";
 import Link from "next/link";
 import { BeforeAfter } from "@/components/marketing/before-after";
+import { DeletedAccountToast } from "@/components/marketing/deleted-account-toast";
 import { DoneForYou } from "@/components/marketing/done-for-you";
 import { FeatureBento } from "@/components/marketing/feature-bento";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
@@ -105,6 +106,7 @@ export default async function LandingPage() {
 
   return (
     <>
+      <DeletedAccountToast />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
