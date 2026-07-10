@@ -1,3 +1,14 @@
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+# pnpm 11: не проверявай зависимостите преди всеки script (модулите се
+# управляват отделно; pre-run install-ът гърми на ignored builds).
+verifyDepsBeforeRun: false
+# Изрично решение за build скриптовете: none билдват (esbuild/sharp/
+# unrs-resolver ползват готови binary-та). Спира ERR_PNPM_IGNORED_BUILDS.
+allowBuilds:
+  esbuild: false
+  sharp: false
+  unrs-resolver: false
+# pnpm 11 supply-chain защита: задържа пакети, публикувани твърде скоро.
+# stripe е официален SDK (вече в commit-нат/проверен lockfile) — изключваме
+# само него, защитата остава за всички други пакети.
+minimumReleaseAgeExclude:
+  - stripe
