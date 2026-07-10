@@ -54,14 +54,16 @@
 3. **Abandoned cart recovery имейл** — таблица `abandoned_carts` + opt-in checkbox + Vercel Cron (`CRON_SECRET`). `db:push` изпълнен. Спец/план `2026-07-10-abandoned-cart*`. **⚠️ След push на prod → Vercel Redeploy** (за да се приложи `CRON_SECRET`). **Тест:** opt-in checkbox на checkout, cron след 1ч → 1 имейл; **без Redeploy cron гардът връща 401.**
 4. **„Провери поръчка" (order lookup)** — публична `/s/{slug}/order-status`, номер+телефон → confirmation (DRY, преизползва UI-я), обща грешка, rate-limit 5/15мин на IP, footer линк 2-та варианта. Спец/план `2026-07-10-order-lookup*`. **Тест:** реален номер+телефон → пренасочва; грешен телефон → обща грешка; 6+ опита → rate-limit; footer 2-та варианта; мобилно 375px.
 
-**Остават „pure code" кандидати:** изтриване на акаунт (GDPR, спец готов), тогъл „Бързо/Детайлно" форма, зони за доставка, S13 фактури/N-функции. Виж `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`.
+**+ Изтриване на акаунт (GDPR чл.17)** — 5-та pure-code функция: код готов + обективен verify скрипт (9/9 ✓) + `pnpm check` ✓, но **ОЩЕ НЕ push-нато** (за разлика от 1–4 горе). Спец `2026-07-09-account-deletion-design.md`, план `2026-07-11-account-deletion.md`, `scripts/verify-account-deletion.mjs`. **Тест:** „Опасна зона" в /dashboard/store → modal (въведи името на магазина) → трие акаунт+магазин+auth → redirect към landing с toast; грешно име → бутонът disabled.
+
+**Остават „pure code" кандидати:** тогъл „Бързо/Детайлно" форма, зони за доставка, конверсионно трио (търсене в хедъра/доставка на продукта/trust badges), S13 фактури/N-функции. Виж `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`.
 
 **Открити нишки (не спешни):**
 - Кеш архитектура — отложена (пълно решение = Next `cacheComponents`). Анализ: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
 - Sentry — чака DSN. Backup/PITR — за преценка.
 - **Vercel prod env vars при push:** увери се, че `CRON_SECRET` е там (за cron) + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `NEXT_PUBLIC_SITE_URL`; всяко добавяне → **Redeploy**.
 
-**Какво следва:** ръчна проверка на живо на 4-те pure-code функции (+ Vercel Redeploy за #3 abandoned cart) → после следващ кандидат. + `2026-07-07-post-audit-roadmap.md` + `2026-07-06-builder-roadmap.md` (Вълна 4).
+**Какво следва:** ръчна проверка на живо на 4-те push-нати + **push на 5-та (изтриване на акаунт)** (+ Vercel Redeploy за #3 abandoned cart) → после следващ кандидат. + `2026-07-07-post-audit-roadmap.md` + `2026-07-06-builder-roadmap.md` (Вълна 4).
 
 ---
 
@@ -78,6 +80,21 @@
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-11 · `af9bd33`…`f8ba5c4` (dev, НЕ push-нато)** — **Изтриване на акаунт
+  (GDPR чл.17) — 5-та „pure code" функция.** Спец
+  (`docs/superpowers/specs/2026-07-09-account-deletion-design.md`, сверен със схемата днес:
+  каскадата е ~19 таблици вкл. `subscriptions`/`abandoned_carts`; `push_subscriptions`
+  каскадят към `profiles`; добавен guarded Stripe cancel) → план
+  (`docs/superpowers/plans/2026-07-11-account-deletion.md`) → inline изпълнение (6 задачи, TDD).
+  „Опасна зона" в `/dashboard/store` → `Modal` с typed confirmation (името на магазина) →
+  `deleteAccount` (`src/actions/account.ts`): guarded Stripe cancel (спящ билинг → пропуска) →
+  best-effort Storage cleanup (рекурсивен list) → `delete shops` (каскада) → `delete profiles`
+  (каскада `push_subscriptions`) → `auth.admin.deleteUser` → signOut → клиентът redirect към
+  landing с toast „Акаунтът е изтрит". `confirmNameMatches`/`isStripeConfigured` чисти + тестове.
+  **Обективен verify скрипт** `scripts/verify-account-deletion.mjs` (9/9 ✓: създава хвърляем
+  акаунт, трие по същия ред, проверява 0 остатъци във всички таблици, самопочиства). `pnpm check`
+  минава. **Остава:** ръчна проверка на Опасна зона flow-а + push (при разрешение).
 
 - **2026-07-11 · `147cd76`…`4bd2e2e` + `d52623c` (dev, PUSH-нато на prod)** — **„Провери поръчка" от
   купувача — 4-та „pure code" функция.** Спец
