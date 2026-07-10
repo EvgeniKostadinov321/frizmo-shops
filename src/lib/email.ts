@@ -1,6 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
-import type { Shop } from "@/db";
+import type { AbandonedLine, Shop } from "@/db";
 import { formatPrice } from "@/lib/money";
 import type { PricedLine } from "@/lib/pricing";
 
@@ -378,6 +378,50 @@ export async function sendBackInStockEmail(input: {
     });
   } catch (e) {
     console.error("Back-in-stock имейлът се провали:", e);
+  }
+}
+
+/** Abandoned cart: напомняне за незавършена поръчка. Един имейл, уважителен тон. */
+export async function sendAbandonedCartEmail(input: {
+  toEmail: string;
+  shopName: string;
+  shopSlug: string;
+  lines: AbandonedLine[];
+  subtotalCents: number;
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — abandoned cart имейлът е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const checkoutUrl = `${BASE_URL}/s/${input.shopSlug}/checkout`;
+  const rows = input.lines
+    .map(
+      (l) =>
+        `<tr>
+          <td style="padding:8px 0;font-size:14px;">${esc(l.name)} × ${l.qty}</td>
+          <td style="padding:8px 0;font-size:14px;text-align:right;">${formatPrice(l.priceCents * l.qty)}</td>
+        </tr>`,
+    )
+    .join("");
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.toEmail,
+      subject: "Забрави ли нещо в количката?",
+      html: shell(
+        "Още е тук за теб",
+        `<p style="font-size:14px;line-height:1.6;">Здравей! Продуктите от <strong>${esc(input.shopName)}</strong> те чакат в количката.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;">${rows}</table>
+        <p style="text-align:right;font-weight:600;font-size:14px;">Общо: ${formatPrice(input.subtotalCents)}</p>
+        <p style="margin:24px 0;">
+          <a href="${checkoutUrl}" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Върни се към количката</a>
+        </p>
+        <p style="font-size:12px;color:#9ca3af;">Получаваш този имейл, защото поиска напомняне. Няма да получиш втори за същата количка.</p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Abandoned cart имейлът се провали:", e);
   }
 }
 
