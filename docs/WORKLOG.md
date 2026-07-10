@@ -37,7 +37,7 @@
 
 ---
 
-## Текущо състояние (2026-07-10)
+## Текущо състояние (2026-07-11)
 
 - **Клонове:** **`dev` = Vercel PRODUCTION** (потвърдено 2026-07-08 от Deployments таба: `dev` носи Production badge). Работим и качваме САМО на `dev`. **`main` НЕ се ползва** (стара грешна презумпция „main=prod"). Push към `dev` (=prod): агентът ПИТА преди качване, качва само при изрично разрешение.
 - **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
@@ -45,22 +45,23 @@
 - **Website builder Вълни 1–3Б ✅** (dev+prod, тествани). Остава Вълна 4 (undo/версии, домейн, i18n).
 - **Одит цикли ✅**: 4 одита 2026-07-07 (security/a11y/perf/UX) + production readiness одит 2026-07-09 (12/19 оправени, 2 критични concurrency бъга фикснати). `docs/superpowers/audits/`.
 
-### „Pure code" функции (2026-07-10) — 3 завършени, чакат ръчна проверка + push
+### „Pure code" функции (2026-07-11) — 4 завършени + PUSH-нати на dev(=prod), чакат ръчна проверка на живо
 
-Три чисто-кодови функции имплементирани inline (spec→plan→TDD код), `pnpm check` минава, **commit-нати само локално на dev, НЕ push-нати** (към момента на писане — ако е push-нато, виж git log):
+Четири чисто-кодови функции (spec→plan→TDD код), `pnpm check` минава, **push-нати на `dev` (= production) на 2026-07-11.** Остава САМО ръчна проверка на живо от потребителя (Playwright не се ползва за естетика). **Листа за тестване:**
 
-1. **Тегло/размери/количество на продукт** — 6 nullable колони на `products`, всичко по избор; `db:push` изпълнен. Спец `2026-07-10-product-weight-design.md`, план `2026-07-10-product-weight.md`.
-2. **Product feed** (Google Merchant/FB) — `/s/{slug}/feed.xml` (ISR), нула конфиг. Спец/план `2026-07-10-product-feed*`.
-3. **Abandoned cart recovery имейл** — таблица `abandoned_carts` + opt-in checkbox + Vercel Cron (`CRON_SECRET`). `db:push` изпълнен. Спец/план `2026-07-10-abandoned-cart*`. **⚠️ След push на prod → Vercel Redeploy** (за да се приложи `CRON_SECRET`).
+1. **Тегло/размери/количество на продукт** — 6 nullable колони на `products`, всичко по избор; `db:push` изпълнен. Спец `2026-07-10-product-weight-design.md`, план `2026-07-10-product-weight.md`. **Тест:** форма (нов/edit), публична страница количество + Product JSON-LD, CSV експорт/импорт, мобилно 375px.
+2. **Product feed** (Google Merchant/FB) — `/s/{slug}/feed.xml` (ISR), нула конфиг. Спец/план `2026-07-10-product-feed*`. **Тест:** feed.xml в браузър (валиден XML), Copy бутон в `/dashboard/store` (само published), мобилно.
+3. **Abandoned cart recovery имейл** — таблица `abandoned_carts` + opt-in checkbox + Vercel Cron (`CRON_SECRET`). `db:push` изпълнен. Спец/план `2026-07-10-abandoned-cart*`. **⚠️ След push на prod → Vercel Redeploy** (за да се приложи `CRON_SECRET`). **Тест:** opt-in checkbox на checkout, cron след 1ч → 1 имейл; **без Redeploy cron гардът връща 401.**
+4. **„Провери поръчка" (order lookup)** — публична `/s/{slug}/order-status`, номер+телефон → confirmation (DRY, преизползва UI-я), обща грешка, rate-limit 5/15мин на IP, footer линк 2-та варианта. Спец/план `2026-07-10-order-lookup*`. **Тест:** реален номер+телефон → пренасочва; грешен телефон → обща грешка; 6+ опита → rate-limit; footer 2-та варианта; мобилно 375px.
 
-**Остават 4 „pure code" функции** (от 7): изтриване на акаунт (GDPR, спец готов), тогъл „Бързо/Детайлно" форма (нова идея), зони за доставка, S13 фактури/N-функции. Виж `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`.
+**Остават „pure code" кандидати:** изтриване на акаунт (GDPR, спец готов), тогъл „Бързо/Детайлно" форма, зони за доставка, S13 фактури/N-функции. Виж `docs/superpowers/plans/2026-07-07-post-audit-roadmap.md`.
 
 **Открити нишки (не спешни):**
 - Кеш архитектура — отложена (пълно решение = Next `cacheComponents`). Анализ: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
 - Sentry — чака DSN. Backup/PITR — за преценка.
 - **Vercel prod env vars при push:** увери се, че `CRON_SECRET` е там (за cron) + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `NEXT_PUBLIC_SITE_URL`; всяко добавяне → **Redeploy**.
 
-**Какво следва:** ръчна проверка на 3-те pure-code функции → push → после №4. + `2026-07-07-post-audit-roadmap.md` + `2026-07-06-builder-roadmap.md` (Вълна 4).
+**Какво следва:** ръчна проверка на живо на 4-те pure-code функции (+ Vercel Redeploy за #3 abandoned cart) → после следващ кандидат. + `2026-07-07-post-audit-roadmap.md` + `2026-07-06-builder-roadmap.md` (Вълна 4).
 
 ---
 
@@ -78,7 +79,7 @@
 
 ## Дневник (най-новото най-отгоре)
 
-- **2026-07-11 · `147cd76`…`4bd2e2e` (dev, НЕ push-нато още)** — **„Провери поръчка" от
+- **2026-07-11 · `147cd76`…`4bd2e2e` + `d52623c` (dev, PUSH-нато на prod)** — **„Провери поръчка" от
   купувача — 4-та „pure code" функция.** Спец
   (`docs/superpowers/specs/2026-07-10-order-lookup-design.md`) → план
   (`docs/superpowers/plans/2026-07-10-order-lookup.md`) → inline изпълнение (5 задачи, TDD).
@@ -90,7 +91,7 @@
   — стъпва на `orderNumber`/`customerPhone`(e164)/`publicToken`. `pnpm check` минава (238 теста).
   **Забележка (среда след преинсталация):** Node 24 (`nvm use 24`, pnpm 11 иска ≥22.13);
   `pnpm-workspace.yaml` фиксове (`verifyDepsBeforeRun`/`allowBuilds`/`minimumReleaseAgeExclude`
-  stripe); `.nvmrc=24`. **Остава:** ръчна проверка + push (заедно с №1-3, при разрешение).
+  stripe); `.nvmrc=24`. **PUSH-нато на prod 2026-07-11** (origin/dev `b3a0769`→`d52623c`, заедно с env фиксовете `2bbf1e2`). **Остава:** ръчна проверка на живо (виж „Листа за тестване" горе).
 
 - **2026-07-10 · `e367ac7`…`51ace8c` (dev, НЕ push-нато още)** — **Abandoned cart recovery
   имейл — 3-та „pure code" функция.** Спец
