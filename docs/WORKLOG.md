@@ -78,6 +78,20 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-11 · `147cd76`…`4bd2e2e` (dev, НЕ push-нато още)** — **„Провери поръчка" от
+  купувача — 4-та „pure code" функция.** Спец
+  (`docs/superpowers/specs/2026-07-10-order-lookup-design.md`) → план
+  (`docs/superpowers/plans/2026-07-10-order-lookup.md`) → inline изпълнение (5 задачи, TDD).
+  Публична страница `/s/{slug}/order-status`: купувачът въвежда номер + телефон → нов
+  `lookupOrder` action (строг rate-limit 5/15мин на IP, `parseBgPhone` e164 сравнение, ОБЩА
+  грешка — не разкрива дали номер съществува) → при съвпадение връща path към готовата
+  confirmation страница, клиентът навигира (DRY, преизползва UI-я). `parseOrderNumber` чист
+  модул + тестове. Footer линк „Провери поръчка" в 2-та варианта. Без нови колони/таблици/cron
+  — стъпва на `orderNumber`/`customerPhone`(e164)/`publicToken`. `pnpm check` минава (238 теста).
+  **Забележка (среда след преинсталация):** Node 24 (`nvm use 24`, pnpm 11 иска ≥22.13);
+  `pnpm-workspace.yaml` фиксове (`verifyDepsBeforeRun`/`allowBuilds`/`minimumReleaseAgeExclude`
+  stripe); `.nvmrc=24`. **Остава:** ръчна проверка + push (заедно с №1-3, при разрешение).
+
 - **2026-07-10 · `e367ac7`…`51ace8c` (dev, НЕ push-нато още)** — **Abandoned cart recovery
   имейл — 3-та „pure code" функция.** Спец
   (`docs/superpowers/specs/2026-07-10-abandoned-cart-design.md`) → план
