@@ -87,6 +87,8 @@ export async function getActiveProducts(
   filters: {
     search?: string;
     categoryId?: string;
+    /** Д2: филтър по категория + всичките ѝ наследници (поддърво). Побеждава categoryId. */
+    categoryIds?: string[];
     /** Долна/горна граница на ефективната цена (центове). */
     minPrice?: number;
     maxPrice?: number;
@@ -99,7 +101,11 @@ export async function getActiveProducts(
   const page = Math.max(1, filters.page ?? 1);
   const conditions: SQL[] = [eq(products.shopId, shopId), eq(products.status, "active")];
   if (filters.search) conditions.push(ilike(products.name, `%${filters.search}%`));
-  if (filters.categoryId) conditions.push(eq(products.categoryId, filters.categoryId));
+  if (filters.categoryIds && filters.categoryIds.length > 0) {
+    conditions.push(inArray(products.categoryId, filters.categoryIds));
+  } else if (filters.categoryId) {
+    conditions.push(eq(products.categoryId, filters.categoryId));
+  }
   if (filters.minPrice !== undefined) conditions.push(sql`${EFFECTIVE_PRICE} >= ${filters.minPrice}`);
   if (filters.maxPrice !== undefined) conditions.push(sql`${EFFECTIVE_PRICE} <= ${filters.maxPrice}`);
   if (filters.inStock) conditions.push(sql`(${products.stock} is null or ${products.stock} > 0)`);

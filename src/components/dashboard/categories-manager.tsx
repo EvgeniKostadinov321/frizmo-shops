@@ -40,7 +40,12 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
   /* Коя категория има текущо действие (местене) — за spinner на бутона. */
   const [pending, setPending] = useState<{ id: string; dir: "up" | "down" } | null>(null);
 
-  const parentOptions = tree.map((c) => ({ value: c.id, label: c.name }));
+  /* Родител може да е ниво 1 или 2 (за да е детето най-много ниво 3). Ниво 2 се
+     показва с отстъп „— “; ниво 3 категориите НЕ са опции (иначе детето → ниво 4). */
+  const parentOptions = tree.flatMap((root) => [
+    { value: root.id, label: root.name },
+    ...root.children.map((child) => ({ value: child.id, label: `— ${child.name}` })),
+  ]);
 
   function openCreate() {
     setName("");
@@ -108,7 +113,7 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
     return (
       <div
         className={`flex items-center justify-between gap-2 border-b border-surface-100 py-2 last:border-0 ${
-          depth > 0 ? "pl-8" : ""
+          depth === 1 ? "pl-8" : depth >= 2 ? "pl-16" : ""
         }`}
       >
         <div className="min-w-0">
@@ -172,7 +177,12 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
             <div key={root.id}>
               <CategoryRow category={root} depth={0} />
               {root.children.map((child) => (
-                <CategoryRow key={child.id} category={child} depth={1} />
+                <div key={child.id}>
+                  <CategoryRow category={child} depth={1} />
+                  {child.children.map((grand) => (
+                    <CategoryRow key={grand.id} category={grand} depth={2} />
+                  ))}
+                </div>
               ))}
             </div>
           ))}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon, TransitionLink } from "@/components/ui";
+import { collectDescendantIds } from "@/lib/category-tree";
 import { toCents } from "@/lib/money";
 import { MascotState } from "@/components/storefront/mascot";
 import { ProductCard } from "@/components/storefront/product-card";
@@ -60,18 +61,21 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
   const minPrice = sp.min ? (toCents(sp.min) ?? undefined) : undefined;
   const maxPrice = sp.max ? (toCents(sp.max) ?? undefined) : undefined;
   const inStock = sp.inStock === "1";
-  const [{ items, hasMore, total }, categories] = await Promise.all([
-    getActiveProducts(shop.id, {
-      search: sp.search,
-      categoryId: sp.category,
-      minPrice,
-      maxPrice,
-      inStock,
-      page,
-      sort,
-    }),
-    getPublicCategories(shop.id),
-  ]);
+  /* Категориите се зареждат първо — за да включим наследниците на избрана
+     категория във филтъра (Д2: избор на родител показва всичко от поддървото). */
+  const categories = await getPublicCategories(shop.id);
+  const categoryIds = sp.category ? collectDescendantIds(categories, sp.category) : undefined;
+
+  const { items, hasMore, total } = await getActiveProducts(shop.id, {
+    search: sp.search,
+    categoryId: sp.category,
+    categoryIds,
+    minPrice,
+    maxPrice,
+    inStock,
+    page,
+    sort,
+  });
   /* S1: една заявка за звездите на всички карти на страницата (без N+1). */
   const ratings = await getReviewAggregates(items.map((p) => p.id));
 
