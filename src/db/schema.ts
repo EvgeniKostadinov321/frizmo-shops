@@ -418,7 +418,10 @@ export const orderItems = pgTable(
     /** Напр. "2 бр за 30,00 €" — как е получена сумата. */
     appliedDeal: text("applied_deal").notNull().default(""),
   },
-  (t) => [index("order_items_order_idx").on(t.orderId)],
+  (t) => [
+    index("order_items_order_idx").on(t.orderId),
+    index("order_items_product_idx").on(t.productId),
+  ],
 ).enableRLS();
 
 export const pushSubscriptions = pgTable(
@@ -591,6 +594,9 @@ export type AbandonedCart = typeof abandonedCarts.$inferSelect;
 /** S1: ревюта — предварителна модерация (pending не се вижда публично). */
 export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved"]);
 
+/** Q&A на продукт — въпрос влиза pending, публичен чак когато търговецът отговори. */
+export const questionStatusEnum = pgEnum("question_status", ["pending", "answered"]);
+
 export const reviews = pgTable(
   "reviews",
   {
@@ -617,6 +623,31 @@ export const reviews = pgTable(
   ],
 ).enableRLS();
 
+export const productQuestions = pgTable(
+  "product_questions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    /** Име на питащия; празно → „Купувач" в UI. */
+    askerName: text("asker_name").notNull().default(""),
+    question: text("question").notNull(),
+    /** Отговорът на търговеца; непразен при status='answered'. */
+    answer: text("answer").notNull().default(""),
+    status: questionStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("product_questions_shop_status_idx").on(t.shopId, t.status),
+    index("product_questions_product_status_idx").on(t.productId, t.status),
+  ],
+).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
@@ -634,5 +665,6 @@ export type ProductVariant = typeof productVariants.$inferSelect;
 export type StockAlert = typeof stockAlerts.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
+export type ProductQuestion = typeof productQuestions.$inferSelect;
 export type Subscriber = typeof subscribers.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;
