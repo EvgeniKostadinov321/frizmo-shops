@@ -8,6 +8,8 @@ import { clientIp } from "@/actions/cart";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { parseBgPhone } from "@/lib/phone";
+import { hasPurchasedProduct } from "@/db/queries/reviews";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
 
 const submitSchema = z.object({
@@ -15,6 +17,8 @@ const submitSchema = z.object({
   authorName: z.string().trim().min(2, "Въведи име").max(60),
   rating: z.number().int().min(1, "Избери оценка").max(5),
   text: z.string().trim().max(1000).default(""),
+  /** По избор: за verified бадж (не се съхранява — само проверка срещу поръчки). */
+  phone: z.string().max(30).optional(),
   /** Honeypot: реален потребител никога не го попълва. */
   website: z.string().max(100).default(""),
 });
@@ -44,12 +48,21 @@ export async function submitReview(shopSlug: string, rawInput: unknown): Promise
   });
   if (!product || product.status !== "active") return fail("Продуктът не съществува.");
 
+  let verified = false;
+  if (input.phone) {
+    const parsedPhone = parseBgPhone(input.phone);
+    if (parsedPhone.ok) {
+      verified = await hasPurchasedProduct(shop.id, parsedPhone.e164, product.id);
+    }
+  }
+
   await db.insert(reviews).values({
     shopId: shop.id,
     productId: product.id,
     authorName: sanitizeText(input.authorName, 60),
     rating: input.rating,
     text: sanitizeMultiline(input.text, 1000),
+    verified,
   });
 
   return ok(null);

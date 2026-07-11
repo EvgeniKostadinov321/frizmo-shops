@@ -1,5 +1,5 @@
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
-import { db, products, reviews } from "@/db";
+import { db, orderItems, orders, products, reviews } from "@/db";
 
 export const REVIEWS_PAGE_SIZE = 10;
 
@@ -17,6 +17,31 @@ export async function getApprovedReviews(productId: string, page = 1) {
     db.select({ value: count() }).from(reviews).where(where),
   ]);
   return { items, total: total?.value ?? 0, page: safePage, pageSize: REVIEWS_PAGE_SIZE };
+}
+
+/**
+ * Има ли този телефон (e164) реална поръчка на дадения продукт в магазина —
+ * за verified ревю. Статуси: confirmed/shipped/completed (реална покупка).
+ */
+export async function hasPurchasedProduct(
+  shopId: string,
+  phoneE164: string,
+  productId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .where(
+      and(
+        eq(orders.shopId, shopId),
+        eq(orders.customerPhone, phoneE164),
+        inArray(orders.status, ["confirmed", "shipped", "completed"]),
+        eq(orderItems.productId, productId),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
 }
 
 export interface ReviewAggregate {

@@ -571,6 +571,8 @@ export const reviews = pgTable(
     rating: integer("rating").notNull(),
     text: text("text").notNull().default(""),
     status: reviewStatusEnum("status").notNull().default("pending"),
+    /** true = авторът е доказал покупка (телефон срещу поръчка) → бадж „Потвърдена покупка". */
+    verified: boolean("verified").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
