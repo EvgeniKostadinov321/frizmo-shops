@@ -35,6 +35,9 @@ export function ProductCard({
     product.promoPriceCents !== null && product.promoPriceCents < product.priceCents
       ? product.promoPriceCents
       : null;
+  /* „Нов" зависи от текущата дата; storefront е dynamic (per-request) render, така
+     че Date.now() тук е нарочно — стойността се смята веднъж на заявка, не мига. */
+  // eslint-disable-next-line react-hooks/purity
   const isNew = isNewProduct(product.createdAt, Date.now());
 
   return (

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/ui";
+import { CartSuggestions } from "@/components/storefront/cart-suggestions";
 import { MascotState } from "@/components/storefront/mascot";
 import { priceCartAction } from "@/actions/cart";
 import { formatPrice } from "@/lib/money";
@@ -262,6 +263,13 @@ export function CartView({ shopId, slug, base, logoPath, freeShippingOverCents, 
           );
         })}
       </div>
+
+      <CartSuggestions
+        slug={slug}
+        base={base}
+        productIds={[...new Set(stored.map((l) => l.productId))]}
+        onNavigate={onNavigate}
+      />
 
       <div className="flex flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) p-4 shadow-(--sf-shadow)">
         {freeRemaining !== null && freeShippingOverCents !== null && !hasErrors && (
