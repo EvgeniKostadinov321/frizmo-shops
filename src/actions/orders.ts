@@ -12,6 +12,7 @@ import {
   paymentMethods,
   products,
   productVariants,
+  referrals,
   shippingMethods,
   shops,
 } from "@/db";
@@ -275,6 +276,15 @@ export async function createOrder(
           .update(coupons)
           .set({ usedCount: rawSql`${coupons.usedCount} + 1`, updatedAt: new Date() })
           .where(eq(coupons.id, couponRowId));
+
+        /* В2: ако приложеният код е реферер код — увеличи брояча (същата транзакция).
+           Не-реферер код → 0 обновени реда, безопасно. */
+        if (appliedCoupon) {
+          await tx
+            .update(referrals)
+            .set({ referredCount: rawSql`${referrals.referredCount} + 1`, updatedAt: new Date() })
+            .where(and(eq(referrals.shopId, shop.id), eq(referrals.code, appliedCoupon.code)));
+        }
       }
 
       await decrementStock(tx, input.lines);
