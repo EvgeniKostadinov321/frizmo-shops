@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { Icon } from "@/components/ui";
+import { ReorderButton } from "@/components/storefront/reorder-button";
 import { ReturnRequest } from "@/components/storefront/return-request";
 import { db, orderItems, orders } from "@/db";
 import { getPublicShop } from "@/db/queries/storefront";
@@ -120,6 +121,8 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pa
           Връщането по тази поръчка е прието.
         </p>
       )}
+
+      <ReorderButton shopSlug={shop.slug} shopId={shop.id} orderId={order.id} token={token} />
 
       <p className="mt-6 text-center text-sm text-(--sf-muted)">
         {shop.name} ще се свърже с теб при нужда на {order.customerPhone}.
