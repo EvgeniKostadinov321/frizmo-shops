@@ -11,22 +11,26 @@ import { Stars } from "@/components/storefront/stars";
 import { StockAlertForm } from "@/components/storefront/stock-alert-form";
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getApprovedReviews, getReviewAggregates } from "@/db/queries/reviews";
+import { getAnsweredQuestions } from "@/db/queries/questions";
 import { getSizeGuide } from "@/db/queries/size-guides";
 import { SizeGuideModal } from "@/components/storefront/size-guide-modal";
+import { QuestionForm } from "@/components/storefront/question-form";
 import { VariantPicker } from "@/components/storefront/variant-picker";
 import {
   getActiveProduct,
   getPublicCategories,
   getPublicShop,
   getRelatedProducts,
+  getSoldCount,
 } from "@/db/queries/storefront";
 import { publicImageUrl } from "@/lib/storage";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { formatNetQuantity } from "@/lib/money";
+import { count, NOUNS } from "@/lib/plural";
 
 interface PageProps {
   params: Promise<{ slug: string; productSlug: string }>;
-  searchParams: Promise<{ reviewsPage?: string }>;
+  searchParams: Promise<{ reviewsPage?: string; questionsPage?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -59,13 +63,17 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
   const sp = await searchParams;
   const reviewsPage = sp.reviewsPage ? Math.max(1, Number(sp.reviewsPage) || 1) : 1;
-  const [related, categories, productReviews, aggregates, shipping] = await Promise.all([
-    getRelatedProducts(shop.id, product.id, product.categoryId),
-    getPublicCategories(shop.id),
-    getApprovedReviews(product.id, reviewsPage),
-    getReviewAggregates([product.id]),
-    getShippingMethods(shop.id),
-  ]);
+  const questionsPage = sp.questionsPage ? Math.max(1, Number(sp.questionsPage) || 1) : 1;
+  const [related, categories, productReviews, aggregates, shipping, soldCount, questions] =
+    await Promise.all([
+      getRelatedProducts(shop.id, product.id, product.categoryId),
+      getPublicCategories(shop.id),
+      getApprovedReviews(product.id, reviewsPage),
+      getReviewAggregates([product.id]),
+      getShippingMethods(shop.id),
+      getSoldCount(shop.id, product.id),
+      getAnsweredQuestions(product.id, questionsPage),
+    ]);
   const activeShipping = shipping.filter((m) => m.active);
   const rating = aggregates.get(product.id) ?? null;
   const category = categories.find((c) => c.id === product.categoryId);
@@ -157,10 +165,16 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
         }
       />
 
-      {(product.brand || sizeGuide) && (
+      {(product.brand || sizeGuide || soldCount >= 5) && (
         <div className="mt-3 flex flex-wrap items-center gap-4">
           {product.brand && (
             <p className="text-sm text-(--sf-muted)">Марка: {product.brand}</p>
+          )}
+          {soldCount >= 5 && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-(--sf-muted)">
+              <Icon name="shopping-cart" size={15} />
+              {count(soldCount, NOUNS.sold)}
+            </span>
           )}
           {sizeGuide && (
             <SizeGuideModal
@@ -275,6 +289,47 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
             )}
           </div>
           <ReviewForm shopSlug={shop.slug} productId={product.id} />
+        </div>
+      </div>
+
+      {/* Q&A — само отговорени въпроси се виждат; формата подава pending */}
+      <div className="mt-14 border-t border-(--sf-border) pt-10">
+        <h2 className="mb-6 text-2xl text-(--sf-text)">Въпроси и отговори</h2>
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="flex flex-col gap-4">
+            {questions.items.length === 0 ? (
+              <p className="text-sm text-(--sf-muted)">Още няма въпроси — задай първия.</p>
+            ) : (
+              <>
+                <ul className="flex flex-col divide-y divide-(--sf-border)">
+                  {questions.items.map((q) => (
+                    <li key={q.id} className="flex flex-col gap-2 py-4 first:pt-0">
+                      <div className="flex items-baseline gap-2">
+                        <Icon name="help-circle" size={15} className="shrink-0 text-(--sf-primary)" />
+                        <p className="font-medium text-(--sf-text)">{q.question}</p>
+                      </div>
+                      <p className="pl-6 text-xs text-(--sf-muted)">
+                        {q.askerName || "Купувач"} ·{" "}
+                        {new Intl.DateTimeFormat("bg-BG", { day: "numeric", month: "short", year: "numeric" }).format(q.createdAt)}
+                      </p>
+                      <div className="ml-6 border-l-2 border-(--sf-border) pl-3">
+                        <p className="text-sm leading-relaxed text-(--sf-muted)">{q.answer}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {questions.total > questionsPage * questions.pageSize && (
+                  <Link
+                    href={`${base}/p/${product.slug}?questionsPage=${questionsPage + 1}`}
+                    className="self-start text-sm font-medium text-(--sf-primary) hover:underline"
+                  >
+                    Виж още въпроси →
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
+          <QuestionForm shopSlug={shop.slug} productId={product.id} />
         </div>
       </div>
 
