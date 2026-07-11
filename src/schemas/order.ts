@@ -12,6 +12,8 @@ export const orderSchema = z.object({
   city: z.string().trim().max(60).default(""),
   note: z.string().trim().max(500).default(""),
   shippingMethodId: z.uuid("Избери доставка"),
+  /** Д3: избрана зона на доставка (при courier метод със зони). null = метод без зони. */
+  shippingZoneId: z.union([z.uuid(), z.null()]).default(null),
   paymentMethodId: z.uuid("Избери плащане"),
   /** N9: подаръчна опаковка (такса) + картичка (текст) — важат само ако магазинът ги предлага. */
   giftWrap: z.boolean().default(false),

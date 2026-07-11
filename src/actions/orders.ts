@@ -14,6 +14,7 @@ import {
   productVariants,
   referrals,
   shippingMethods,
+  shippingZones,
   shops,
 } from "@/db";
 import { clientIp } from "@/actions/cart";
@@ -189,6 +190,26 @@ export async function createOrder(
   if (!shipping) return fail("Избери валиден метод за доставка.");
   if (!payment) return fail("Избери валиден метод за плащане.");
 
+  /* Д3: зони на доставка. Ако методът има ≥1 зона → цената идва от избраната зона
+     (изисква се); без зони → базовата цена на метода. Всичко се решава на сървъра. */
+  const methodZones =
+    shipping.type === "courier"
+      ? await db.query.shippingZones.findMany({
+          where: and(
+            eq(shippingZones.shippingMethodId, shipping.id),
+            eq(shippingZones.shopId, shop.id),
+          ),
+        })
+      : [];
+  let shippingDisplayName = shipping.name;
+  let shippingBasePriceCents = shipping.priceCents;
+  if (methodZones.length > 0) {
+    const zone = methodZones.find((z) => z.id === input.shippingZoneId);
+    if (!zone) return fail("Избери зона на доставка.");
+    shippingDisplayName = `${shipping.name} — ${zone.name}`;
+    shippingBasePriceCents = zone.priceCents;
+  }
+
   if (shipping.type !== "pickup" && input.address.trim().length < 5) {
     return { ok: false, error: "Провери полетата с грешки.", fieldErrors: { address: "Въведи адрес за доставка" } };
   }
@@ -254,8 +275,8 @@ export async function createOrder(
         input.lines,
         pricingProducts,
         {
-          name: shipping.name,
-          priceCents: shipping.priceCents,
+          name: shippingDisplayName,
+          priceCents: shippingBasePriceCents,
           freeOverCents: shipping.freeOverCents,
         },
         appliedCoupon,
@@ -299,7 +320,7 @@ export async function createOrder(
           address: sanitizeText(input.address, 200),
           city: sanitizeText(input.city, 60),
           note: sanitizeText(input.note, 500),
-          shippingName: shipping.name,
+          shippingName: shippingDisplayName,
           shippingPriceCents: cart.shipping?.priceCents ?? 0,
           paymentName: payment.name,
           paymentType: payment.type,
@@ -350,7 +371,7 @@ export async function createOrder(
       address: input.address,
       city: input.city,
       note: input.note,
-      shippingName: shipping.name,
+      shippingName: shippingDisplayName,
       shippingPriceCents: created.cart.shipping?.priceCents ?? 0,
       paymentName: payment.name,
       paymentDetails: payment.details,

@@ -6,7 +6,7 @@ import { saveAbandonedCart } from "@/actions/abandoned-cart";
 import { priceCartAction } from "@/actions/cart";
 import { validateCoupon } from "@/actions/coupons";
 import { createOrder } from "@/actions/orders";
-import type { PaymentMethod, ShippingMethod } from "@/db";
+import type { PaymentMethod, ShippingMethod, ShippingZone } from "@/db";
 import {
   clearCart,
   getCartSnapshot,
@@ -23,6 +23,8 @@ interface CheckoutFormProps {
   base: string;
   shippingMethods: ShippingMethod[];
   paymentMethods: PaymentMethod[];
+  /** Д3: ценови зони (всички на магазина; групират се по метод). */
+  zones: ShippingZone[];
   /** N9: подаръчна опаковка (настройка на магазина; таксата е преглед — сървърът я прилага). */
   giftWrapEnabled?: boolean;
   giftWrapFeeCents?: number;
@@ -121,6 +123,7 @@ export function CheckoutForm({
   base,
   shippingMethods,
   paymentMethods,
+  zones,
   giftWrapEnabled = false,
   giftWrapFeeCents = 0,
   giftCardEnabled = false,
@@ -146,6 +149,7 @@ export function CheckoutForm({
     city: "",
     note: "",
     shippingMethodId: shippingMethods[0]?.id ?? "",
+    shippingZoneId: "",
     paymentMethodId: paymentMethods[0]?.id ?? "",
     website: "", // honeypot
   });
@@ -176,6 +180,13 @@ export function CheckoutForm({
   const storedKey = JSON.stringify(stored);
   const shipping = shippingMethods.find((m) => m.id === form.shippingMethodId);
   const isPickup = shipping?.type === "pickup";
+  /* Д3: зони на избрания метод. Ако има зони → клиентът трябва да избере една;
+     цената в резюмето идва от зоната (сървърът е финалният източник). */
+  const methodZones =
+    shipping?.type === "courier"
+      ? zones.filter((z) => z.shippingMethodId === shipping.id)
+      : [];
+  const selectedZone = methodZones.find((z) => z.id === form.shippingZoneId);
 
   /* Сървърно преизчисление при промяна на количката (без доставка — тя долу).
      Ако има приложен купон, преизчисляваме с него (validateCoupon), за да не
@@ -222,7 +233,10 @@ export function CheckoutForm({
     /* Безплатна доставка по ОРИГИНАЛНИЯ subtotal (купонът не я отнема). */
     const free =
       shipping.freeOverCents !== null && cart.subtotalCents >= shipping.freeOverCents;
-    const shippingCents = free ? 0 : shipping.priceCents;
+    /* Д3: базовата цена е на зоната, ако методът има зони; иначе на метода. */
+    const basePrice =
+      methodZones.length > 0 ? (selectedZone?.priceCents ?? shipping.priceCents) : shipping.priceCents;
+    const shippingCents = free ? 0 : basePrice;
     const giftCents = giftWrapEnabled && giftWrap ? giftWrapFeeCents : 0;
     return {
       free,
@@ -230,7 +244,7 @@ export function CheckoutForm({
       giftCents,
       totalCents: cart.subtotalCents - discountCents + shippingCents + giftCents,
     };
-  }, [cart, shipping, discountCents, giftWrap, giftWrapEnabled, giftWrapFeeCents]);
+  }, [cart, shipping, methodZones.length, selectedZone, discountCents, giftWrap, giftWrapEnabled, giftWrapFeeCents]);
 
   if (stored.length === 0) {
     return (
@@ -289,6 +303,7 @@ export function CheckoutForm({
     try {
       const result = await createOrder(slug, {
         ...form,
+        shippingZoneId: form.shippingZoneId || null,
         lines: stored,
         couponCode: appliedCode,
         giftWrap: giftWrapEnabled && giftWrap,
@@ -375,7 +390,9 @@ export function CheckoutForm({
                     name="shipping"
                     className="mt-0.5"
                     checked={form.shippingMethodId === m.id}
-                    onChange={() => set("shippingMethodId", m.id)}
+                    onChange={() =>
+                      setForm((f) => ({ ...f, shippingMethodId: m.id, shippingZoneId: "" }))
+                    }
                   />
                   <span className="flex flex-col gap-0.5">
                     <span>{m.name}</span>
@@ -395,6 +412,36 @@ export function CheckoutForm({
             ))}
           </div>
         </Field>
+
+        {methodZones.length > 0 && (
+          <Field label="Зона на доставка" required error={fieldErrors.shippingZoneId}>
+            <div className="flex flex-col gap-2">
+              {methodZones.map((z) => (
+                <label
+                  key={z.id}
+                  className={`flex cursor-pointer items-center justify-between gap-2 rounded-(--sf-radius) border p-3 ${
+                    form.shippingZoneId === z.id
+                      ? "border-(--sf-primary)"
+                      : "border-(--sf-border)"
+                  }`}
+                >
+                  <span className="flex items-center gap-2 text-sm text-(--sf-text)">
+                    <input
+                      type="radio"
+                      name="shipping-zone"
+                      checked={form.shippingZoneId === z.id}
+                      onChange={() => set("shippingZoneId", z.id)}
+                    />
+                    <span>{z.name}</span>
+                  </span>
+                  <span className="shrink-0 text-sm font-medium text-(--sf-text)">
+                    {formatPrice(z.priceCents)}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </Field>
+        )}
 
         {!isPickup && (
           <>
