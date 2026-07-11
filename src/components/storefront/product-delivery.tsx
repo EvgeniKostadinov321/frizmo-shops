@@ -7,7 +7,7 @@ import { deliveryHoursLines } from "@/lib/working-hours";
 export function ProductDelivery({ methods }: { methods: ShippingMethod[] }) {
   if (methods.length === 0) return null;
   return (
-    <div className="mt-6 max-w-md rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) p-4">
+    <div className="rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface-raised) p-4">
       <div className="mb-3 flex items-center gap-2">
         <span aria-hidden className="text-(--sf-primary)">
           <Icon name="truck" size={18} />

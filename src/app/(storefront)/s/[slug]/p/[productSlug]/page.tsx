@@ -163,37 +163,40 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
               }
             : null
         }
+        sidebar={
+          <>
+            {(product.brand || soldCount >= 5 || sizeGuide) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-(--sf-border) pt-4 text-sm text-(--sf-muted)">
+                {product.brand && (
+                  <span>
+                    Марка: <span className="text-(--sf-text)">{product.brand}</span>
+                  </span>
+                )}
+                {soldCount >= 5 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon name="shopping-cart" size={15} />
+                    {count(soldCount, NOUNS.sold)}
+                  </span>
+                )}
+                {sizeGuide && (
+                  <SizeGuideModal
+                    name={sizeGuide.name}
+                    columns={sizeGuide.columns}
+                    rows={sizeGuide.rows}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* S14: изчерпан продукт (следи наличност) → „извести ме" */}
+            {product.stock === 0 && (
+              <StockAlertForm shopSlug={shop.slug} productId={product.id} />
+            )}
+
+            <ProductDelivery methods={activeShipping} />
+          </>
+        }
       />
-
-      {(product.brand || sizeGuide || soldCount >= 5) && (
-        <div className="mt-3 flex flex-wrap items-center gap-4">
-          {product.brand && (
-            <p className="text-sm text-(--sf-muted)">Марка: {product.brand}</p>
-          )}
-          {soldCount >= 5 && (
-            <span className="inline-flex items-center gap-1.5 text-sm text-(--sf-muted)">
-              <Icon name="shopping-cart" size={15} />
-              {count(soldCount, NOUNS.sold)}
-            </span>
-          )}
-          {sizeGuide && (
-            <SizeGuideModal
-              name={sizeGuide.name}
-              columns={sizeGuide.columns}
-              rows={sizeGuide.rows}
-            />
-          )}
-        </div>
-      )}
-
-      {/* S14: изчерпан продукт (следи наличност) → „извести ме" */}
-      {product.stock === 0 && (
-        <div className="mt-6 max-w-md">
-          <StockAlertForm shopSlug={shop.slug} productId={product.id} />
-        </div>
-      )}
-
-      <ProductDelivery methods={activeShipping} />
 
       {(product.description ||
         product.attributes.length > 0 ||

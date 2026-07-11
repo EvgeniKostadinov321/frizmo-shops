@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 import type { ProductOption, ProductVariant } from "@/db";
 import {
@@ -33,6 +40,9 @@ interface VariantPickerProps {
   deal: { quantity: number; totalPriceCents: number } | null;
   /** Категория за kicker-а над заглавието (линк към филтрирания каталог). */
   category: { name: string; href: string } | null;
+  /** Допълнителни блокове (марка, доставка, trust) под CTA — пълнят дясната
+   *  колона до нивото на снимката, за да няма празнина на десктоп. */
+  sidebar?: ReactNode;
 }
 
 /** Общо за qty бройки: deal групите по deal цена, остатъкът по единичната —
@@ -66,6 +76,7 @@ export function VariantPicker({
   variants,
   deal,
   category,
+  sidebar,
 }: VariantPickerProps) {
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [activeImage, setActiveImage] = useState(0);
@@ -349,6 +360,8 @@ export function VariantPicker({
             <FavoriteButton shopId={shopId} productId={productId} variant="page" />
           </div>
         )}
+
+        {sidebar}
       </div>
 
       {/* STICKY CTA (само мобилно): цената + „Добави" винаги под палеца.
