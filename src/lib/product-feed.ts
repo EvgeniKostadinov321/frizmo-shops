@@ -16,6 +16,9 @@ export interface FeedProduct {
   images: string[];
   weightGrams: number | null;
   categoryId: string | null;
+  sku: string | null;
+  gtin: string | null;
+  brand: string | null;
 }
 
 /** XML escape — редът е важен (& първо, иначе двойно-escape). */
@@ -66,9 +69,11 @@ export function buildProductFeed(
     if (p.promoPriceCents !== null) {
       lines.push(`<g:sale_price>${price(p.promoPriceCents)}</g:sale_price>`);
     }
-    lines.push(`<g:brand>${escapeXml(shop.name)}</g:brand>`);
+    if (p.sku) lines.push(`<g:mpn>${escapeXml(p.sku)}</g:mpn>`);
+    if (p.gtin) lines.push(`<g:gtin>${escapeXml(p.gtin)}</g:gtin>`);
+    lines.push(`<g:brand>${escapeXml(p.brand ?? shop.name)}</g:brand>`);
     lines.push(`<g:condition>new</g:condition>`);
-    lines.push(`<g:identifier_exists>no</g:identifier_exists>`);
+    lines.push(`<g:identifier_exists>${p.gtin ? "yes" : "no"}</g:identifier_exists>`);
     if (p.weightGrams !== null) {
       lines.push(`<g:shipping_weight>${p.weightGrams} g</g:shipping_weight>`);
     }

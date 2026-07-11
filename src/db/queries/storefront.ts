@@ -284,6 +284,9 @@ export async function getFeedProducts(shopId: string) {
       images: true,
       weightGrams: true,
       categoryId: true,
+      sku: true,
+      gtin: true,
+      brand: true,
     },
     limit: 10_000,
   });

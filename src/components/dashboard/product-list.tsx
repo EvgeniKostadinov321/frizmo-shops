@@ -573,16 +573,29 @@ export function ProductList({ items, total, page, pageSize, categories, csvTools
                     {product.categoryId ? (categoryLabels.get(product.categoryId) ?? "—") : "—"}
                   </TCell>
                   <TCell>
-                    {product.promoPriceCents !== null ? (
+                    <div className="flex flex-col">
                       <span>
-                        <span className="font-medium text-danger-600">
-                          {formatPrice(product.promoPriceCents)}
-                        </span>{" "}
-                        <s className="text-xs text-ink-500">{formatPrice(product.priceCents)}</s>
+                        {product.promoPriceCents !== null ? (
+                          <span>
+                            <span className="font-medium text-danger-600">
+                              {formatPrice(product.promoPriceCents)}
+                            </span>{" "}
+                            <s className="text-xs text-ink-500">{formatPrice(product.priceCents)}</s>
+                          </span>
+                        ) : (
+                          formatPrice(product.priceCents)
+                        )}
                       </span>
-                    ) : (
-                      formatPrice(product.priceCents)
-                    )}
+                      {product.costCents != null && product.priceCents > 0 && (
+                        <span className="text-xs text-ink-500">
+                          Марж:{" "}
+                          {Math.round(
+                            ((product.priceCents - product.costCents) / product.priceCents) * 100,
+                          )}
+                          %
+                        </span>
+                      )}
+                    </div>
                   </TCell>
                   <TCell>
                     <span className="flex items-center gap-2">

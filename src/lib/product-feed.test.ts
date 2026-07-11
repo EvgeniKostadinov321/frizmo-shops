@@ -17,6 +17,9 @@ function product(overrides: Partial<FeedProduct> = {}): FeedProduct {
     images: ["shops/s1/products/a.jpg"],
     weightGrams: null,
     categoryId: null,
+    sku: null,
+    gtin: null,
+    brand: null,
     ...overrides,
   };
 }
@@ -88,6 +91,36 @@ describe("buildProductFeed", () => {
     expect(xml).toContain("<g:brand>Ателие „Роза“</g:brand>");
     expect(xml).toContain("<g:identifier_exists>no</g:identifier_exists>");
     expect(xml).toContain("<g:condition>new</g:condition>");
+  });
+
+  it("валиден GTIN → g:gtin + g:mpn + identifier_exists=yes", () => {
+    const xml = buildProductFeed(
+      shop,
+      [product({ sku: "SKU1", gtin: "4006381333931" })],
+      cats,
+      BASE,
+    );
+    expect(xml).toContain("<g:gtin>4006381333931</g:gtin>");
+    expect(xml).toContain("<g:mpn>SKU1</g:mpn>");
+    expect(xml).toContain("<g:identifier_exists>yes</g:identifier_exists>");
+  });
+
+  it("без GTIN → identifier_exists=no, без g:gtin", () => {
+    const xml = buildProductFeed(shop, [product({ sku: "SKU1" })], cats, BASE);
+    expect(xml).toContain("<g:mpn>SKU1</g:mpn>");
+    expect(xml).toContain("<g:identifier_exists>no</g:identifier_exists>");
+    expect(xml).not.toContain("<g:gtin>");
+  });
+
+  it("brand override побеждава името на магазина", () => {
+    const xml = buildProductFeed(shop, [product({ brand: "Nike" })], cats, BASE);
+    expect(xml).toContain("<g:brand>Nike</g:brand>");
+    expect(xml).not.toContain("<g:brand>Ателие „Роза“</g:brand>");
+  });
+
+  it("без sku → без g:mpn", () => {
+    const xml = buildProductFeed(shop, [product()], cats, BASE);
+    expect(xml).not.toContain("<g:mpn>");
   });
 
   it("escape в title", () => {

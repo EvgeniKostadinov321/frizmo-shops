@@ -40,6 +40,10 @@ export async function GET() {
       "height_cm",
       "net_quantity",
       "net_quantity_unit",
+      "sku",
+      "gtin",
+      "brand",
+      "cost",
     ],
     ...rows.map((p) => [
       p.name,
@@ -56,6 +60,10 @@ export async function GET() {
       scaledToCsv(p.heightMm, 10),
       scaledToCsv(p.netQuantityValue, 1000),
       p.netQuantityUnit ?? "",
+      p.sku ?? "",
+      p.gtin ?? "",
+      p.brand ?? "",
+      centsToCsv(p.costCents),
     ]),
   ]);
 
