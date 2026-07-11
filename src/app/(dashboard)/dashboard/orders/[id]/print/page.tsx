@@ -25,7 +25,7 @@ export default async function OrderPrintPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      {/* eslint-disable-next-line react/no-danger — статичен print stylesheet, без потребителски вход */}
+      {/* Статичен print stylesheet (без потребителски вход) — крие dashboard chrome при печат. */}
       <style>{
         "@media print{body *{visibility:hidden}.print-slip,.print-slip *{visibility:visible}.print-slip{position:absolute;inset:0}.print-hide{display:none}}"
       }</style>

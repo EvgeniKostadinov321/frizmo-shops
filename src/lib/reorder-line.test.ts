@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveReorderLine, type ReorderCandidate } from "./reorder";
+import { resolveReorderLine, type ReorderCandidate } from "./reorder-line";
 
 const base: ReorderCandidate = {
   productId: "p1",
