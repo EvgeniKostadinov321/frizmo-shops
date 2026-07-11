@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckoutForm } from "@/components/storefront/checkout-form";
+import { CheckoutTrustBadges } from "@/components/storefront/checkout-trust-badges";
 import { PageHeader } from "@/components/storefront/page-header";
 import { getPaymentMethods, getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicShop } from "@/db/queries/storefront";
@@ -43,16 +44,22 @@ export default async function CheckoutPage({ params }: PageProps) {
           Магазинът все още не е настроил методи за доставка и плащане.
         </p>
       ) : (
-        <CheckoutForm
-          shopId={shop.id}
-          slug={shop.slug}
-          base={`/s/${shop.slug}`}
-          shippingMethods={activeShipping}
-          paymentMethods={activePayment}
-          giftWrapEnabled={shop.giftWrapEnabled}
-          giftWrapFeeCents={shop.giftWrapFeeCents}
-          giftCardEnabled={shop.giftCardEnabled}
-        />
+        <>
+          <CheckoutTrustBadges
+            returnWindowDays={shop.returnWindowDays}
+            hasCod={activePayment.some((m) => m.type === "cod")}
+          />
+          <CheckoutForm
+            shopId={shop.id}
+            slug={shop.slug}
+            base={`/s/${shop.slug}`}
+            shippingMethods={activeShipping}
+            paymentMethods={activePayment}
+            giftWrapEnabled={shop.giftWrapEnabled}
+            giftWrapFeeCents={shop.giftWrapFeeCents}
+            giftCardEnabled={shop.giftCardEnabled}
+          />
+        </>
       )}
     </div>
   );
