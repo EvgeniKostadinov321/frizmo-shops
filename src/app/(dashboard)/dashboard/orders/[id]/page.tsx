@@ -33,9 +33,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </h1>
           <OrderStatusBadge status={order.status} />
         </div>
-        <Link href="/dashboard/orders" className="text-sm text-brand-600 hover:underline">
-          ← Всички поръчки
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/dashboard/orders/${order.id}/print`}
+            className="text-sm text-brand-600 hover:underline"
+          >
+            Печат
+          </Link>
+          <Link href="/dashboard/orders" className="text-sm text-brand-600 hover:underline">
+            ← Всички поръчки
+          </Link>
+        </div>
       </div>
 
       <p className="text-sm text-ink-500">{dateFormat.format(order.createdAt)}</p>
