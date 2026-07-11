@@ -259,18 +259,20 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
                 <ul className="flex flex-col divide-y divide-(--sf-border)">
                   {productReviews.items.map((review) => (
                     <li key={review.id} className="flex flex-col gap-1.5 py-4 first:pt-0">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span className="text-(--sf-primary)">
                           <Stars rating={review.rating} size={14} />
                         </span>
                         <span className="font-medium text-(--sf-text)">{review.authorName}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-(--sf-muted)">
                         {review.verified && (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-(--sf-primary)">
+                          <span className="inline-flex items-center gap-1 font-medium text-(--sf-primary)">
                             <Icon name="shield-check" size={13} />
                             Потвърдена покупка
                           </span>
                         )}
-                        <span className="text-xs text-(--sf-muted)">
+                        <span>
                           {new Intl.DateTimeFormat("bg-BG", { day: "numeric", month: "short", year: "numeric" }).format(review.createdAt)}
                         </span>
                       </div>
