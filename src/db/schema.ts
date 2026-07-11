@@ -157,6 +157,22 @@ export const products = pgTable(
     netQuantityValue: integer("net_quantity_value"),
     /** Единица на количеството: 'mg' | 'g' | 'kg' | 'ml' | 'l'. Винаги заедно с netQuantityValue. */
     netQuantityUnit: text("net_quantity_unit"),
+    /** Вътрешен артикулен код на търговеца (g:mpn във feed). null = няма. */
+    sku: text("sku"),
+    /** EAN/UPC баркод — валиден GTIN (g:gtin, превключва identifier_exists). null = няма. */
+    gtin: text("gtin"),
+    /** Марка override; null → името на магазина (сегашният feed fallback). */
+    brand: text("brand"),
+    /** Доставна цена в евроцентове — само за търговеца (марж). Никога публично. */
+    costCents: integer("cost_cents"),
+    /** SEO title override; null → продуктовото име. */
+    seoTitle: text("seo_title"),
+    /** SEO meta description override; null → началото на описанието. */
+    seoDescription: text("seo_description"),
+    /** Закачена размерна таблица; null = няма. FK set null при триене на таблицата. */
+    sizeGuideId: uuid("size_guide_id").references((): AnyPgColumn => sizeGuides.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -265,6 +281,25 @@ export const shippingMethods = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("shipping_methods_shop_idx").on(t.shopId)],
+).enableRLS();
+
+export const sizeGuides = pgTable(
+  "size_guides",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** Заглавия на колоните, напр. ["Размер","Гръдна обиколка"]. */
+    columns: jsonb("columns").$type<string[]>().notNull().default([]),
+    /** Редове: всеки е масив с дължина = columns.length. */
+    rows: jsonb("rows").$type<string[][]>().notNull().default([]),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("size_guides_shop_idx").on(t.shopId)],
 ).enableRLS();
 
 export const paymentMethods = pgTable(
