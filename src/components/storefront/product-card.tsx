@@ -5,6 +5,7 @@ import { FavoriteButton } from "@/components/storefront/favorite-button";
 import { Stars } from "@/components/storefront/stars";
 import type { Product } from "@/db";
 import { formatPrice } from "@/lib/money";
+import { isNewProduct } from "@/lib/product-badges";
 import { publicImageUrl } from "@/lib/storage";
 
 /** Процент отстъпка за промо badge-а (закръглен). */
@@ -34,6 +35,7 @@ export function ProductCard({
     product.promoPriceCents !== null && product.promoPriceCents < product.priceCents
       ? product.promoPriceCents
       : null;
+  const isNew = isNewProduct(product.createdAt, Date.now());
 
   return (
     <Link
@@ -72,11 +74,18 @@ export function ProductCard({
             <Icon name="image" size={40} className="text-(--sf-muted) opacity-40" />
           </span>
         )}
-        {promo !== null && (
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-(--sf-accent) px-2.5 py-1 text-xs font-bold text-(--sf-on-accent)">
-            −{discountPercent(product.priceCents, promo)}%
-          </span>
-        )}
+        <span className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
+          {promo !== null && (
+            <span className="rounded-full bg-(--sf-accent) px-2.5 py-1 text-xs font-bold text-(--sf-on-accent)">
+              −{discountPercent(product.priceCents, promo)}%
+            </span>
+          )}
+          {isNew && (
+            <span className="rounded-full bg-(--sf-primary) px-2.5 py-1 text-xs font-bold text-(--sf-on-primary)">
+              Нов
+            </span>
+          )}
+        </span>
         <FavoriteButton shopId={product.shopId} productId={product.id} variant="card" />
         {outOfStock && (
           <span className="absolute inset-x-0 bottom-0 bg-(--sf-text)/85 py-1.5 text-center text-xs font-medium text-(--sf-bg)">
