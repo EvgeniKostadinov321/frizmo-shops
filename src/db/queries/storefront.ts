@@ -4,6 +4,8 @@ import { cache } from "react";
 import {
   categories,
   db,
+  orderItems,
+  orders,
   productAttributes,
   productOptions,
   products,
@@ -158,6 +160,23 @@ export async function getActiveProduct(shopId: string, productSlug: string) {
   ]);
 
   return { ...product, attributes, options, variants, promotion: promotion ?? null };
+}
+
+/** Сума продадени бройки за продукт (поръчки confirmed/shipped/completed, не new/cancelled).
+    Tenant: филтър по orders.shopId. 0 ако няма. */
+export async function getSoldCount(shopId: string, productId: string): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`coalesce(sum(${orderItems.quantity}), 0)::int` })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(
+      and(
+        eq(orderItems.productId, productId),
+        eq(orders.shopId, shopId),
+        inArray(orders.status, ["confirmed", "shipped", "completed"]),
+      ),
+    );
+  return row?.total ?? 0;
 }
 
 export async function getRelatedProducts(shopId: string, productId: string, categoryId: string | null) {

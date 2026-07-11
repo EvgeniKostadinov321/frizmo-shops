@@ -25,6 +25,7 @@ export const NOUNS = {
   result: { one: "резултат", many: "резултата" },
   day: { one: "ден", many: "дни" },
   image: { one: "снимка", many: "снимки" },
+  sold: { one: "продаден", many: "продадени" },
 } as const;
 
 /** Само думата в правилната форма: `noun(1, NOUNS.promo)` → "промоция". */
