@@ -465,13 +465,28 @@ export function ProductForm({
           <Card className="flex flex-col gap-4">
             <h2 className="text-lg font-bold text-ink-900">Таблица с размери</h2>
             {sizeGuides.length > 0 ? (
-              <Select
-                label="Таблица с размери"
-                options={sizeGuides}
-                placeholder="— Няма —"
-                value={sizeGuideId}
-                onChange={(e) => setSizeGuideId(e.target.value)}
-              />
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Select
+                    label="Таблица с размери"
+                    options={sizeGuides}
+                    placeholder="— Няма —"
+                    value={sizeGuideId}
+                    onChange={(e) => setSizeGuideId(e.target.value)}
+                  />
+                </div>
+                {sizeGuideId && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="h-11 shrink-0 text-danger-600"
+                    onClick={() => setSizeGuideId("")}
+                  >
+                    <Icon name="x" size={16} />
+                    Премахни
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="flex flex-col gap-2 rounded-control border border-dashed border-surface-300 bg-surface-50 p-4">
                 <p className="text-sm text-ink-500">
