@@ -10,6 +10,7 @@ export function ReviewForm({ shopSlug, productId }: { shopSlug: string; productI
   const [hovered, setHovered] = useState(0);
   const [authorName, setAuthorName] = useState("");
   const [text, setText] = useState("");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export function ReviewForm({ shopSlug, productId }: { shopSlug: string; productI
         authorName,
         rating,
         text,
+        phone,
         website: "",
       });
       if (!result.ok) {
@@ -98,6 +100,17 @@ export function ReviewForm({ shopSlug, productId }: { shopSlug: string; productI
         placeholder="Сподели впечатленията си (по избор)"
         aria-label="Текст на ревюто"
         className="rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3.5 py-2.5 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
+      />
+
+      <input
+        type="tel"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        maxLength={30}
+        placeholder="Телефон (по избор — за бадж Потвърдена покупка)"
+        aria-label="Телефон (по избор)"
+        autoComplete="tel"
+        className="h-11 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3.5 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
       />
 
       {error && <p className="text-sm text-danger-600">{error}</p>}

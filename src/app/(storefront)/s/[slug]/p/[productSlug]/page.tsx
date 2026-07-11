@@ -6,6 +6,7 @@ import { ProductDelivery } from "@/components/storefront/product-delivery";
 import { RecentlyViewed } from "@/components/storefront/recently-viewed";
 import { Paragraphs } from "@/components/storefront/sections/shared";
 import { ReviewForm } from "@/components/storefront/review-form";
+import { Icon } from "@/components/ui";
 import { Stars } from "@/components/storefront/stars";
 import { StockAlertForm } from "@/components/storefront/stock-alert-form";
 import { getShippingMethods } from "@/db/queries/fulfillment";
@@ -225,6 +226,12 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
                           <Stars rating={review.rating} size={14} />
                         </span>
                         <span className="font-medium text-(--sf-text)">{review.authorName}</span>
+                        {review.verified && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-(--sf-primary)">
+                            <Icon name="shield-check" size={13} />
+                            Потвърдена покупка
+                          </span>
+                        )}
                         <span className="text-xs text-(--sf-muted)">
                           {new Intl.DateTimeFormat("bg-BG", { day: "numeric", month: "short", year: "numeric" }).format(review.createdAt)}
                         </span>
