@@ -350,3 +350,4 @@ export function MenuButton({ onOpen, expanded }: { onOpen: () => void; expanded:
 
 export { CartButton };
 export { FavoritesButton } from "../favorites-button";
+export { HeaderSearch } from "./header-search";

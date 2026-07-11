@@ -6,6 +6,7 @@ import {
   buildNav,
   CartButton,
   FavoritesButton,
+  HeaderSearch,
   type HeaderVariantProps,
   MenuButton,
   MobileMenu,
@@ -56,11 +57,13 @@ export function HeaderVariant1({
             <NavLink key={item.href} item={item} current={isCurrent(item.href)} />
           ))}
           <NavOverflow items={overflow} />
+          <HeaderSearch base={base} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
         </nav>
 
         <div className="flex items-center gap-1 md:hidden">
+          <HeaderSearch base={base} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
           <MenuButton onOpen={() => setMenuOpen(true)} expanded={menuOpen} />

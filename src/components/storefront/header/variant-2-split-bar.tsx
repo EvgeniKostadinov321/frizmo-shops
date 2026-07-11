@@ -6,6 +6,7 @@ import {
   buildNav,
   CartButton,
   FavoritesButton,
+  HeaderSearch,
   type HeaderVariantProps,
   MenuButton,
   MobileMenu,
@@ -75,6 +76,7 @@ export function HeaderVariant2({ shop, settings, rootCategories = [] }: HeaderVa
             ))}
             <NavOverflow items={overflow} />
           </nav>
+          <HeaderSearch base={base} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
         </div>

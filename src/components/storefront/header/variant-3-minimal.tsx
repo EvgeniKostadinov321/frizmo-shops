@@ -6,6 +6,7 @@ import {
   buildNav,
   CartButton,
   FavoritesButton,
+  HeaderSearch,
   type HeaderVariantProps,
   MenuButton,
   MobileMenu,
@@ -44,6 +45,7 @@ export function HeaderVariant3({
         <div className="mx-auto flex h-19 max-w-6xl items-center justify-between gap-4 px-4">
           <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
           <div className="flex items-center gap-1">
+            <HeaderSearch base={base} />
             <FavoritesButton shopId={shop.id} base={base} />
             <CartButton shopId={shop.id} base={base} />
             <MenuButton onOpen={() => setMenuOpen(true)} expanded={menuOpen} />
