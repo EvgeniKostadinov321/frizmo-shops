@@ -12,12 +12,21 @@ import { NAV_ITEMS, isActive } from "@/components/dashboard/nav-items";
  * всички страници + Изход; светла/тъмна остава извън менюто в header-а.
  * Десктоп навигацията е отделно (`DashboardNav`, страничен sidebar).
  */
-export function MobileMenuButton({ pendingReviews = 0 }: { pendingReviews?: number }) {
+export function MobileMenuButton({
+  pendingReviews = 0,
+  pendingQuestions = 0,
+}: {
+  pendingReviews?: number;
+  pendingQuestions?: number;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const badgeFor = (href: string) =>
-    href === "/dashboard/reviews" && pendingReviews > 0 ? pendingReviews : null;
+  const badgeFor = (href: string) => {
+    if (href === "/dashboard/reviews" && pendingReviews > 0) return pendingReviews;
+    if (href === "/dashboard/questions" && pendingQuestions > 0) return pendingQuestions;
+    return null;
+  };
 
   /* Заключи скрола + Escape затваря, докато fullscreen менюто е отворено. */
   useEffect(() => {

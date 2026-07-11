@@ -8,12 +8,21 @@ import { NAV_ITEMS, isActive } from "@/components/dashboard/nav-items";
  * Десктоп странична навигация (sidebar). На мобилно навигацията е в header-а
  * като burger меню (`MobileMenuButton`) — този компонент е скрит под md.
  */
-export function DashboardNav({ pendingReviews = 0 }: { pendingReviews?: number }) {
+export function DashboardNav({
+  pendingReviews = 0,
+  pendingQuestions = 0,
+}: {
+  pendingReviews?: number;
+  pendingQuestions?: number;
+}) {
   const pathname = usePathname();
 
-  /* Badge с чакащи за одобрение (S1) — само на „Ревюта". */
-  const badgeFor = (href: string) =>
-    href === "/dashboard/reviews" && pendingReviews > 0 ? pendingReviews : null;
+  /* Badge с чакащи — „Ревюта" (одобрение) и „Въпроси" (отговор). */
+  const badgeFor = (href: string) => {
+    if (href === "/dashboard/reviews" && pendingReviews > 0) return pendingReviews;
+    if (href === "/dashboard/questions" && pendingQuestions > 0) return pendingQuestions;
+    return null;
+  };
 
   return (
     <nav aria-label="Основна навигация" className="hidden flex-col gap-1 md:flex">

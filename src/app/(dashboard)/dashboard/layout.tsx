@@ -1,5 +1,6 @@
 import { Logo } from "@/components/ui";
 import { countPendingReviews } from "@/db/queries/reviews";
+import { countPendingQuestions } from "@/db/queries/questions";
 import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { MobileMenuButton } from "@/components/dashboard/mobile-menu-button";
@@ -14,7 +15,9 @@ export default async function DashboardLayout({
 }) {
   const { user, shop } = await getOwnShop();
   await ensureProfile(user.id);
-  const pendingReviews = shop ? await countPendingReviews(shop.id) : 0;
+  const [pendingReviews, pendingQuestions] = shop
+    ? await Promise.all([countPendingReviews(shop.id), countPendingQuestions(shop.id)])
+    : [0, 0];
 
   return (
     <div className="min-h-screen">
@@ -22,7 +25,10 @@ export default async function DashboardLayout({
         {/* Мобилно: burger вляво (само с магазин — иначе няма навигация) */}
         {shop && (
           <div className="md:hidden">
-            <MobileMenuButton pendingReviews={pendingReviews} />
+            <MobileMenuButton
+              pendingReviews={pendingReviews}
+              pendingQuestions={pendingQuestions}
+            />
           </div>
         )}
 
@@ -44,7 +50,10 @@ export default async function DashboardLayout({
       {shop ? (
         <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
           <aside className="hidden md:block md:w-48 md:shrink-0">
-            <DashboardNav pendingReviews={pendingReviews} />
+            <DashboardNav
+              pendingReviews={pendingReviews}
+              pendingQuestions={pendingQuestions}
+            />
           </aside>
           <main className="min-w-0 flex-1">
             <PushBanner />
