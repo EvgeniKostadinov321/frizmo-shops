@@ -13,6 +13,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/analytics", label: "Аналитика", icon: "trending-up" },
   { href: "/dashboard/store", label: "Магазин", icon: "store" },
   { href: "/dashboard/products", label: "Продукти", icon: "store" },
+  { href: "/dashboard/size-guides", label: "Таблици размери", icon: "ruler" },
   { href: "/dashboard/orders", label: "Поръчки", icon: "receipt" },
   { href: "/dashboard/reviews", label: "Ревюта", icon: "star" },
   { href: "/dashboard/categories", label: "Категории", icon: "palette" },
