@@ -3,13 +3,14 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import { db, paymentMethods, shippingMethods, shops } from "@/db";
+import { db, paymentMethods, shippingMethods, shippingZones, shops } from "@/db";
+import { max } from "drizzle-orm";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { toCents } from "@/lib/money";
 import { sanitizeText } from "@/lib/sanitize";
-import { paymentMethodSchema, shippingMethodSchema } from "@/schemas/fulfillment";
+import { paymentMethodSchema, shippingMethodSchema, zoneSchema } from "@/schemas/fulfillment";
 
 function revalidate(slug: string) {
   revalidateTag(shopCacheTag(slug), "max");
@@ -175,6 +176,51 @@ export async function deletePaymentMethod(input: { id: string }): Promise<Action
   await db
     .delete(paymentMethods)
     .where(and(eq(paymentMethods.id, method.id), eq(paymentMethods.shopId, shop.id)));
+  revalidate(shop.slug);
+  return ok(null);
+}
+
+/** Д3: добавя ценова зона към courier метод (проверява собственост на метода). */
+export async function saveShippingZone(input: unknown): Promise<ActionResult> {
+  const parsed = zoneSchema.safeParse(input);
+  if (!parsed.success) return zodFail(parsed.error);
+
+  const { shop } = await requireShop();
+  const method = await db.query.shippingMethods.findFirst({
+    where: eq(shippingMethods.id, parsed.data.shippingMethodId),
+  });
+  if (!method || method.shopId !== shop.id) return fail("Методът не съществува.");
+  if (method.type !== "courier") return fail("Зони се добавят само към куриерски метод.");
+
+  const [orderRow] = await db
+    .select({ maxOrder: max(shippingZones.sortOrder) })
+    .from(shippingZones)
+    .where(eq(shippingZones.shippingMethodId, method.id));
+
+  await db.insert(shippingZones).values({
+    shopId: shop.id,
+    shippingMethodId: method.id,
+    name: sanitizeText(parsed.data.name, 60),
+    priceCents: toCents(parsed.data.price)!,
+    sortOrder: (orderRow?.maxOrder ?? 0) + 1,
+  });
+
+  revalidate(shop.slug);
+  return ok(null);
+}
+
+/** Д3: трие ценова зона (проверява собственост по магазина). */
+export async function deleteShippingZone(input: { id: string }): Promise<ActionResult> {
+  const parsed = idSchema.safeParse(input);
+  if (!parsed.success) return fail("Невалидна зона.");
+  const { shop } = await requireShop();
+  const zone = await db.query.shippingZones.findFirst({
+    where: eq(shippingZones.id, parsed.data.id),
+  });
+  if (!zone || zone.shopId !== shop.id) return fail("Зоната не съществува.");
+  await db
+    .delete(shippingZones)
+    .where(and(eq(shippingZones.id, zone.id), eq(shippingZones.shopId, shop.id)));
   revalidate(shop.slug);
   return ok(null);
 }

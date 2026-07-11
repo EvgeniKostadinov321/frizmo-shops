@@ -11,7 +11,8 @@ import {
   togglePaymentMethod,
   toggleShippingMethod,
 } from "@/actions/fulfillment";
-import type { PaymentMethod, ShippingMethod } from "@/db";
+import type { PaymentMethod, ShippingMethod, ShippingZone } from "@/db";
+import { ShippingZonesEditor } from "@/components/dashboard/shipping-zones-editor";
 import {
   Badge,
   Button,
@@ -37,6 +38,7 @@ import {
 interface FulfillmentManagerProps {
   shipping: ShippingMethod[];
   payment: PaymentMethod[];
+  zones: ShippingZone[];
 }
 
 type ShippingDraft = {
@@ -50,8 +52,9 @@ type ShippingDraft = {
 };
 type PaymentDraft = { id: string | null; type: string; name: string; details: string };
 
-export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProps) {
+export function FulfillmentManager({ shipping, payment, zones }: FulfillmentManagerProps) {
   const router = useRouter();
+  const zonesByMethod = (methodId: string) => zones.filter((z) => z.shippingMethodId === methodId);
   const [shippingDraft, setShippingDraft] = useState<ShippingDraft | null>(null);
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft | null>(null);
   const [toDelete, setToDelete] = useState<{ kind: "shipping" | "payment"; id: string; name: string } | null>(null);
@@ -132,14 +135,17 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
         {shipping.map((m) => (
           <div
             key={m.id}
-            className={`flex items-center justify-between gap-2 rounded-control border border-surface-200 px-3 py-2 ${
+            className={`rounded-control border border-surface-200 px-3 py-2 ${
               m.active ? "" : "opacity-60"
             }`}
           >
+            <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate font-medium text-ink-900">{m.name}</p>
               <p className="text-xs text-ink-500">
-                {formatPrice(m.priceCents)}
+                {m.type === "courier" && zonesByMethod(m.id).length > 0
+                  ? "Цена по зона (виж отдолу)"
+                  : formatPrice(m.priceCents)}
                 {m.freeOverCents !== null && ` · безплатна над ${formatPrice(m.freeOverCents)}`}
               </p>
             </div>
@@ -180,6 +186,10 @@ export function FulfillmentManager({ shipping, payment }: FulfillmentManagerProp
                 <Icon name="trash" size={18} />
               </Button>
             </div>
+            </div>
+            {m.type === "courier" && (
+              <ShippingZonesEditor methodId={m.id} zones={zonesByMethod(m.id)} />
+            )}
           </div>
         ))}
       </Card>

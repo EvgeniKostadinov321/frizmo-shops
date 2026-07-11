@@ -48,5 +48,13 @@ export const paymentMethodSchema = z
     }
   });
 
+/** Д3: ценова зона към courier метод (име + цена). */
+export const zoneSchema = z.object({
+  shippingMethodId: z.uuid(),
+  name: z.string().trim().min(2, "Въведи име на зона").max(60),
+  price: priceString,
+});
+
 export type ShippingMethodInput = z.infer<typeof shippingMethodSchema>;
 export type PaymentMethodInput = z.infer<typeof paymentMethodSchema>;
+export type ZoneInput = z.infer<typeof zoneSchema>;

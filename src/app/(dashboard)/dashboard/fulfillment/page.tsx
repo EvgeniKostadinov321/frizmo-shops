@@ -5,6 +5,7 @@ import {
   getPaymentMethods,
   getShippingMethods,
 } from "@/db/queries/fulfillment";
+import { getZonesForShop } from "@/db/queries/shipping-zones";
 import { requireShop } from "@/lib/auth";
 
 export const metadata = { title: "Плащане и доставка — Frizmo Shops" };
@@ -13,14 +14,15 @@ export default async function FulfillmentPage() {
   const { shop } = await requireShop();
   await ensureDefaultMethods(shop.id);
 
-  const [shipping, payment] = await Promise.all([
+  const [shipping, payment, zones] = await Promise.all([
     getShippingMethods(shop.id),
     getPaymentMethods(shop.id),
+    getZonesForShop(shop.id),
   ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <FulfillmentManager shipping={shipping} payment={payment} />
+      <FulfillmentManager shipping={shipping} payment={payment} zones={zones} />
       <OrderSettings
         giftWrapEnabled={shop.giftWrapEnabled}
         giftWrapFeeCents={shop.giftWrapFeeCents}
