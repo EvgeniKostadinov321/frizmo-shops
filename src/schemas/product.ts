@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { cmToMm, toCents, toMilliQuantity } from "@/lib/money";
+import { isValidGtin } from "@/lib/gtin";
 
 const priceString = z
   .string()
@@ -95,6 +96,24 @@ export const productSchema = z.object({
   width: optionalDimension.default(""),
   height: optionalDimension.default(""),
   netQuantity,
+  /* Продуктови кодове (identifiers) — надграждат product feed-а. */
+  sku: z.string().trim().max(60).default(""),
+  gtin: z
+    .union([
+      z
+        .string()
+        .trim()
+        .refine((s) => isValidGtin(s), "Невалиден баркод (8–14 цифри с контролна цифра)"),
+      z.literal(""),
+    ])
+    .default(""),
+  brand: z.string().trim().max(60).default(""),
+  cost: optionalPriceString.default(""),
+  /* SEO override per продукт. */
+  seoTitle: z.string().trim().max(60).default(""),
+  seoDescription: z.string().trim().max(160).default(""),
+  /* Закачена размерна таблица (per магазин). */
+  sizeGuideId: z.union([z.uuid(), z.literal("")]).default(""),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

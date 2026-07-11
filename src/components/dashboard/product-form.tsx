@@ -1,9 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { saveProduct } from "@/actions/products";
+import {
+  getModeSnapshot,
+  getServerModeSnapshot,
+  onModeChange,
+  setMode,
+} from "@/lib/product-form-mode";
 import { AttributesEditor, type AttributeRow } from "./attributes-editor";
 import { ImageUploader } from "./image-uploader";
 import { OptionsEditor } from "./options-editor";
@@ -45,12 +51,20 @@ export interface ProductFormInitial {
   height: string;
   netQuantityValue: string;
   netQuantityUnit: string;
+  sku: string;
+  gtin: string;
+  brand: string;
+  cost: string;
+  seoTitle: string;
+  seoDescription: string;
+  sizeGuideId: string;
 }
 
 interface ProductFormProps {
   productId?: string;
   initial?: ProductFormInitial;
   categories: { value: string; label: string }[];
+  sizeGuides: { value: string; label: string }[];
   /** Опростен режим за onboarding: без характеристики и варианти. */
   simple?: boolean;
   redirectTo?: string;
@@ -75,12 +89,20 @@ const emptyInitial: ProductFormInitial = {
   height: "",
   netQuantityValue: "",
   netQuantityUnit: "g",
+  sku: "",
+  gtin: "",
+  brand: "",
+  cost: "",
+  seoTitle: "",
+  seoDescription: "",
+  sizeGuideId: "",
 };
 
 export function ProductForm({
   productId,
   initial = emptyInitial,
   categories,
+  sizeGuides,
   simple = false,
   redirectTo = "/dashboard/products",
 }: ProductFormProps) {
@@ -103,8 +125,19 @@ export function ProductForm({
   const [height, setHeight] = useState(initial.height);
   const [netQuantityValue, setNetQuantityValue] = useState(initial.netQuantityValue);
   const [netQuantityUnit, setNetQuantityUnit] = useState(initial.netQuantityUnit);
+  const [sku, setSku] = useState(initial.sku);
+  const [gtin, setGtin] = useState(initial.gtin);
+  const [brand, setBrand] = useState(initial.brand);
+  const [cost, setCost] = useState(initial.cost);
+  const [seoTitle, setSeoTitle] = useState(initial.seoTitle);
+  const [seoDescription, setSeoDescription] = useState(initial.seoDescription);
+  const [sizeGuideId, setSizeGuideId] = useState(initial.sizeGuideId);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  /* „Бързо/Детайлно": onboarding е закован „Бързо" (simple); иначе от localStorage. */
+  const mode = useSyncExternalStore(onModeChange, getModeSnapshot, getServerModeSnapshot);
+  const showDetailed = !simple && mode === "detailed";
 
   function handleAxesChange(nextAxes: OptionAxis[]) {
     setAxes(nextAxes);
@@ -155,6 +188,13 @@ export function ProductForm({
           netQuantityValue.trim() === ""
             ? null
             : { value: netQuantityValue, unit: netQuantityUnit || "g" },
+        sku,
+        gtin,
+        brand,
+        cost,
+        seoTitle,
+        seoDescription,
+        sizeGuideId,
       });
 
       if (!result.ok) {
@@ -179,6 +219,35 @@ export function ProductForm({
       }}
       noValidate
     >
+      {!simple && (
+        <div className="flex items-center gap-1 self-start rounded-control border border-surface-200 bg-surface-0 p-1">
+          <button
+            type="button"
+            onClick={() => setMode("quick")}
+            aria-pressed={mode === "quick"}
+            className={`h-9 rounded-control px-4 text-sm font-medium transition-colors ${
+              mode === "quick"
+                ? "bg-brand-600 text-surface-0"
+                : "text-ink-700 hover:bg-surface-100"
+            }`}
+          >
+            Бързо
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("detailed")}
+            aria-pressed={mode === "detailed"}
+            className={`h-9 rounded-control px-4 text-sm font-medium transition-colors ${
+              mode === "detailed"
+                ? "bg-brand-600 text-surface-0"
+                : "text-ink-700 hover:bg-surface-100"
+            }`}
+          >
+            Детайлно
+          </button>
+        </div>
+      )}
+
       <Card className="flex flex-col gap-4">
         <h2 className="text-lg font-bold text-ink-900">Основни</h2>
         <Input
@@ -266,7 +335,7 @@ export function ProductForm({
         {fieldErrors.images && <p className="text-sm text-danger-600">{fieldErrors.images}</p>}
       </Card>
 
-      {!simple && (
+      {showDetailed && (
         <>
           <Card className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
@@ -355,6 +424,90 @@ export function ProductForm({
               <p className="text-sm text-ink-500">
                 Нетно съдържание — това вижда клиентът (напр. 500 мл, 250 г, 1 кг).
               </p>
+            </div>
+          </Card>
+
+          <Card className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-ink-900">Продуктови кодове</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="SKU"
+                hint="Твой вътрешен код (напр. BLU-M-01). Клиентът не го вижда."
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                error={fieldErrors.sku}
+              />
+              <Input
+                label="Баркод (GTIN / EAN)"
+                hint="Баркод на артикула. Подобрява рекламите в Google."
+                inputMode="numeric"
+                value={gtin}
+                onChange={(e) => setGtin(e.target.value)}
+                error={fieldErrors.gtin}
+              />
+              <Input
+                label="Марка"
+                hint="Реалната марка. Празно → името на магазина."
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                error={fieldErrors.brand}
+              />
+              <PriceInput
+                label="Доставна цена"
+                hint="Само за теб — смятаме печалба. Не се вижда публично."
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                error={fieldErrors.cost}
+              />
+            </div>
+          </Card>
+
+          <Card className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-ink-900">Таблица с размери</h2>
+            {sizeGuides.length > 0 ? (
+              <Select
+                label="Таблица с размери"
+                options={sizeGuides}
+                placeholder="— Няма —"
+                value={sizeGuideId}
+                onChange={(e) => setSizeGuideId(e.target.value)}
+              />
+            ) : (
+              <div className="flex flex-col gap-2 rounded-control border border-dashed border-surface-300 bg-surface-50 p-4">
+                <p className="text-sm text-ink-500">
+                  Още нямаш таблици с размери. Създай таблица (напр. „Дамски дрехи“) и я
+                  закачи тук — купувачите ще виждат размерите преди да поръчат.
+                </p>
+                <div>
+                  <LinkButton href="/dashboard/size-guides" variant="secondary" size="sm">
+                    <Icon name="plus" size={16} />
+                    Създай таблица
+                  </LinkButton>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          <Card className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold text-ink-900">SEO</h2>
+            <Input
+              label="SEO заглавие"
+              hint="Празно → името на продукта. Показва се в таба на браузъра и Google."
+              maxLength={60}
+              value={seoTitle}
+              onChange={(e) => setSeoTitle(e.target.value)}
+              error={fieldErrors.seoTitle}
+            />
+            <div className="flex flex-col gap-1">
+              <Textarea
+                label="SEO описание"
+                hint="Празно → началото на описанието. Показва се в Google под заглавието."
+                maxLength={160}
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                error={fieldErrors.seoDescription}
+              />
+              <p className="self-end text-xs text-ink-500">{seoDescription.length}/160</p>
             </div>
           </Card>
 

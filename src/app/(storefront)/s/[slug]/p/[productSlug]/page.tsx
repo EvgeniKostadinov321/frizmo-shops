@@ -11,6 +11,8 @@ import { Stars } from "@/components/storefront/stars";
 import { StockAlertForm } from "@/components/storefront/stock-alert-form";
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getApprovedReviews, getReviewAggregates } from "@/db/queries/reviews";
+import { getSizeGuide } from "@/db/queries/size-guides";
+import { SizeGuideModal } from "@/components/storefront/size-guide-modal";
 import { VariantPicker } from "@/components/storefront/variant-picker";
 import {
   getActiveProduct,
@@ -34,11 +36,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const product = await getActiveProduct(result.shop.id, productSlug);
   if (!product) return {};
   return {
-    title: `${product.name} — ${result.shop.name}`,
-    description: product.description.slice(0, 160) || product.name,
+    title: product.seoTitle || `${product.name} — ${result.shop.name}`,
+    description:
+      product.seoDescription || product.description.slice(0, 160) || product.name,
     alternates: { canonical: `/s/${slug}/p/${productSlug}` },
     openGraph: {
-      title: product.name,
+      title: product.seoTitle || product.name,
       ...(product.images[0] && { images: [publicImageUrl(product.images[0])] }),
     },
   };
@@ -66,6 +69,9 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
   const activeShipping = shipping.filter((m) => m.active);
   const rating = aggregates.get(product.id) ?? null;
   const category = categories.find((c) => c.id === product.categoryId);
+  const sizeGuide = product.sizeGuideId
+    ? await getSizeGuide(shop.id, product.sizeGuideId)
+    : null;
 
   const effectivePrice = product.promoPriceCents ?? product.priceCents;
   const inStock = product.stock === null || product.stock > 0;
@@ -150,6 +156,21 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
             : null
         }
       />
+
+      {(product.brand || sizeGuide) && (
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          {product.brand && (
+            <p className="text-sm text-(--sf-muted)">Марка: {product.brand}</p>
+          )}
+          {sizeGuide && (
+            <SizeGuideModal
+              name={sizeGuide.name}
+              columns={sizeGuide.columns}
+              rows={sizeGuide.rows}
+            />
+          )}
+        </div>
+      )}
 
       {/* S14: изчерпан продукт (следи наличност) → „извести ме" */}
       {product.stock === 0 && (

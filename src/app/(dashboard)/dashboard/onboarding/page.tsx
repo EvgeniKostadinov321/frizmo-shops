@@ -65,7 +65,7 @@ export default async function OnboardingPage() {
         Магазинът „{shop.name}“ е създаден! Добави първия продукт — детайли като
         характеристики и варианти можеш да добавиш по-късно.
       </OnboardingHeader>
-      <ProductForm simple categories={[]} redirectTo="/dashboard" />
+      <ProductForm simple categories={[]} sizeGuides={[]} redirectTo="/dashboard" />
       <p className="text-center">
         <Link
           href="/dashboard"

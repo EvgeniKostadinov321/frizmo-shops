@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/dashboard/product-form";
 import { getCategoriesTree } from "@/db/queries/categories";
 import { getProductWithRelations } from "@/db/queries/products";
+import { getSizeGuides } from "@/db/queries/size-guides";
 import { requireShop } from "@/lib/auth";
 import { centsToInput, scaledToInput } from "@/lib/money";
 
@@ -18,11 +19,15 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const product = await getProductWithRelations(id);
   if (!product || product.shopId !== shop.id) notFound();
 
-  const tree = await getCategoriesTree(shop.id);
+  const [tree, guides] = await Promise.all([
+    getCategoriesTree(shop.id),
+    getSizeGuides(shop.id),
+  ]);
   const categoryOptions = tree.flatMap((root) => [
     { value: root.id, label: root.name },
     ...root.children.map((c) => ({ value: c.id, label: `${root.name} → ${c.name}` })),
   ]);
+  const sizeGuideOptions = guides.map((g) => ({ value: g.id, label: g.name }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -30,6 +35,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
       <ProductForm
         productId={product.id}
         categories={categoryOptions}
+        sizeGuides={sizeGuideOptions}
         initial={{
           name: product.name,
           description: product.description,
@@ -61,6 +67,13 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           netQuantityValue:
             product.netQuantityValue !== null ? scaledToInput(product.netQuantityValue, 1000) : "",
           netQuantityUnit: product.netQuantityUnit ?? "g",
+          sku: product.sku ?? "",
+          gtin: product.gtin ?? "",
+          brand: product.brand ?? "",
+          cost: centsToInput(product.costCents),
+          seoTitle: product.seoTitle ?? "",
+          seoDescription: product.seoDescription ?? "",
+          sizeGuideId: product.sizeGuideId ?? "",
         }}
       />
     </div>

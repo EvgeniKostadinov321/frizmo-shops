@@ -11,11 +11,13 @@ import {
   products,
   productVariants,
   promotions,
+  sizeGuides,
 } from "@/db";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { parseCsv } from "@/lib/csv";
+import { isValidGtin } from "@/lib/gtin";
 import { toCents } from "@/lib/money";
 import { slugify } from "@/lib/slug";
 import { getShopPlan, PLAN_LIMITS } from "@/lib/plan";
@@ -146,6 +148,13 @@ export async function saveProduct(
       where: eq(categories.id, input.categoryId),
     });
     if (!category || category.shopId !== shop.id) return fail("Невалидна категория.");
+  }
+
+  if (input.sizeGuideId) {
+    const guide = await db.query.sizeGuides.findFirst({
+      where: eq(sizeGuides.id, input.sizeGuideId),
+    });
+    if (!guide || guide.shopId !== shop.id) return fail("Невалидна таблица с размери.");
   }
 
   if (productId === null) {
@@ -354,6 +363,10 @@ const CSV_HEADER = [
   "height_cm",
   "net_quantity",
   "net_quantity_unit",
+  "sku",
+  "gtin",
+  "brand",
+  "cost",
 ] as const;
 const CSV_MAX_ROWS = 500;
 
@@ -477,6 +490,20 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
         continue;
       }
 
+      const skuRaw = sanitizeText(cell(row, "sku"), 60);
+      const gtinRaw = cell(row, "gtin");
+      if (gtinRaw && !isValidGtin(gtinRaw)) {
+        result.skipped.push(`ред ${lineNo}: невалиден баркод „${gtinRaw}“`);
+        continue;
+      }
+      const brandRaw = sanitizeText(cell(row, "brand"), 60);
+      const costRaw = cell(row, "cost");
+      const costCents = costRaw ? toCents(costRaw.replace(",", ".")) : null;
+      if (costRaw && costCents === null) {
+        result.skipped.push(`ред ${lineNo}: невалидна доставна цена „${costRaw}“`);
+        continue;
+      }
+
       const values = {
         name,
         description: sanitizeMultiline(cell(row, "description"), 10_000),
@@ -486,6 +513,10 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
         status,
         categoryId,
         ...measures.values,
+        sku: skuRaw || null,
+        gtin: gtinRaw || null,
+        brand: brandRaw || null,
+        costCents,
         updatedAt: new Date(),
       };
 

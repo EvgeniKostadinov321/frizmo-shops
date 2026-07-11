@@ -20,6 +20,13 @@ export function productValues(input: ProductInput, shopId: string) {
     heightMm: input.height === "" ? null : cmToMm(input.height),
     netQuantityValue: input.netQuantity ? toMilliQuantity(input.netQuantity.value)! : null,
     netQuantityUnit: input.netQuantity ? input.netQuantity.unit : null,
+    sku: input.sku ? sanitizeText(input.sku, 60) : null,
+    gtin: input.gtin || null,
+    brand: input.brand ? sanitizeText(input.brand, 60) : null,
+    costCents: input.cost ? toCents(input.cost) : null,
+    seoTitle: input.seoTitle ? sanitizeText(input.seoTitle, 60) : null,
+    seoDescription: input.seoDescription ? sanitizeText(input.seoDescription, 160) : null,
+    sizeGuideId: input.sizeGuideId || null,
     updatedAt: new Date(),
   };
 }
