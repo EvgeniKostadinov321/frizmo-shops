@@ -3,14 +3,50 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { campaigns, db, shops, subscribers } from "@/db";
+import { campaigns, coupons, db, referrals, shops, subscribers } from "@/db";
 import { clientIp } from "@/actions/cart";
 import { revalidatePath } from "next/cache";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sendCampaignEmail, sendNewsletterConfirmEmail } from "@/lib/email";
+import { generateCouponCode } from "@/lib/coupon-code";
+import { welcomeCouponLabel, type CouponType } from "@/lib/coupon-label";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
+
+/**
+ * Издава купон + връща кода. Уникален per магазин (retry до 5 при колизия).
+ * maxUses: 1 за welcome (еднократен), null за referral (многократен).
+ */
+async function issueCoupon(
+  shopId: string,
+  prefix: string,
+  type: CouponType,
+  value: number,
+  minSubtotalCents: number,
+  maxUses: number | null,
+  expiresAt: Date | null,
+): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateCouponCode(prefix);
+    try {
+      await db.insert(coupons).values({
+        shopId,
+        code,
+        discountType: type,
+        discountValue: value,
+        minSubtotalCents,
+        maxUses,
+        expiresAt,
+        active: true,
+      });
+      return code;
+    } catch {
+      /* Колизия по unique (shopId, code) → нов опит. */
+    }
+  }
+  throw new Error("Неуспешно генериране на уникален код");
+}
 
 const subscribeSchema = z.object({
   email: z.email("Невалиден имейл"),
@@ -80,38 +116,82 @@ const confirmSchema = z.object({
 
 export type ConfirmResult = "confirmed" | "already" | "unsubscribed" | "invalid";
 
+export interface ConfirmOutcome {
+  result: ConfirmResult;
+  welcomeCode?: string;
+  welcomeLabel?: string;
+  referralCode?: string;
+  referralLabel?: string;
+}
+
 /**
  * Потвърждава/отписва абонамент по token. Мутацията е ТУК (не при рендиране на
  * страницата), за да не я задейства prefetch/preview на линка от имейл клиент.
- * Викана от бутон на страницата с потвърждение.
+ * Викана от бутон на страницата с потвърждение. При първо потвърждение издава
+ * welcome/referral кодове (ако са включени) и ги връща за показване.
  */
-export async function confirmNewsletter(rawInput: unknown): Promise<ConfirmResult> {
+export async function confirmNewsletter(rawInput: unknown): Promise<ConfirmOutcome> {
   const parsed = confirmSchema.safeParse(rawInput);
-  if (!parsed.success) return "invalid";
+  if (!parsed.success) return { result: "invalid" };
   const { shopSlug, token, action } = parsed.data;
 
   const shop = await db.query.shops.findFirst({ where: eq(shops.slug, shopSlug) });
-  if (!shop) return "invalid";
+  if (!shop) return { result: "invalid" };
 
   const row = await db.query.subscribers.findFirst({
     where: and(eq(subscribers.shopId, shop.id), eq(subscribers.token, token)),
   });
-  if (!row) return "invalid";
+  if (!row) return { result: "invalid" };
 
   if (action === "unsubscribe") {
     await db
       .update(subscribers)
       .set({ status: "unsubscribed", updatedAt: new Date() })
       .where(eq(subscribers.id, row.id));
-    return "unsubscribed";
+    return { result: "unsubscribed" };
   }
 
-  if (row.status === "confirmed") return "already";
+  /* Вече потвърден → НЕ издаваме втори код (идемпотентност). */
+  if (row.status === "confirmed") return { result: "already" };
+
+  const now = new Date();
   await db
     .update(subscribers)
-    .set({ status: "confirmed", confirmedAt: new Date(), updatedAt: new Date() })
+    .set({ status: "confirmed", confirmedAt: now, updatedAt: now })
     .where(eq(subscribers.id, row.id));
-  return "confirmed";
+
+  const out: ConfirmOutcome = { result: "confirmed" };
+
+  if (shop.welcomeCouponEnabled) {
+    const expires = new Date(now.getTime() + 30 * 86_400_000);
+    out.welcomeCode = await issueCoupon(
+      shop.id,
+      "WELCOME",
+      shop.welcomeCouponType,
+      shop.welcomeCouponValue,
+      shop.welcomeCouponMinSubtotalCents,
+      1,
+      expires,
+    );
+    out.welcomeLabel = welcomeCouponLabel(shop.welcomeCouponType, shop.welcomeCouponValue);
+  }
+
+  if (shop.referralEnabled) {
+    const refCode = await issueCoupon(
+      shop.id,
+      "REF",
+      shop.referralType,
+      shop.referralValue,
+      shop.referralMinSubtotalCents,
+      null,
+      null,
+    );
+    await db.insert(referrals).values({ shopId: shop.id, subscriberId: row.id, code: refCode });
+    out.referralCode = refCode;
+    out.referralLabel = welcomeCouponLabel(shop.referralType, shop.referralValue);
+  }
+
+  return out;
 }
 
 const campaignSchema = z.object({

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { confirmNewsletter, type ConfirmResult } from "@/actions/newsletter";
+import { confirmNewsletter, type ConfirmOutcome, type ConfirmResult } from "@/actions/newsletter";
 
 const MESSAGES: Record<ConfirmResult, { title: string; text: string }> = {
   confirmed: {
@@ -51,7 +51,7 @@ export function NewsletterConfirm({
   token: string;
   action: "confirm" | "unsubscribe";
 }) {
-  const [result, setResult] = useState<ConfirmResult | null>(null);
+  const [result, setResult] = useState<ConfirmOutcome | null>(null);
   const [pending, startTransition] = useTransition();
 
   function run() {
@@ -60,7 +60,7 @@ export function NewsletterConfirm({
     });
   }
 
-  const view = result ? MESSAGES[result] : PROMPT[action];
+  const view = result ? MESSAGES[result.result] : PROMPT[action];
 
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-lg flex-col items-center justify-center gap-4 px-4 py-16 text-center">
@@ -68,6 +68,29 @@ export function NewsletterConfirm({
         {view.title}
       </h1>
       <p className="text-(--sf-muted)">{view.text}</p>
+
+      {result?.welcomeCode && (
+        <div className="mt-2 w-full rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-5 py-4">
+          <p className="text-sm text-(--sf-muted)">Твоят код за {result.welcomeLabel}:</p>
+          <p className="mt-1 font-mono text-lg font-bold tracking-wider text-(--sf-text)">
+            {result.welcomeCode}
+          </p>
+          <p className="mt-1 text-xs text-(--sf-muted)">
+            Валиден 30 дни. Въведи го при поръчка.
+          </p>
+        </div>
+      )}
+      {result?.referralCode && (
+        <div className="mt-2 w-full rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-5 py-4">
+          <p className="text-sm text-(--sf-muted)">Код за приятел ({result.referralLabel}):</p>
+          <p className="mt-1 font-mono text-lg font-bold tracking-wider text-(--sf-text)">
+            {result.referralCode}
+          </p>
+          <p className="mt-1 text-xs text-(--sf-muted)">
+            Сподели го — приятелят ти получава отстъпка.
+          </p>
+        </div>
+      )}
 
       {result === null ? (
         <button
