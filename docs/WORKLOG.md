@@ -81,6 +81,20 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-11 · `f34c469`…`eacf74a` (dev, НЕ push-нато)** — **Доверие + AOV пакет: verified
+  ревюта · cross-sell в количката · „Нов" badge.** Спец
+  (`docs/superpowers/specs/2026-07-11-trust-aov-bundle-design.md`) → план
+  (`docs/superpowers/plans/2026-07-11-trust-aov-bundle.md`) → inline (7 задачи, TDD). **A:** нова
+  колона `reviews.verified` (`db:push` приложен на общата база); опционален телефон в ревю формата →
+  `hasPurchasedProduct` (поръчка confirmed/shipped/completed + продукта) → бадж „Потвърдена покупка";
+  телефонът НЕ се пази; модерацията непроменена. **B:** `getCartSuggestions` action (категориите на
+  количката, извън нея, ≤4) → лента „Може да ти хареса" в `CartView` (drawer + /cart). **C:**
+  `isNewProduct(createdAt, now, 14)` (тествана) → бадж „Нов" top-left в `ProductCard` (стек с промо).
+  react-compiler фиксове (Date.now нарочен per-request; без синхронен setState в effect). `pnpm check`
+  минава (5 нови теста). **Тест (ръчно, light+dark+375px):** verified бадж след ревю с телефон,
+  съвпадащ с поръчка (и без съвпадение → без бадж); cross-sell лента в drawer/cart; „Нов" бадж на
+  скоро добавени продукти. **Остава:** ръчна проверка + push.
+
 - **2026-07-11 · `affe693`…`0b737ca` (dev, PUSH-нато на prod)** — **Конверсионно трио: търсене в
   хедъра · доставка на продукта · trust badges на checkout.** Спец
   (`docs/superpowers/specs/2026-07-11-conversion-trio-design.md`) → план
