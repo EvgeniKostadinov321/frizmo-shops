@@ -21,8 +21,11 @@
 - Нов client компонент `HeaderSearch` — лупа-икона бутон; клик отваря лента на цялата
   ширина под хедъра с autofocus input. `Enter`/submit → GET към `/s/{slug}/products` с
   `name="search"`. `Esc`, бутон „×" и клик извън лентата затварят.
-- **Монтиране:** в action клъстера на 3-те header варианта (до `CartButton`/`FavoritesButton`,
-  през общ `shared.tsx` export) + отделен вход „Търсене" в мобилното меню (`MobileMenu` drawer).
+- **Монтиране:** лупа-икона в action клъстера на 3-те header варианта (до `CartButton`/
+  `FavoritesButton`, през общ `shared.tsx` export), **видима на всички breakpoints** (вкл. мобилно —
+  мобилният трафик е 65%+, търсенето не бива да е скрито зад бургера). Overlay лентата е `fixed` на
+  цялата ширина (`z-50`, покрива header реда) → еднаква във всички варианти. Без отделен вход в
+  drawer-а (иконата е винаги видима).
 - **Реюз:** същият `search` param + `getActiveProducts` — БЕЗ промяна по заявката/`/products`.
 - **Данни:** компонентът получава `base` (`/s/{shop.slug}`) от header варианта.
 - **Edge:** празно/само-празни символи → не сабмитва (native `required` + trim guard).
