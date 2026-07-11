@@ -20,6 +20,9 @@ export const shopStatusEnum = pgEnum("shop_status", [
   "blocked",
 ]);
 
+/** Тип отстъпка за купон/welcome/referral (дефиниран рано — ползва се в shops). */
+export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
+
 /**
  * 1:1 със Supabase auth.users (id = auth user id).
  * enableRLS без политики: достъпът е само през сървъра (Drizzle, direct Postgres) —
@@ -58,6 +61,18 @@ export const shops = pgTable(
     giftCardEnabled: boolean("gift_card_enabled").notNull().default(false),
     /** N12: срок за заявка на връщане в дни (14/30/45, валидира се в Zod). */
     returnWindowDays: integer("return_window_days").notNull().default(14),
+    /** В1: Welcome купон за нови абонати (авто при потвърждение). Използва couponTypeEnum. */
+    welcomeCouponEnabled: boolean("welcome_coupon_enabled").notNull().default(false),
+    welcomeCouponType: couponTypeEnum("welcome_coupon_type").notNull().default("percent"),
+    welcomeCouponValue: integer("welcome_coupon_value").notNull().default(10),
+    welcomeCouponMinSubtotalCents: integer("welcome_coupon_min_subtotal_cents")
+      .notNull()
+      .default(0),
+    /** В2: Реферален купон (за приятел на абоната). */
+    referralEnabled: boolean("referral_enabled").notNull().default(false),
+    referralType: couponTypeEnum("referral_type").notNull().default("percent"),
+    referralValue: integer("referral_value").notNull().default(10),
+    referralMinSubtotalCents: integer("referral_min_subtotal_cents").notNull().default(0),
     status: shopStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -446,8 +461,7 @@ export const rateLimits = pgTable("rate_limits", {
   count: integer("count").notNull().default(0),
 }).enableRLS();
 
-/** Промо кодове за отстъпка на количката (per shop). */
-export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
+/** Промо кодове за отстъпка на количката (per shop). couponTypeEnum е дефиниран горе. */
 
 export const coupons = pgTable(
   "coupons",
@@ -507,6 +521,33 @@ export const subscribers = pgTable(
     index("subscribers_token_idx").on(t.token),
   ],
 ).enableRLS();
+
+/** В2: купон-базирани реферали — всеки абонат има личен реф. код (= coupons.code). */
+export const referrals = pgTable(
+  "referrals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    subscriberId: uuid("subscriber_id")
+      .notNull()
+      .references(() => subscribers.id, { onDelete: "cascade" }),
+    /** Личен реферален код — съществува и като запис в coupons. */
+    code: text("code").notNull(),
+    /** Брой поръчки, направени с този код. */
+    referredCount: integer("referred_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("referrals_shop_code_idx").on(t.shopId, t.code),
+    index("referrals_shop_idx").on(t.shopId),
+    index("referrals_subscriber_idx").on(t.subscriberId),
+  ],
+).enableRLS();
+
+export type Referral = typeof referrals.$inferSelect;
 
 /** S4: изпратени newsletter кампании — история + одит. */
 export const campaigns = pgTable(
