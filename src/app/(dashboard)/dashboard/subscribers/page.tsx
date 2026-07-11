@@ -3,7 +3,9 @@ import { GrowthSettingsForm } from "@/components/dashboard/growth-settings-form"
 import { SubscribersExport } from "@/components/dashboard/subscribers-export";
 import { Card, EmptyState, Table, TBody, TCell, TH, THead, TRow } from "@/components/ui";
 import { getCampaigns, getConfirmedSubscribers } from "@/db/queries/subscribers";
+import { getShopReferrals } from "@/db/queries/referrals";
 import { requireShop } from "@/lib/auth";
+import { count, NOUNS } from "@/lib/plural";
 
 export const metadata = { title: "Абонати — Frizmo Shops" };
 
@@ -15,9 +17,10 @@ const dateFormat = new Intl.DateTimeFormat("bg-BG", {
 
 export default async function SubscribersPage() {
   const { shop } = await requireShop();
-  const [rows, campaignHistory] = await Promise.all([
+  const [rows, campaignHistory, referralsList] = await Promise.all([
     getConfirmedSubscribers(shop.id),
     getCampaigns(shop.id),
+    getShopReferrals(shop.id),
   ]);
 
   return (
@@ -37,6 +40,38 @@ export default async function SubscribersPage() {
         <h2 className="font-display text-lg font-bold text-ink-900">Купони за растеж</h2>
         <GrowthSettingsForm shop={shop} />
       </section>
+
+      {/* В2: реферали — кой абонат колко клиенти е довел */}
+      {referralsList.length > 0 && (
+        <Card>
+          <div className="border-b border-surface-200 px-5 py-4">
+            <h2 className="font-display text-lg font-bold text-ink-900">Реферали</h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              Абонати с личен реферален код и брой доведени поръчки.
+            </p>
+          </div>
+          <Table>
+            <THead>
+              <TRow>
+                <TH>Абонат</TH>
+                <TH>Код</TH>
+                <TH>Доведени</TH>
+              </TRow>
+            </THead>
+            <TBody>
+              {referralsList.map((r) => (
+                <TRow key={r.code}>
+                  <TCell className="font-medium text-ink-900">{r.email}</TCell>
+                  <TCell className="font-mono text-ink-700">{r.code}</TCell>
+                  <TCell className="tabular-nums text-ink-500">
+                    {count(r.referredCount, NOUNS.order)}
+                  </TCell>
+                </TRow>
+              ))}
+            </TBody>
+          </Table>
+        </Card>
+      )}
 
       {/* S4: нова кампания (само при поне 1 абонат) + история */}
       {rows.length > 0 && <CampaignComposer recipientCount={rows.length} />}
