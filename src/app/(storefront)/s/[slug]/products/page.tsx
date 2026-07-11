@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icon, TransitionLink } from "@/components/ui";
 import { toCents } from "@/lib/money";
@@ -140,13 +141,13 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
               className="h-11 w-full rounded-full border border-(--sf-border) bg-(--sf-surface-raised) pl-10 pr-10 text-(--sf-text) shadow-(--sf-shadow) transition-colors placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
             />
             {sp.search && (
-              <TransitionLink
+              <Link
                 href={pageUrl({ search: undefined, page: undefined })}
                 aria-label="Изчисти търсенето"
                 className="absolute inset-y-0 right-1 flex w-10 items-center justify-center text-(--sf-muted) hover:text-(--sf-text)"
               >
                 <Icon name="x" size={16} />
-              </TransitionLink>
+              </Link>
             )}
           </form>
         </div>

@@ -250,6 +250,7 @@ export function ProductForm({
             label="Наличност"
             type="number"
             min={0}
+            inputMode="numeric"
             value={stock}
             onChange={(e) => setStock(e.target.value)}
             error={fieldErrors.stock}
@@ -279,6 +280,7 @@ export function ProductForm({
             <div className="flex flex-col gap-1 sm:max-w-xs">
               <Input
                 label="Тегло (грамове)"
+                hint="Тегло на пратката — за доставка (Еконт/Спиди). Клиентът не го вижда."
                 type="number"
                 min={1}
                 inputMode="numeric"
@@ -351,7 +353,7 @@ export function ProductForm({
                 />
               </div>
               <p className="text-sm text-ink-500">
-                Показва се на страницата на продукта, напр. „500 мл“.
+                Нетно съдържание — това вижда клиентът (напр. 500 мл, 250 г, 1 кг).
               </p>
             </div>
           </Card>
@@ -371,6 +373,7 @@ export function ProductForm({
                   type="number"
                   min={2}
                   max={50}
+                  inputMode="numeric"
                   value={deal.quantity}
                   onChange={(e) => setDeal({ ...deal, quantity: e.target.value })}
                   error={fieldErrors.deal}

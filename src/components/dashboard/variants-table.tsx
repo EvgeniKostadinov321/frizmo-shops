@@ -57,6 +57,7 @@ export function VariantsTable({
                 label="Наличност"
                 type="number"
                 min={0}
+                inputMode="numeric"
                 placeholder="—"
                 value={variant.stock}
                 onChange={(e) => update(i, { stock: e.target.value })}
@@ -138,6 +139,7 @@ export function VariantsTable({
                 hideLabel
                 type="number"
                 min={0}
+                inputMode="numeric"
                 placeholder="—"
                 value={variant.stock}
                 onChange={(e) => update(i, { stock: e.target.value })}

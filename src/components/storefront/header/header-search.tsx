@@ -39,13 +39,13 @@ export function HeaderSearch({ base }: { base: string }) {
             </span>
             <input
               ref={inputRef}
-              type="search"
+              type="text"
               name="search"
               required
               placeholder="Търси в магазина…"
               aria-label="Търсене на продукти"
               enterKeyHint="search"
-              className="h-11 flex-1 bg-transparent text-(--sf-text) placeholder:text-(--sf-muted) focus:outline-none"
+              className="h-11 min-w-0 flex-1 bg-transparent text-(--sf-text) placeholder:text-(--sf-muted) focus:outline-none"
             />
             <button
               type="button"

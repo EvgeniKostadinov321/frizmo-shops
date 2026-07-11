@@ -207,6 +207,7 @@ export function ManualOrderForm({
                       type="number"
                       min={1}
                       max={999}
+                      inputMode="numeric"
                       value={line.qty}
                       onChange={(e) => setQty(index, Number(e.target.value))}
                       aria-label="Количество"
