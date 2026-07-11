@@ -7,6 +7,7 @@ import { categories, db } from "@/db";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
+import { categoryDepth, MAX_CATEGORY_DEPTH } from "@/lib/category-tree";
 import { sanitizeText } from "@/lib/sanitize";
 import { categorySchema } from "@/schemas/category";
 
@@ -19,6 +20,18 @@ function revalidateShop(slug: string) {
 async function ownCategory(id: string, shopId: string) {
   const category = await db.query.categories.findFirst({ where: eq(categories.id, id) });
   return category && category.shopId === shopId ? category : null;
+}
+
+/** Нивото на категория чрез следване на parentId веригата (1 = корен). */
+async function categoryLevel(id: string, shopId: string): Promise<number> {
+  let level = 1;
+  let current = await ownCategory(id, shopId);
+  while (current?.parentId) {
+    level++;
+    if (level > MAX_CATEGORY_DEPTH) break; // защита срещу счупена/циклична верига
+    current = await ownCategory(current.parentId, shopId);
+  }
+  return level;
 }
 
 function siblingFilter(shopId: string, parentId: string | null) {
@@ -41,7 +54,10 @@ export async function createCategory(input: {
   if (parentId) {
     const parent = await ownCategory(parentId, shop.id);
     if (!parent) return fail("Родителската категория не съществува.");
-    if (parent.parentId) return fail("Подкатегория не може да има свои подкатегории.");
+    const parentLevel = await categoryLevel(parent.id, shop.id);
+    if (categoryDepth(parentLevel) > MAX_CATEGORY_DEPTH) {
+      return fail("Категориите могат да са най-много 3 нива дълбоко.");
+    }
   }
 
   const [orderRow] = await db
