@@ -85,6 +85,15 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-11 (ПАКЕТ Б — „Доверие на продукта" ✅ КОД) · commits `edfeb98`(спец)→`1320871`(план)→`411b9d9`…`c90a5e8`(имплементация)** —
+  Вторият групиран пакет. 2 функции през spec→plan→TDD→gate, inline: **(1) „X продадени" бадж** —
+  `getSoldCount` (агрегат от order_items×orders, само confirmed/shipped/completed, не new/cancelled),
+  праг 5+, само продуктовата страница; нов индекс `order_items_product_idx`. **(2) Q&A на продукт** —
+  нова таблица `product_questions` + enum `question_status` (pending→answered); публична форма
+  (`QuestionForm`, rate limit + honeypot) → влиза pending → търговец отговаря в `/dashboard/questions`
+  и публикува → само answered се виждат; nav badge за чакащи (desktop+mobile). Огледало на
+  ревю-модерацията. `db:push` приложен. `pnpm check` ✓ (280 теста + build). **Чака ръчна проверка → push.**
+
 - **2026-07-11 (ПАКЕТ A — „Продуктова форма 2.0" ✅ КОД) · commits `7c3d1ec`(спец)→`3a42ead`(план)→`b50a37a`…`4d0d513`(имплементация)** —
   Първият групиран пакет от оставащите pure-code функции. 4 функции през spec→plan→TDD→gate,
   inline: **(1) Product identifiers** (SKU→g:mpn, GTIN с GS1 mod-10 валидация→g:gtin +
