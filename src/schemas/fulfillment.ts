@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidBgIban } from "@/lib/iban";
 import { toCents } from "@/lib/money";
 import { workingHoursSchema } from "@/lib/working-hours";
 
@@ -30,11 +31,22 @@ export const shippingMethodSchema = z.object({
   deliveryHours: z.union([workingHoursSchema, z.null()]).default(null),
 });
 
-export const paymentMethodSchema = z.object({
-  type: z.enum(["cod", "bank_transfer", "on_site"]),
-  name: z.string().trim().min(2, "Въведи име").max(60),
-  details: z.string().trim().max(300).default(""),
-});
+export const paymentMethodSchema = z
+  .object({
+    type: z.enum(["cod", "bank_transfer", "on_site"]),
+    name: z.string().trim().min(2, "Въведи име").max(60),
+    details: z.string().trim().max(300).default(""),
+  })
+  .superRefine((v, ctx) => {
+    /* Банков превод изисква валиден BG IBAN в details (смисълът на метода). */
+    if (v.type === "bank_transfer" && !isValidBgIban(v.details)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["details"],
+        message: "Въведи валиден IBAN (напр. BG80 BNBG 9661 1020 3456 78)",
+      });
+    }
+  });
 
 export type ShippingMethodInput = z.infer<typeof shippingMethodSchema>;
 export type PaymentMethodInput = z.infer<typeof paymentMethodSchema>;
