@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { db, shops } from "@/db";
 import { getPricingProducts } from "@/db/queries/cart";
+import { getCrossSellProducts } from "@/db/queries/storefront";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { priceCart, type PricedCart } from "@/lib/pricing";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -27,6 +28,37 @@ export interface CartLineView {
 export async function clientIp(): Promise<string> {
   const h = await headers();
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+}
+
+export interface SuggestionCard {
+  id: string;
+  name: string;
+  slug: string;
+  imagePath: string | null;
+  priceCents: number;
+  promoPriceCents: number | null;
+}
+
+/** Cross-sell предложения за количката (публично; лек rate limit; празно при нищо). */
+export async function getCartSuggestions(
+  slug: string,
+  rawIds: unknown,
+): Promise<SuggestionCard[]> {
+  const parsed = z.array(z.uuid()).max(50).safeParse(rawIds);
+  if (!parsed.success || parsed.data.length === 0) return [];
+  const ip = await clientIp();
+  if (!(await checkRateLimit(`cart-suggest:${ip}`, 30, 60))) return [];
+  const shop = await db.query.shops.findFirst({ where: eq(shops.slug, slug) });
+  if (!shop || shop.status !== "published") return [];
+  const rows = await getCrossSellProducts(shop.id, parsed.data);
+  return rows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    imagePath: p.images[0] ?? null,
+    priceCents: p.priceCents,
+    promoPriceCents: p.promoPriceCents,
+  }));
 }
 
 /** Публично ценообразуване на количката — сървърът е източникът на истината. */

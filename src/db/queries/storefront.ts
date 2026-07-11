@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, isNotNull, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNotNull, ne, notInArray, sql, type SQL } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
@@ -167,6 +167,29 @@ export async function getRelatedProducts(shopId: string, productId: string, cate
       eq(products.status, "active"),
       ne(products.id, productId),
       categoryId ? eq(products.categoryId, categoryId) : isNotNull(products.id),
+    ),
+    orderBy: [desc(products.createdAt)],
+    limit: 4,
+  });
+}
+
+/** Cross-sell: активни продукти от категориите на количката, извън нея (до 4, най-нови). */
+export async function getCrossSellProducts(shopId: string, productIds: string[]) {
+  if (productIds.length === 0) return [];
+  const inCart = await db.query.products.findMany({
+    where: and(eq(products.shopId, shopId), inArray(products.id, productIds)),
+    columns: { categoryId: true },
+  });
+  const categoryIds = [
+    ...new Set(inCart.map((p) => p.categoryId).filter((c): c is string => c !== null)),
+  ];
+  if (categoryIds.length === 0) return [];
+  return db.query.products.findMany({
+    where: and(
+      eq(products.shopId, shopId),
+      eq(products.status, "active"),
+      inArray(products.categoryId, categoryIds),
+      notInArray(products.id, productIds),
     ),
     orderBy: [desc(products.createdAt)],
     limit: 4,
