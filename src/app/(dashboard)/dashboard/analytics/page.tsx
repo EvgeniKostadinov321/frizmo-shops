@@ -1,3 +1,4 @@
+import { BreakdownTable } from "@/components/dashboard/breakdown-table";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { Icon, TransitionLink } from "@/components/ui";
 import {
@@ -6,8 +7,10 @@ import {
   type AnalyticsPeriod,
   type PeriodMetrics,
 } from "@/db/queries/analytics";
+import { getAnalyticsBreakdowns } from "@/db/queries/analytics-breakdowns";
 import { requireShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
+import { count, NOUNS } from "@/lib/plural";
 
 export const metadata = { title: "Аналитика — Frizmo Shops" };
 
@@ -65,7 +68,10 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
     ? (parsed as AnalyticsPeriod)
     : 30;
 
-  const { current, previous, daily, topProducts } = await getAnalytics(shop.id, period);
+  const [{ current, previous, daily, topProducts }, breakdowns] = await Promise.all([
+    getAnalytics(shop.id, period),
+    getAnalyticsBreakdowns(shop.id, period),
+  ]);
 
   const metric = (key: keyof PeriodMetrics) => ({ current: current[key], previous: previous[key] });
 
@@ -165,6 +171,97 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </ol>
         )}
       </section>
+
+      {/* В3: Източници на поръчки */}
+      <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
+        <h2 className="font-display text-lg font-bold text-ink-900">Източници на поръчки</h2>
+        <div className="mt-4 grid gap-6 lg:grid-cols-3">
+          <div>
+            <h3 className="mb-1 text-sm font-bold text-ink-700">По плащане</h3>
+            <BreakdownTable rows={breakdowns.sources.byPayment} emptyText="Няма данни." />
+          </div>
+          <div>
+            <h3 className="mb-1 text-sm font-bold text-ink-700">По град</h3>
+            <BreakdownTable rows={breakdowns.sources.byCity} emptyText="Няма данни." />
+          </div>
+          <div>
+            <h3 className="mb-1 text-sm font-bold text-ink-700">Купони</h3>
+            <BreakdownTable
+              rows={[breakdowns.sources.coupon.withCoupon, breakdowns.sources.coupon.withoutCoupon]}
+              emptyText="Няма данни."
+            />
+            <p className="mt-2 text-xs text-ink-500">
+              Обща отстъпка: {formatPrice(breakdowns.sources.coupon.totalDiscountCents)}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* В3: Конверсия абонати → клиенти */}
+      <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
+        <h2 className="font-display text-lg font-bold text-ink-900">От абонати към клиенти</h2>
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <MiniStat label="Нови абонати" value={String(breakdowns.conversion.newSubscribers)} />
+          <MiniStat
+            label="Поръчали абонати"
+            value={String(breakdowns.conversion.subscribersWhoOrdered)}
+          />
+          <MiniStat
+            label="Welcome поръчки"
+            value={String(breakdowns.conversion.welcomeOrders)}
+          />
+          <MiniStat
+            label="Приходи от welcome"
+            value={formatPrice(breakdowns.conversion.welcomeRevenueCents)}
+          />
+        </div>
+      </section>
+
+      {/* В3: Повторни клиенти (all-time) */}
+      <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-bold text-ink-900">Повторни клиенти</h2>
+          <p className="text-xs text-ink-500">за целия период</p>
+        </div>
+        <p className="mt-2 text-sm text-ink-700">
+          <strong className="tabular-nums">{breakdowns.repeat.repeatCustomers}</strong> от{" "}
+          <strong className="tabular-nums">{breakdowns.repeat.totalCustomers}</strong> клиенти са
+          поръчвали повече от веднъж.
+        </p>
+        {breakdowns.repeat.top.length > 0 && (
+          <ul className="mt-3 divide-y divide-surface-100">
+            {breakdowns.repeat.top.map((r) => (
+              <li key={r.phoneMasked} className="flex items-center gap-3 py-2 text-sm">
+                <span className="min-w-0 flex-1 font-mono text-ink-900">{r.phoneMasked}</span>
+                <span className="tabular-nums text-ink-500">{count(r.orderCount, NOUNS.order)}</span>
+                <span className="w-24 text-right font-bold tabular-nums text-ink-900">
+                  {formatPrice(r.totalCents)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* В3: Топ категории */}
+      <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
+        <h2 className="font-display text-lg font-bold text-ink-900">Топ категории</h2>
+        <div className="mt-3">
+          <BreakdownTable rows={breakdowns.categories} emptyText="Няма продажби за периода." />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/** Компактна метрика без сравнение (за разрезите). */
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-card border border-surface-200 bg-surface-0 p-4">
+      <p className="text-sm text-ink-500">{label}</p>
+      <p className="mt-1 font-display text-2xl font-extrabold tabular-nums tracking-tight text-ink-900">
+        {value}
+      </p>
     </div>
   );
 }
