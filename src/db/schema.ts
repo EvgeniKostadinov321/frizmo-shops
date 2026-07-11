@@ -298,6 +298,32 @@ export const shippingMethods = pgTable(
   (t) => [index("shipping_methods_shop_idx").on(t.shopId)],
 ).enableRLS();
 
+/** Д3: ръчни ценови зони към courier метод. Ако метод има ≥1 зона → цената идва от зоната. */
+export const shippingZones = pgTable(
+  "shipping_zones",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    shippingMethodId: uuid("shipping_method_id")
+      .notNull()
+      .references(() => shippingMethods.id, { onDelete: "cascade" }),
+    /** Напр. „София“, „Областни градове“, „Села“. */
+    name: text("name").notNull(),
+    priceCents: integer("price_cents").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("shipping_zones_method_idx").on(t.shippingMethodId),
+    index("shipping_zones_shop_idx").on(t.shopId),
+  ],
+).enableRLS();
+
+export type ShippingZone = typeof shippingZones.$inferSelect;
+
 export const sizeGuides = pgTable(
   "size_guides",
   {
