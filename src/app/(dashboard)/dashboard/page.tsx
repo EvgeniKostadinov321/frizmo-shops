@@ -6,6 +6,8 @@ import { StatTile } from "@/components/dashboard/stat-tile";
 import { countCategories } from "@/db/queries/categories";
 import { countNewOrders, getMonthRevenue, getOrders } from "@/db/queries/orders";
 import { countLowStock, countProducts } from "@/db/queries/products";
+import { getOnboardingStatus } from "@/db/queries/onboarding-status";
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { getOwnShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
 
@@ -32,6 +34,9 @@ export default async function DashboardPage() {
 
   const isDraft = shop.status === "draft";
   const latest = recentOrders.items.slice(0, 5);
+  /* Д1: онбординг чеклист — само след първия продукт (иначе е рано); сам се
+     скрива когато всичките 6 стъпки са готови. */
+  const onboarding = productCount > 0 ? await getOnboardingStatus(shop) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,6 +58,8 @@ export default async function DashboardPage() {
         </div>
         <LinkButton href="/dashboard/products/new">Нов продукт</LinkButton>
       </div>
+
+      {onboarding && <OnboardingChecklist result={onboarding} />}
 
       {/* KPI лента */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
