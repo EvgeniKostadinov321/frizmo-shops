@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
+import { ProductDelivery } from "@/components/storefront/product-delivery";
 import { RecentlyViewed } from "@/components/storefront/recently-viewed";
 import { Paragraphs } from "@/components/storefront/sections/shared";
 import { ReviewForm } from "@/components/storefront/review-form";
 import { Stars } from "@/components/storefront/stars";
 import { StockAlertForm } from "@/components/storefront/stock-alert-form";
+import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getApprovedReviews, getReviewAggregates } from "@/db/queries/reviews";
 import { VariantPicker } from "@/components/storefront/variant-picker";
 import {
@@ -53,12 +55,14 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
   const sp = await searchParams;
   const reviewsPage = sp.reviewsPage ? Math.max(1, Number(sp.reviewsPage) || 1) : 1;
-  const [related, categories, productReviews, aggregates] = await Promise.all([
+  const [related, categories, productReviews, aggregates, shipping] = await Promise.all([
     getRelatedProducts(shop.id, product.id, product.categoryId),
     getPublicCategories(shop.id),
     getApprovedReviews(product.id, reviewsPage),
     getReviewAggregates([product.id]),
+    getShippingMethods(shop.id),
   ]);
+  const activeShipping = shipping.filter((m) => m.active);
   const rating = aggregates.get(product.id) ?? null;
   const category = categories.find((c) => c.id === product.categoryId);
 
@@ -152,6 +156,8 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
           <StockAlertForm shopSlug={shop.slug} productId={product.id} />
         </div>
       )}
+
+      <ProductDelivery methods={activeShipping} />
 
       {(product.description ||
         product.attributes.length > 0 ||
