@@ -85,6 +85,17 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-11 (ПАКЕТ A — „Продуктова форма 2.0" ✅ КОД) · commits `7c3d1ec`(спец)→`3a42ead`(план)→`b50a37a`…`4d0d513`(имплементация)** —
+  Първият групиран пакет от оставащите pure-code функции. 4 функции през spec→plan→TDD→gate,
+  inline: **(1) Product identifiers** (SKU→g:mpn, GTIN с GS1 mod-10 валидация→g:gtin +
+  `identifier_exists=yes`, марка override→g:brand, доставна цена→марж % в admin) — надграждат feed-а
+  + CSV експорт/импорт; **(2) SEO override** (seoTitle/seoDescription per продукт → generateMetadata
+  с fallback, JSON-LD непроменен); **(3) Size guides** (нова таблица `size_guides` per магазин,
+  `/dashboard/size-guides` CRUD + динамичен редактор + публичен modal, икона `ruler`);
+  **(4) „Бързо/Детайлно" тогъл** (localStorage/useSyncExternalStore, default детайлно, onboarding
+  закован „Бързо", само визуален — без загуба на данни). `db:push` приложен (7 нови колони + таблица).
+  `pnpm check` ✓ (271 теста, build). **Чака ръчна проверка → после push разрешение.**
+
 - **2026-07-11 (ТЕСТ-СЕСИЯ ПРИКЛЮЧЕНА) · push `7c236e7`→`bd306c5`** — **Всичките 7 pure-code
   функции тествани на живо и минаха.** №1–7 ✅ (№3 abandoned cart с реален имейл в пощата; №5
   изтриване на реален втори акаунт, потвърдено в базата; №7 verified бадж с реален match). Пътьом
