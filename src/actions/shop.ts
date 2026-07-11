@@ -10,6 +10,8 @@ import { getOwnShop, requireShop } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
 import { insertShopWithUniqueSlug, previewShopSlug } from "@/lib/shop-slug";
+import { ok, zodFail, type ActionResult } from "@/lib/action-result";
+import { growthSettingsSchema } from "@/schemas/growth-settings";
 import { shopSchema, type ShopInput } from "@/schemas/shop";
 
 export type ShopFormState = {
@@ -134,4 +136,28 @@ export async function updateShop(
   revalidateTag(shopCacheTag(shop.slug), "max");
   revalidatePath(`/s/${shop.slug}`, "layout");
   return { ok: true };
+}
+
+/** В1/В2: настройки за welcome/referral купон. */
+export async function saveGrowthSettings(rawInput: unknown): Promise<ActionResult> {
+  const { shop } = await requireShop();
+  const parsed = growthSettingsSchema.safeParse(rawInput);
+  if (!parsed.success) return zodFail(parsed.error);
+  const v = parsed.data;
+  await db
+    .update(shops)
+    .set({
+      welcomeCouponEnabled: v.welcomeCouponEnabled,
+      welcomeCouponType: v.welcomeCouponType,
+      welcomeCouponValue: v.welcomeCouponValue,
+      welcomeCouponMinSubtotalCents: v.welcomeCouponMinSubtotalCents,
+      referralEnabled: v.referralEnabled,
+      referralType: v.referralType,
+      referralValue: v.referralValue,
+      referralMinSubtotalCents: v.referralMinSubtotalCents,
+      updatedAt: new Date(),
+    })
+    .where(eq(shops.id, shop.id));
+  revalidatePath("/dashboard/subscribers");
+  return ok(null);
 }

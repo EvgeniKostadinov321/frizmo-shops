@@ -1,4 +1,5 @@
 import { CampaignComposer } from "@/components/dashboard/campaign-composer";
+import { GrowthSettingsForm } from "@/components/dashboard/growth-settings-form";
 import { SubscribersExport } from "@/components/dashboard/subscribers-export";
 import { Card, EmptyState, Table, TBody, TCell, TH, THead, TRow } from "@/components/ui";
 import { getCampaigns, getConfirmedSubscribers } from "@/db/queries/subscribers";
@@ -30,6 +31,12 @@ export default async function SubscribersPage() {
         </div>
         {rows.length > 0 && <SubscribersExport />}
       </div>
+
+      {/* В1/В2: купони за растеж — welcome + реферал */}
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-bold text-ink-900">Купони за растеж</h2>
+        <GrowthSettingsForm shop={shop} />
+      </section>
 
       {/* S4: нова кампания (само при поне 1 абонат) + история */}
       {rows.length > 0 && <CampaignComposer recipientCount={rows.length} />}
