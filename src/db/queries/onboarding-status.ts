@@ -30,9 +30,9 @@ export function computeChecklist(f: ChecklistFlags): ChecklistResult {
   const steps: ChecklistStep[] = [
     { key: "shop", label: "Магазинът е създаден", done: true, href: "/dashboard/store", cta: "Провери" },
     { key: "product", label: "Добави първи продукт", done: f.hasProduct, href: "/dashboard/products/new", cta: "Добави" },
-    { key: "contacts", label: "Попълни контакти и адрес", done: f.hasContacts, href: "/dashboard/store", cta: "Попълни" },
-    { key: "shipping", label: "Добави метод на доставка", done: f.hasShipping, href: "/dashboard/fulfillment", cta: "Добави" },
-    { key: "payment", label: "Добави метод на плащане", done: f.hasPayment, href: "/dashboard/fulfillment", cta: "Добави" },
+    { key: "contacts", label: "Попълни контакти и адрес", done: f.hasContacts, href: "/dashboard/store?tab=contacts", cta: "Попълни" },
+    { key: "shipping", label: "Добави метод на доставка", done: f.hasShipping, href: "/dashboard/fulfillment?tab=shipping", cta: "Добави" },
+    { key: "payment", label: "Добави метод на плащане", done: f.hasPayment, href: "/dashboard/fulfillment?tab=payment", cta: "Добави" },
     { key: "publish", label: "Публикувай магазина", done: f.published, href: "/dashboard/website", cta: "Публикувай" },
   ];
   const done = steps.filter((s) => s.done).length;
