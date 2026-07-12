@@ -1,10 +1,4 @@
-import type {
-  CourierCreds,
-  CourierProvider,
-  Office,
-  WaybillInput,
-  WaybillResult,
-} from "./types";
+import type { CourierCreds, CourierProvider, Office } from "./types";
 import { CourierError } from "./types";
 
 /* Econt Delivery API (JSON). Auth: HTTP Basic (username/password) в credentials.

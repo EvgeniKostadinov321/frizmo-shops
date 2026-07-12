@@ -1,10 +1,4 @@
-import type {
-  CourierCreds,
-  CourierProvider,
-  Office,
-  WaybillInput,
-  WaybillResult,
-} from "./types";
+import type { CourierCreds, CourierProvider, Office } from "./types";
 import { CourierError } from "./types";
 
 /* Speedy REST API. Auth: userName/password в тялото на всяка заявка.
