@@ -101,8 +101,8 @@ export function MobileMenuButton({
             })}
           </nav>
 
-          {/* Режим на сложност — над Изход */}
-          <div className="border-t border-surface-200 p-2">
+          {/* Режим на сложност — над Изход (инлайн, не popover на мобилно) */}
+          <div className="border-t border-surface-200 px-2 py-2">
             <ComplexityModeSwitcher mode={mode} variant="mobile" onChanged={() => setOpen(false)} />
           </div>
 
