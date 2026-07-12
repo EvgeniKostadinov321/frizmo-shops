@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { signOut } from "@/actions/auth";
 import { Icon } from "@/components/ui";
+import { ComplexityModeSwitcher } from "@/components/dashboard/complexity-mode-switcher";
 import { NAV_ITEMS, isActive } from "@/components/dashboard/nav-items";
 import { isVisible, type ComplexityMode } from "@/lib/complexity";
 
@@ -99,6 +100,11 @@ export function MobileMenuButton({
               );
             })}
           </nav>
+
+          {/* Режим на сложност — над Изход */}
+          <div className="border-t border-surface-200 p-2">
+            <ComplexityModeSwitcher mode={mode} variant="mobile" onChanged={() => setOpen(false)} />
+          </div>
 
           {/* Изход — най-долу, отделен с hairline */}
           <div className="border-t border-surface-200 p-4">

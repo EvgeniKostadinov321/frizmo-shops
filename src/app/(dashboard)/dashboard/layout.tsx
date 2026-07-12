@@ -5,6 +5,7 @@ import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { MobileMenuButton } from "@/components/dashboard/mobile-menu-button";
 import { PushBanner } from "@/components/dashboard/push-banner";
+import { ComplexityModeSwitcher } from "@/components/dashboard/complexity-mode-switcher";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
@@ -41,6 +42,11 @@ export default async function DashboardLayout({
         {/* Дясно: име (десктоп) + тема (винаги) + Изход (само десктоп) */}
         <div className="flex items-center gap-2 md:flex-1 md:justify-end">
           {shop && <span className="hidden text-sm text-ink-500 sm:block">{shop.name}</span>}
+          {shop && (
+            <div className="hidden md:block">
+              <ComplexityModeSwitcher mode={shop.complexityMode} />
+            </div>
+          )}
           <ThemeToggle />
           <div className="hidden md:block">
             <SignOutButton />
