@@ -1,6 +1,6 @@
 import { BreakdownTable } from "@/components/dashboard/breakdown-table";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { Icon, TransitionLink } from "@/components/ui";
+import { Icon, TransitionLink, Tabs, TabPanel } from "@/components/ui";
 import {
   ANALYTICS_PERIODS,
   getAnalytics,
@@ -102,6 +102,16 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         </div>
       </div>
 
+      <Tabs
+        ariaLabel="Аналитика"
+        tabs={[
+          { key: "overview", label: "Общ преглед" },
+          { key: "breakdowns", label: "Разрези" },
+          { key: "customers", label: "Клиенти" },
+        ]}
+      >
+        <TabPanel tabKey="overview">
+          <div className="flex flex-col gap-5">
       {/* Метрики със сравнение */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard
@@ -171,7 +181,11 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </ol>
         )}
       </section>
+          </div>
+        </TabPanel>
 
+        <TabPanel tabKey="breakdowns">
+          <div className="flex flex-col gap-5">
       {/* В3: Източници на поръчки */}
       <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
         <h2 className="font-display text-lg font-bold text-ink-900">Източници на поръчки</h2>
@@ -197,6 +211,18 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         </div>
       </section>
 
+      {/* В3: Топ категории */}
+      <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
+        <h2 className="font-display text-lg font-bold text-ink-900">Топ категории</h2>
+        <div className="mt-3">
+          <BreakdownTable rows={breakdowns.categories} emptyText="Няма продажби за периода." />
+        </div>
+      </section>
+          </div>
+        </TabPanel>
+
+        <TabPanel tabKey="customers">
+          <div className="flex flex-col gap-5">
       {/* В3: Конверсия абонати → клиенти */}
       <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
         <h2 className="font-display text-lg font-bold text-ink-900">От абонати към клиенти</h2>
@@ -242,14 +268,9 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </ul>
         )}
       </section>
-
-      {/* В3: Топ категории */}
-      <section className="rounded-card border border-surface-200 bg-surface-0 p-5">
-        <h2 className="font-display text-lg font-bold text-ink-900">Топ категории</h2>
-        <div className="mt-3">
-          <BreakdownTable rows={breakdowns.categories} emptyText="Няма продажби за периода." />
-        </div>
-      </section>
+          </div>
+        </TabPanel>
+      </Tabs>
     </div>
   );
 }
