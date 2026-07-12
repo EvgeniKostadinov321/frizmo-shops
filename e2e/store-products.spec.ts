@@ -32,6 +32,12 @@ async function createShopViaWizard(page: Page, name: string, category: string) {
     "data-active",
     "true",
   );
+  /* Ф2: 4-та стъпка „Сложност" */
+  await page.getByRole("button", { name: "Напред" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Сложност" })).toHaveAttribute(
+    "data-active",
+    "true",
+  );
   await page.getByRole("button", { name: "Създай магазина" }).click();
   await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
 }
@@ -53,11 +59,18 @@ test.describe("Магазин и продукти", () => {
       "true",
     );
     await page.getByLabel("Град").fill("Пловдив");
-    /* „Контакти" → „Работно време": чакаме индикатора, после създаваме */
+    /* „Контакти" → „Работно време": чакаме индикатора */
     await page.getByRole("button", { name: "Напред" }).click();
     await expect(
       page.getByRole("listitem").filter({ hasText: "Работно време" }),
     ).toHaveAttribute("data-active", "true");
+    /* Ф2: 4-та стъпка „Сложност" — избираме „Пълна настройка" (тестът ползва
+       варианти, които са само в пълен режим). */
+    await page.getByRole("button", { name: "Напред" }).click();
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "Сложност" }),
+    ).toHaveAttribute("data-active", "true");
+    await page.getByRole("button", { name: /Пълна настройка/ }).click();
     await page.getByRole("button", { name: "Създай магазина" }).click();
 
     /* 2. Стъпка 2 → прескачаме */
