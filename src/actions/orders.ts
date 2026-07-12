@@ -213,6 +213,12 @@ export async function createOrder(
     /* Няма мач и няма fallback → базовата цена на метода (никога не блокира). */
   }
 
+  /* Куриер до офис → офисът е задължителен (както зоните блокират „Избери зона").
+     Офисът е само дестинация на товарителницата — НЕ мени цената. */
+  if (shipping.deliveryTarget === "office" && !input.courierOfficeId) {
+    return fail("Избери офис на куриера.");
+  }
+
   if (shipping.type !== "pickup" && input.address.trim().length < 5) {
     return { ok: false, error: "Провери полетата с грешки.", fieldErrors: { address: "Въведи адрес за доставка" } };
   }
@@ -336,6 +342,10 @@ export async function createOrder(
           giftWrapFeeCents,
           totalCents: cart.totalCents,
           idempotencyKey: input.idempotencyKey ?? null,
+          /* Куриерски снапшот — за товарителницата после (null за не-куриерски методи). */
+          courierProvider: shipping.courierProvider ?? null,
+          courierOfficeId: input.courierOfficeId || null,
+          courierOfficeName: sanitizeText(input.courierOfficeName, 200) || null,
         },
         cart.lines,
       );

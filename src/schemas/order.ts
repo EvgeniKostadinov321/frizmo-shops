@@ -13,6 +13,10 @@ export const orderSchema = z.object({
   note: z.string().trim().max(500).default(""),
   shippingMethodId: z.uuid("Избери доставка"),
   paymentMethodId: z.uuid("Избери плащане"),
+  /** Куриерски офис (само при office-based метод — задължителността се проверява в
+     createOrder по метода, както зоните). */
+  courierOfficeId: z.string().trim().max(50).default(""),
+  courierOfficeName: z.string().trim().max(200).default(""),
   /** N9: подаръчна опаковка (такса) + картичка (текст) — важат само ако магазинът ги предлага. */
   giftWrap: z.boolean().default(false),
   giftCard: z.boolean().default(false),

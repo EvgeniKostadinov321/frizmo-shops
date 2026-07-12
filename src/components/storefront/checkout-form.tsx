@@ -15,6 +15,7 @@ import {
 } from "@/lib/cart-storage";
 import { matchZone } from "@/lib/match-zone";
 import { formatPrice } from "@/lib/money";
+import { CourierOfficePicker } from "@/components/storefront/courier-office-picker";
 import { SfAddressAutocomplete } from "@/components/storefront/sf-address-autocomplete";
 import { deliveryHoursLines } from "@/lib/working-hours";
 import type { PricedCart } from "@/lib/pricing";
@@ -169,6 +170,11 @@ export function CheckoutForm({
   const [giftNote, setGiftNote] = useState("");
   /* Abandoned cart: opt-in „Напомни ми" (GDPR). Улавя количка+имейл на сървъра. */
   const [remindMe, setRemindMe] = useState(false);
+  /* Куриер до офис: избраният офис (само за office-based метод). */
+  const [courierOffice, setCourierOffice] = useState<{
+    officeId: string;
+    officeName: string;
+  } | null>(null);
 
   /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
      синхронно в effect чупи react-compiler lint-а). */
@@ -181,6 +187,8 @@ export function CheckoutForm({
   const storedKey = JSON.stringify(stored);
   const shipping = shippingMethods.find((m) => m.id === form.shippingMethodId);
   const isPickup = shipping?.type === "pickup";
+  /* Куриер до офис → показваме офис търсачка вместо адрес. */
+  const isOffice = shipping?.deliveryTarget === "office" && shipping?.courierProvider != null;
   /* Д3.1: зони на избрания метод. Цената се мачва АВТОМАТИЧНО по града (без picker) —
      клиентски matchZone за instant preview; сървърът е финалният източник. */
   const methodZones = useMemo(
@@ -311,6 +319,8 @@ export function CheckoutForm({
         giftWrap: giftWrapEnabled && giftWrap,
         giftCard: giftCardEnabled && giftCard,
         giftNote: giftCardEnabled && giftCard ? giftNote : "",
+        courierOfficeId: isOffice ? (courierOffice?.officeId ?? "") : "",
+        courierOfficeName: isOffice ? (courierOffice?.officeName ?? "") : "",
         idempotencyKey: idempotencyKeyRef.current ?? undefined,
       });
       if (!result.ok) {
@@ -392,7 +402,10 @@ export function CheckoutForm({
                     name="shipping"
                     className="mt-0.5"
                     checked={form.shippingMethodId === m.id}
-                    onChange={() => set("shippingMethodId", m.id)}
+                    onChange={() => {
+                      set("shippingMethodId", m.id);
+                      setCourierOffice(null);
+                    }}
                   />
                   <span className="flex flex-col gap-0.5">
                     <span>{m.name}</span>
@@ -413,7 +426,16 @@ export function CheckoutForm({
           </div>
         </Field>
 
-        {!isPickup && (
+        {isOffice && shipping?.courierProvider && (
+          <CourierOfficePicker
+            shopId={shopId}
+            provider={shipping.courierProvider}
+            selected={courierOffice}
+            onSelect={setCourierOffice}
+          />
+        )}
+
+        {!isPickup && !isOffice && (
           <>
             <Field label="Адрес за доставка" required error={fieldErrors.address}>
               <SfAddressAutocomplete
