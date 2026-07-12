@@ -13,7 +13,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const result = await getPublicShop(slug);
   if (!result) return {};
-  return { title: `Контакти — ${result.shop.name}` };
+  const desc = `Свържи се с ${result.shop.name} — телефон, имейл и адрес.`;
+  return {
+    title: `Контакти — ${result.shop.name}`,
+    description: desc,
+    openGraph: { title: `Контакти — ${result.shop.name}`, description: desc },
+  };
 }
 
 export default async function ContactPage({ params }: PageProps) {

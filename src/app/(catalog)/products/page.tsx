@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   title: "Продукти от малки български бизнеси — Frizmo Shops",
   description:
     "Разгледай продуктите на всички магазини във Frizmo Shops: храни, дрехи, ръчна изработка и още.",
+  openGraph: {
+    title: "Продукти от малки български бизнеси — Frizmo Shops",
+    description:
+      "Разгледай продуктите на всички магазини във Frizmo Shops: храни, дрехи, ръчна изработка и още.",
+  },
 };
 
 const SORT_OPTIONS: { value: ProductSort; label: string }[] = [

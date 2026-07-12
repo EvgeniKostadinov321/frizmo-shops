@@ -12,7 +12,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const result = await getPublicShop(slug);
   if (!result) return {};
-  return { title: `За нас — ${result.shop.name}` };
+  const desc = result.shop.description?.slice(0, 160) || `Научи повече за ${result.shop.name}.`;
+  return {
+    title: `За нас — ${result.shop.name}`,
+    description: desc,
+    openGraph: { title: `За нас — ${result.shop.name}`, description: desc },
+  };
 }
 
 /**

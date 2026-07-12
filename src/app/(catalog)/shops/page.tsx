@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   title: "Каталог с онлайн магазини — Frizmo Shops",
   description:
     "Открий малки български бизнеси: храни, мода, ръчна изработка, козметика и още — всички на едно място.",
+  openGraph: {
+    title: "Каталог с онлайн магазини — Frizmo Shops",
+    description:
+      "Открий малки български бизнеси: храни, мода, ръчна изработка, козметика и още — всички на едно място.",
+  },
 };
 
 const SORT_OPTIONS: { value: ShopSort; label: string }[] = [

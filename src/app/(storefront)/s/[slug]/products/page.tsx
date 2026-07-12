@@ -38,11 +38,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const result = await getPublicShop(slug);
   if (!result) return {};
+  const desc = `Разгледай всички продукти от ${result.shop.name}.`;
   return {
     title: `Продукти — ${result.shop.name}`,
+    description: desc,
     /* Canonical към чистия каталог (без filter/sort/page query) — иначе всяка
        комбинация филтри е отделен индексируем URL → дублирано съдържание. */
     alternates: { canonical: `/s/${slug}/products` },
+    openGraph: { title: `Продукти — ${result.shop.name}`, description: desc },
   };
 }
 
