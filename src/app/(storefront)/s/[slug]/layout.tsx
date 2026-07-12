@@ -2,6 +2,7 @@ import type { Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
+import { FavoritesMerger } from "@/components/storefront/account/favorites-merger";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { StorefrontFooter } from "@/components/storefront/footer";
 import { StorefrontHeader } from "@/components/storefront/header";
@@ -109,6 +110,7 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
       className="flex min-h-screen flex-col overflow-x-clip bg-(--sf-bg) text-(--sf-text)"
     >
       {viewerIsOwner && <PreviewListener />}
+      {viewerLoggedIn && <FavoritesMerger shopId={shop.id} />}
       {viewerIsOwner && (shop.status !== "published" || viewingDraft) && (
         <div className="bg-warning-600 px-4 py-2 text-center text-sm font-medium text-white">
           {shop.status !== "published"

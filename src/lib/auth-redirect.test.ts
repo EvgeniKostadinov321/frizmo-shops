@@ -8,11 +8,11 @@ describe("resolvePostAuthPath", () => {
   it("продавач без магазин → dashboard", () => {
     expect(resolvePostAuthPath(false, "seller")).toBe("/dashboard");
   });
-  it("купувач без магазин → account (или next)", () => {
-    expect(resolvePostAuthPath(false, "buyer")).toBe("/account");
+  it("купувач без магазин → каталог /shops (или валиден next)", () => {
+    expect(resolvePostAuthPath(false, "buyer")).toBe("/shops");
     expect(resolvePostAuthPath(false, "buyer", "/s/shop/checkout")).toBe("/s/shop/checkout");
   });
   it("непознат next се пренебрегва (open-redirect гард)", () => {
-    expect(resolvePostAuthPath(false, "buyer", "https://evil.com")).toBe("/account");
+    expect(resolvePostAuthPath(false, "buyer", "https://evil.com")).toBe("/shops");
   });
 });
