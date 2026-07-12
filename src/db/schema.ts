@@ -280,6 +280,56 @@ export const orderStatusEnum = pgEnum("order_status", [
   "returned",
 ]);
 
+/* Куриерска интеграция (Еконт/Спиди) — офис доставка + товарителница. */
+export const courierProviderEnum = pgEnum("courier_provider", ["econt", "speedy"]);
+export const deliveryTargetEnum = pgEnum("delivery_target", ["address", "office"]);
+export const officeTypeEnum = pgEnum("office_type", ["office", "apt"]);
+
+/** Per-shop куриерски акаунт (ключове + подател за товарителницата). Tenant-изолиран. */
+export const shopCourierAccounts = pgTable(
+  "shop_courier_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    provider: courierProviderEnum("provider").notNull(),
+    /** Ключове (username/password или token) — само сървърно, никога NEXT_PUBLIC_. */
+    credentials: jsonb("credentials").notNull(),
+    senderName: text("sender_name").notNull().default(""),
+    senderPhone: text("sender_phone").notNull().default(""),
+    senderCity: text("sender_city").notNull().default(""),
+    senderAddress: text("sender_address").notNull().default(""),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("shop_courier_provider_idx").on(t.shopId, t.provider)],
+).enableRLS();
+
+export type ShopCourierAccount = typeof shopCourierAccounts.$inferSelect;
+
+/** Кеш на куриерските офиси/автомати (nomenclature). Опреснява се lazy по град. */
+export const courierOffices = pgTable(
+  "courier_offices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    provider: courierProviderEnum("provider").notNull(),
+    officeId: text("office_id").notNull(),
+    name: text("name").notNull(),
+    city: text("city").notNull(),
+    address: text("address").notNull().default(""),
+    type: officeTypeEnum("type").notNull().default("office"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("courier_offices_city_idx").on(t.provider, t.city),
+    uniqueIndex("courier_offices_uid").on(t.provider, t.officeId),
+  ],
+).enableRLS();
+
+export type CourierOffice = typeof courierOffices.$inferSelect;
+
 export const shippingMethods = pgTable(
   "shipping_methods",
   {
@@ -295,6 +345,10 @@ export const shippingMethods = pgTable(
     /** Опционално работно време за доставка (дни + часове) — само информация за
        клиента. Формат: WorkingHours ({ days: [{closed,open,close}×7] }). null = не се показва. */
     deliveryHours: jsonb("delivery_hours"),
+    /** Куриер за товарителница (null = стар ръчен куриер, обратна съвместимост). */
+    courierProvider: courierProviderEnum("courier_provider"),
+    /** До адрес или до офис на куриера. */
+    deliveryTarget: deliveryTargetEnum("delivery_target").notNull().default("address"),
     active: boolean("active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -434,6 +488,12 @@ export const orders = pgTable(
        id — иначе всеки с познат orderId (UUID) вижда личните данни на клиента. */
     publicToken: uuid("public_token").notNull().defaultRandom(),
     status: orderStatusEnum("status").notNull().default("new"),
+    /* Куриерска товарителница — снапшоти (null докато не се генерира). */
+    courierProvider: courierProviderEnum("courier_provider"),
+    courierOfficeId: text("courier_office_id"),
+    courierOfficeName: text("courier_office_name"),
+    waybillId: text("waybill_id"),
+    trackingNumber: text("tracking_number"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
