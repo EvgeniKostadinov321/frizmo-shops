@@ -10,9 +10,10 @@ import { getOwnShop, requireShop } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
 import { insertShopWithUniqueSlug, previewShopSlug } from "@/lib/shop-slug";
-import { ok, zodFail, type ActionResult } from "@/lib/action-result";
+import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { growthSettingsSchema } from "@/schemas/growth-settings";
-import { shopSchema, type ShopInput } from "@/schemas/shop";
+import { complexityModeSchema, shopSchema, type ShopInput } from "@/schemas/shop";
+import type { ComplexityMode } from "@/lib/complexity";
 
 export type ShopFormState = {
   ok?: boolean;
@@ -89,12 +90,16 @@ export async function createShop(
   if (shop) return { error: "Вече имаш магазин." };
 
   const values = sanitizedValues(parsed.data);
+  /* Ф2: режим на сложност от wizard-а (default business за нови магазини). */
+  const modeParsed = complexityModeSchema.safeParse(formData.get("complexityMode"));
+  const complexityMode: ComplexityMode = modeParsed.success ? modeParsed.data : "business";
   /* Retry при race: UNIQUE constraint-ът гарантира уникален slug, helper-ът го
      превръща в тихо `-2` вместо 500 при паралелно създаване. */
   await insertShopWithUniqueSlug(values.name, (slug) => ({
     ...values,
     slug,
     ownerId: user.id,
+    complexityMode,
   }));
 
   /* Инвалидирай dashboard layout-а: той е рендериран с shop=null отпреди
@@ -102,6 +107,17 @@ export async function createShop(
      (напр. „Прескочи засега") показва празна странична навигация до презареждане. */
   revalidatePath("/dashboard", "layout");
   redirect("/dashboard/onboarding?step=2");
+}
+
+/** Ф2: смяна на режима на сложност. Чисто презентационно — не трие/спира данни. */
+export async function setComplexityMode(mode: ComplexityMode): Promise<ActionResult> {
+  const parsed = complexityModeSchema.safeParse(mode);
+  if (!parsed.success) return fail("Невалиден режим.");
+  const { shop } = await requireShop();
+  await db.update(shops).set({ complexityMode: parsed.data }).where(eq(shops.id, shop.id));
+  /* Nav-ът се рендерира в dashboard layout-а → инвалидирай го. */
+  revalidatePath("/dashboard", "layout");
+  return ok(null);
 }
 
 /**
