@@ -109,6 +109,9 @@ test.describe("Магазин и продукти", () => {
     await page.locator('input[type="file"]').setInputFiles("e2e/fixtures/product.png");
     await expect(page.getByText("Корица")).toBeVisible({ timeout: 20_000 });
 
+    /* Ф1: продуктовата форма е с табове в пълен режим — опциите/вариантите са
+       на таб „Варианти". */
+    await page.getByRole("tab", { name: "Варианти" }).click();
     await page.getByRole("button", { name: "+ Добави опция" }).click();
     await page.getByPlaceholder("Име на опцията (напр. Размер)").fill("Разфасовка");
     const valueInput = page.getByPlaceholder("Напиши стойност и натисни Enter (напр. M)");
@@ -126,9 +129,10 @@ test.describe("Магазин и продукти", () => {
     await expect(page.getByRole("table").getByText("Краве сирене")).toBeVisible();
     await expect(page.getByRole("table").getByText("12,50")).toBeVisible();
 
-    /* 5. Редакция: вариантната цена е запазена */
+    /* 5. Редакция: вариантната цена е запазена (таб „Варианти" — Ф1) */
     await page.getByRole("table").getByRole("link", { name: /Краве сирене/ }).click();
     await expect(page.getByRole("heading", { name: /Редакция/ })).toBeVisible();
+    await page.getByRole("tab", { name: "Варианти" }).click();
     await expect(page.getByLabel("Цена за 1кг")).toHaveValue("23,00");
   });
 

@@ -38,6 +38,10 @@ export async function createShopViaWizard(
     "data-active",
     "true",
   );
+  /* Телефон + адрес са законово изискване за публикуване (publishShop гард —
+     ЗЗП чл. 47). Попълваме ги, за да могат тестовете да публикуват магазина. */
+  await page.getByLabel("Телефон").fill("0888123456");
+  await page.getByLabel("Адрес", { exact: true }).fill("ул. Тестова 1");
   await page.getByRole("button", { name: "Напред" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: "Работно време" })).toHaveAttribute(
     "data-active",

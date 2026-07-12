@@ -12,10 +12,10 @@ test.describe("Каталог, landing и блог", () => {
     await expect(page.getByRole("heading", { name: "Прости, честни цени" })).toBeVisible();
 
     /* Cookie банерът се затваря и не се връща */
-    await page.getByRole("button", { name: "Разбрах" }).click();
-    await expect(page.getByRole("button", { name: "Разбрах" })).not.toBeVisible();
+    await page.getByRole("button", { name: "Приемам" }).click();
+    await expect(page.getByRole("button", { name: "Приемам" })).not.toBeVisible();
     await page.reload();
-    await expect(page.getByRole("button", { name: "Разбрах" })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Приемам" })).not.toBeVisible();
   });
 
   test("каталогът с магазини намира демо магазин по търсене", async ({ page }) => {

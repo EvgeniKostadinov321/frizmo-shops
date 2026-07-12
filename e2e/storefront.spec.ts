@@ -33,9 +33,10 @@ test("персонализация → публикуване → публиче
   await page.getByRole("button", { name: "Създай продукта" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  /* Добавяме вариант през редакцията */
+  /* Добавяме вариант през редакцията (таб „Варианти" — Ф1) */
   await page.getByRole("link", { name: "Продукти", exact: true }).click();
   await page.getByRole("link", { name: /Синя тениска/ }).click();
+  await page.getByRole("tab", { name: "Варианти" }).click();
   await page.getByRole("button", { name: "+ Добави опция" }).click();
   await page.getByPlaceholder("Име на опцията (напр. Размер)").fill("Размер");
   const valueInput = page.getByPlaceholder("Напиши стойност и натисни Enter (напр. M)");
@@ -80,9 +81,14 @@ test("персонализация → публикуване → публиче
   ).toBeVisible();
   await anonBefore.close();
 
-  /* Публикуване на магазина (видимост за клиенти) */
+  /* Публикуване на магазина (видимост за клиенти). Проверяваме стабилното
+     състояние (бутонът става „Скрий магазина") вместо ефимерния toast, който
+     изчезва след 3-5с и флейква. publishShop + router.refresh() е бавен на прод
+     билд → по-голям timeout. */
   await page.getByRole("button", { name: "Публикувай магазина" }).click();
-  await expect(page.getByText("Магазинът е публикуван — вече е достъпен за клиенти.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Скрий магазина" })).toBeVisible({
+    timeout: 20_000,
+  });
 
   /* Анонимен посетител: начало → продукт → variant picker → търсене */
   const anon = await browser.newContext();

@@ -29,10 +29,13 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await page.getByRole("button", { name: "Създай продукта" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  /* Промоция „купи 2 за 30" през редакцията */
+  /* Промоция „купи 2 за 30" през редакцията (таб „Варианти" — Ф1) */
   await page.getByRole("link", { name: "Продукти", exact: true }).click();
   await page.getByRole("link", { name: /Козе сирене/ }).click();
-  await page.getByLabel("Количествена промоция").check();
+  await page.getByRole("tab", { name: "Варианти" }).click();
+  /* Custom Checkbox: реалният input е sr-only (span покрива клика) → кликаме
+     етикета вместо .check() на скрития input. */
+  await page.getByText("Количествена промоция", { exact: true }).click();
   await page.getByLabel("Купи (брой)").fill("2");
   await page.getByLabel("За обща цена").fill("30");
   await page.getByRole("button", { name: "Запази промените" }).click();
@@ -54,7 +57,10 @@ test("пълен поръчков цикъл: deal промоция → checkout
     .getByRole("link", { name: /Разгледай сайта си/ })
     .getAttribute("href");
   await page.getByRole("button", { name: "Публикувай — на живо за всички" }).click();
-  await expect(page.getByRole("heading", { name: "Магазинът ти е на живо!" })).toBeVisible();
+  /* publishShop + refresh е бавен на прод билд → по-голям timeout. */
+  await expect(page.getByRole("heading", { name: "Магазинът ти е на живо!" })).toBeVisible({
+    timeout: 20_000,
+  });
 
   /* ГОСТ: добавя 2 бр → deal цена 30,00 → checkout */
   const guestContext = await browser.newContext();
@@ -90,7 +96,8 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await expect(guest.getByRole("heading", { name: "Поръчката е приета!" })).toBeVisible({
     timeout: 15_000,
   });
-  await expect(guest.getByText("#0001")).toBeVisible();
+  /* Номерът се показва на 2 места (потвърждение + „запиши си номер") → .first(). */
+  await expect(guest.getByText("#0001").first()).toBeVisible();
   await guestContext.close();
 
   /* ТЪРГОВЕЦЪТ: вижда поръчката, потвърждава, наличността е 3.
@@ -103,7 +110,11 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await expect(page.getByText("Потвърдена")).toBeVisible();
 
   await page.getByRole("link", { name: "Продукти", exact: true }).click();
-  await expect(page.getByRole("cell", { name: "3", exact: true })).toBeVisible();
+  /* Наличност 3 в реда на „Козе сирене". Клетката носи и „Нисък склад" badge при
+     ниска наличност → matchва по частичен текст в реда, не exact клетка. */
+  await expect(
+    page.getByRole("row").filter({ hasText: "Козе сирене" }).getByRole("cell", { name: /\b3\b/ }),
+  ).toBeVisible();
 
   /* Отказ → наличността се връща на 5 */
   await page.getByRole("link", { name: "Поръчки", exact: true }).click();
@@ -116,5 +127,7 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await expect(page.getByText("Отказана")).toBeVisible();
 
   await page.getByRole("link", { name: "Продукти", exact: true }).click();
-  await expect(page.getByRole("cell", { name: "5", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("row").filter({ hasText: "Козе сирене" }).getByRole("cell", { name: /\b5\b/ }),
+  ).toBeVisible();
 });
