@@ -1,5 +1,9 @@
 # Social Login (Google) Implementation Plan
 
+> ✅ **ИЗПЪЛНЕН (2026-07-13):** и петте задачи завършени, `pnpm check` зелен, тествани на
+> живо (реален Google вход → профил с име) + push-нати на `dev`. Виж
+> `memory/social-login-feature.md` и WORKLOG дневника 2026-07-13.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Вход/регистрация с Google през Supabase Auth — един клик вместо форма + имейл потвърждение.

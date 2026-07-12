@@ -37,13 +37,14 @@
 
 ---
 
-## Текущо състояние (2026-07-12)
+## Текущо състояние (2026-07-13)
 
 > **ВСИЧКИ pure-code функции завършени, тествани на живо и push-нати на прод** (Пакети А–Д +
 > 7-те по-ранни). **UX инициатива Фаза 1 (табове) + Фаза 2 (режим на сложност) завършени и
-> push-нати.** Оставаща пътна карта → `docs/remaining-roadmap.md`. **СЛЕДВА: външната работа**
-> (домейн `frizmoshops.bg` поръчан, чака setup; Stripe live; Еконт/Спиди; Social login; inv.bg;
-> Sentry). Пълните детайли — в „Дневник" по-долу.
+> push-нати.** **Social login (Google) ✅ имплементиран, тестван на живо и push-нат
+> (2026-07-13).** Оставаща пътна карта → `docs/remaining-roadmap.md`. **СЛЕДВА: външната работа**
+> (домейн `frizmoshops.bg` поръчан, чака setup; Stripe live; Еконт/Спиди — спец/план готови,
+> чакат ключове; inv.bg; Sentry). Пълните детайли — в „Дневник" по-долу.
 
 - **Клонове:** **`dev` = Vercel PRODUCTION** (потвърдено 2026-07-08 от Deployments таба: `dev` носи Production badge). Работим и качваме САМО на `dev`. **`main` НЕ се ползва** (стара грешна презумпция „main=prod"). Push към `dev` (=prod): агентът ПИТА преди качване, качва само при изрично разрешение.
 - **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
@@ -59,8 +60,8 @@
 - **Vercel prod env vars при push:** увери се, че `CRON_SECRET` е там (за cron) + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `NEXT_PUBLIC_SITE_URL`; всяко добавяне → **Redeploy**.
 
 **Какво следва:** външната работа (виж дневника 2026-07-12) — домейн setup (чака SuperHosting до 24ч),
-Stripe live активиране (кодът готов), Еконт/Спиди, Social login (Google), inv.bg фактури (Случай A),
-Sentry. + `2026-07-06-builder-roadmap.md` (Вълна 4).
+Stripe live активиране (кодът готов), Еконт/Спиди (спец/план готови, чакат ключове), inv.bg фактури
+(Случай A), Sentry. + `2026-07-06-builder-roadmap.md` (Вълна 4). **Social login (Google) — ✅ готов.**
 
 ---
 
@@ -77,6 +78,24 @@ Sentry. + `2026-07-06-builder-roadmap.md` (Вълна 4).
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-13 (SOCIAL LOGIN Google — имплементиран, тестван на живо + PUSH)** —
+  Първата външна функция, за която ключовете дойдоха. Спец `2026-07-12-social-login-design.md`,
+  план `2026-07-12-social-login.md` (изпълнен). **5 задачи (TDD, чести commit-и):**
+  (1) `safeNextPath` — open-redirect гард (чиста функция, 6 теста); (2) `ensureProfile(userId,
+  fullName?)` — записва OAuth името при първо влизане (идемпотентен); (3) `signInWithProvider(next?)`
+  action — `signInWithOAuth({provider:"google"})`, `origin` от заявката (localhost/прод), не
+  хардкоднат; (4) callback route `app/(auth)/auth/callback/route.ts` — `exchangeCodeForSession` +
+  `ensureProfile` + redirect към валидиран `next`; (5) бутон „Продължи с Google" (официално
+  multicolor „G" SVG inline) + „или" divider над имейл формата в `AuthForm` (покрива login+register)
+  + грешка `?error=oauth`. **Само Google** първа итерация; Client ID/Secret живеят в **Supabase**
+  (не env — Supabase е OAuth медиаторът). `next` параметризиран → преизползваемо за купувачески
+  акаунт (S3) по-късно. **Тествано на живо:** реален Google вход (blendbg34@gmail.com) → callback
+  размени code за сесия → профил създаден **с името от Google** („Djini kostadinov", не празен) →
+  нов юзър без магазин → онбординг екран; имейлът авто-потвърден. Проверено директно в базата
+  (auth.users провайдър=google + profiles.full_name + shops празно). `pnpm check` зелен
+  (51 файла / 360 теста). **Setup за живо:** Supabase → Auth → URL Configuration → Redirect URLs
+  трябва да включва `localhost:3000/**` (dev) + прод домейна. Commit-и `25668c5`..`f793bb3`.
 
 - **2026-07-12 (E2E СТАБИЛНОСТ + Фаза 1/2 привеждане + ember a11y fix — тествано + PUSH)** —
   „Технически дълг" сесия докато чакаме домейна. Открих, че e2e тестовете са били
