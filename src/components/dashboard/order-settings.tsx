@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { saveOrderSettings } from "@/actions/fulfillment";
 import { Button, Checkbox, PriceInput, Select } from "@/components/ui";
+import { isDirty } from "@/lib/is-dirty";
 import { centsToInput } from "@/lib/money";
 
 interface OrderSettingsProps {
@@ -22,11 +23,21 @@ export function OrderSettings({
   returnWindowDays,
 }: OrderSettingsProps) {
   const router = useRouter();
+  const baseFee = giftWrapFeeCents > 0 ? centsToInput(giftWrapFeeCents) : "";
   const [enabled, setEnabled] = useState(giftWrapEnabled);
-  const [fee, setFee] = useState(giftWrapFeeCents > 0 ? centsToInput(giftWrapFeeCents) : "");
+  const [fee, setFee] = useState(baseFee);
   const [cardEnabled, setCardEnabled] = useState(giftCardEnabled);
   const [windowDays, setWindowDays] = useState(String(returnWindowDays));
   const [busy, setBusy] = useState(false);
+  const dirty = isDirty(
+    { enabled, fee, cardEnabled, windowDays },
+    {
+      enabled: giftWrapEnabled,
+      fee: baseFee,
+      cardEnabled: giftCardEnabled,
+      windowDays: String(returnWindowDays),
+    },
+  );
 
   async function handleSave() {
     setBusy(true);
@@ -104,7 +115,7 @@ export function OrderSettings({
       </div>
 
       <div>
-        <Button loading={busy} onClick={handleSave}>
+        <Button loading={busy} disabled={!dirty} onClick={handleSave}>
           Запази настройките
         </Button>
       </div>

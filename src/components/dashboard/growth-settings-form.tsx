@@ -1,10 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button, Checkbox, Input, PriceInput, Select } from "@/components/ui";
 import { saveGrowthSettings } from "@/actions/shop";
 import type { Shop } from "@/db";
 import { centsToInput, toCents } from "@/lib/money";
+import { isDirty } from "@/lib/is-dirty";
 
 const TYPE_OPTIONS = [
   { value: "percent", label: "Процент (%)" },
@@ -29,61 +32,77 @@ function initFields(enabled: boolean, type: string, value: number, minCents: num
   };
 }
 
-/** Стойността в центове/процент според типа. null = невалиден вход. */
-function valueToNumber(f: CouponFields): number | null {
-  if (f.type === "fixed") return toCents(f.value);
+/**
+ * Валидира стойността според типа и връща или числото (center/percent), или
+ * конкретно съобщение за грешка. Огледало на серверната Zod валидация, за да
+ * покажем грешката под точното поле още преди submit.
+ */
+function validateCoupon(f: CouponFields): { value: number } | { error: string } {
+  if (f.type === "fixed") {
+    const cents = toCents(f.value);
+    if (cents === null || cents < 1) return { error: "Въведи валидна сума (напр. 5,00)" };
+    return { value: cents };
+  }
   const n = Number(f.value);
-  return Number.isInteger(n) ? n : null;
+  if (!Number.isInteger(n) || n < 1 || n > 100) {
+    return { error: "Процентът трябва да е между 1 и 100" };
+  }
+  return { value: n };
 }
 
 /** В1/В2: настройки за welcome/referral купон. Стойностите се въвеждат в €/%, съхраняват се в центове. */
 export function GrowthSettingsForm({ shop }: { shop: Shop }) {
-  const [welcome, setWelcome] = useState<CouponFields>(
-    initFields(
-      shop.welcomeCouponEnabled,
-      shop.welcomeCouponType,
-      shop.welcomeCouponValue,
-      shop.welcomeCouponMinSubtotalCents,
-    ),
+  const router = useRouter();
+  /* Началните стойности от props-ите — базата за dirty-сравнението (обновява се
+     след router.refresh(), така формата пак става „чиста" след запис). */
+  const baseWelcome = initFields(
+    shop.welcomeCouponEnabled,
+    shop.welcomeCouponType,
+    shop.welcomeCouponValue,
+    shop.welcomeCouponMinSubtotalCents,
   );
-  const [referral, setReferral] = useState<CouponFields>(
-    initFields(
-      shop.referralEnabled,
-      shop.referralType,
-      shop.referralValue,
-      shop.referralMinSubtotalCents,
-    ),
+  const baseReferral = initFields(
+    shop.referralEnabled,
+    shop.referralType,
+    shop.referralValue,
+    shop.referralMinSubtotalCents,
   );
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [welcome, setWelcome] = useState<CouponFields>(baseWelcome);
+  const [referral, setReferral] = useState<CouponFields>(baseReferral);
+  const [fieldErrors, setFieldErrors] = useState<{ welcome?: string; referral?: string }>({});
   const [pending, startTransition] = useTransition();
+  const dirty = isDirty({ welcome, referral }, { welcome: baseWelcome, referral: baseReferral });
 
   function submit() {
-    setError(null);
-    setSaved(false);
-    const welcomeValue = valueToNumber(welcome);
-    const referralValue = valueToNumber(referral);
-    if (welcome.enabled && welcomeValue === null) {
-      setError("Невалидна стойност за welcome купон.");
+    setFieldErrors({});
+
+    const fieldErrs: { welcome?: string; referral?: string } = {};
+    const welcomeRes = welcome.enabled ? validateCoupon(welcome) : { value: 10 };
+    const referralRes = referral.enabled ? validateCoupon(referral) : { value: 10 };
+    if ("error" in welcomeRes) fieldErrs.welcome = welcomeRes.error;
+    if ("error" in referralRes) fieldErrs.referral = referralRes.error;
+    if (fieldErrs.welcome || fieldErrs.referral) {
+      setFieldErrors(fieldErrs);
       return;
     }
-    if (referral.enabled && referralValue === null) {
-      setError("Невалидна стойност за реферален купон.");
-      return;
-    }
+
     startTransition(async () => {
       const res = await saveGrowthSettings({
         welcomeCouponEnabled: welcome.enabled,
         welcomeCouponType: welcome.type,
-        welcomeCouponValue: welcomeValue ?? 10,
+        welcomeCouponValue: (welcomeRes as { value: number }).value,
         welcomeCouponMinSubtotalCents: toCents(welcome.minSubtotal || "0") ?? 0,
         referralEnabled: referral.enabled,
         referralType: referral.type,
-        referralValue: referralValue ?? 10,
+        referralValue: (referralRes as { value: number }).value,
         referralMinSubtotalCents: toCents(referral.minSubtotal || "0") ?? 0,
       });
-      if (res.ok) setSaved(true);
-      else setError(res.error);
+      if (res.ok) {
+        toast.success("Настройките са запазени.");
+        router.refresh(); // пре-зарежда props-ите → dirty базата настига → формата „чиста"
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 
@@ -93,20 +112,25 @@ export function GrowthSettingsForm({ shop }: { shop: Shop }) {
         title="Welcome купон"
         hint="Нов абонат получава личен еднократен код при потвърждаване на абонамента (валиден 30 дни)."
         fields={welcome}
-        onChange={setWelcome}
+        error={fieldErrors.welcome}
+        onChange={(f) => {
+          setWelcome(f);
+          if (fieldErrors.welcome) setFieldErrors((prev) => ({ ...prev, welcome: undefined }));
+        }}
       />
       <CouponSection
         title="Реферален купон"
         hint="Абонатът получава код за приятел — многократен, за да води нови клиенти."
         fields={referral}
-        onChange={setReferral}
+        error={fieldErrors.referral}
+        onChange={(f) => {
+          setReferral(f);
+          if (fieldErrors.referral) setFieldErrors((prev) => ({ ...prev, referral: undefined }));
+        }}
       />
 
-      {error && <p className="text-sm text-danger-600">{error}</p>}
-      {saved && <p className="text-sm text-success-600">Настройките са запазени.</p>}
-
       <div>
-        <Button type="button" onClick={submit} disabled={pending}>
+        <Button type="button" onClick={submit} disabled={pending || !dirty}>
           {pending ? "Запазване…" : "Запази"}
         </Button>
       </div>
@@ -118,11 +142,13 @@ function CouponSection({
   title,
   hint,
   fields,
+  error,
   onChange,
 }: {
   title: string;
   hint: string;
   fields: CouponFields;
+  error?: string;
   onChange: (f: CouponFields) => void;
 }) {
   return (
@@ -152,12 +178,14 @@ function CouponSection({
               inputMode="numeric"
               value={fields.value}
               onChange={(e) => onChange({ ...fields, value: e.target.value })}
+              error={error}
             />
           ) : (
             <PriceInput
               label="Отстъпка"
               value={fields.value}
               onChange={(e) => onChange({ ...fields, value: e.target.value })}
+              error={error}
             />
           )}
           <PriceInput

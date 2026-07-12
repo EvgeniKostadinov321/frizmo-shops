@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { saveSizeGuide } from "@/actions/size-guides";
 import { Button, Icon, Input } from "@/components/ui";
+import { isDirty } from "@/lib/is-dirty";
 
 interface Props {
   initial?: { id: string; name: string; columns: string[]; rows: string[][] };
@@ -11,10 +12,17 @@ interface Props {
 }
 
 export function SizeGuideEditor({ initial, onSaved }: Props) {
-  const [name, setName] = useState(initial?.name ?? "");
-  const [columns, setColumns] = useState<string[]>(initial?.columns ?? ["Размер"]);
-  const [rows, setRows] = useState<string[][]>(initial?.rows ?? [[""]]);
+  const baseName = initial?.name ?? "";
+  const baseColumns = initial?.columns ?? ["Размер"];
+  const baseRows = initial?.rows ?? [[""]];
+  const [name, setName] = useState(baseName);
+  const [columns, setColumns] = useState<string[]>(baseColumns);
+  const [rows, setRows] = useState<string[][]>(baseRows);
   const [saving, setSaving] = useState(false);
+  /* Dirty: при редакция сравняваме с началните; при създаване искаме поне име. */
+  const dirty = initial
+    ? isDirty({ name, columns, rows }, { name: baseName, columns: baseColumns, rows: baseRows })
+    : name.trim() !== "";
 
   function addColumn() {
     setColumns([...columns, ""]);
@@ -178,7 +186,7 @@ export function SizeGuideEditor({ initial, onSaved }: Props) {
       </div>
 
       <div className="flex items-center gap-3 border-t border-surface-200 pt-4">
-        <Button type="button" loading={saving} onClick={handleSave}>
+        <Button type="button" loading={saving} disabled={!dirty} onClick={handleSave}>
           Запази таблицата
         </Button>
       </div>

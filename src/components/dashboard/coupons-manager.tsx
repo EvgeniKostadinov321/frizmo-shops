@@ -63,10 +63,25 @@ export function CouponsManager({ coupons }: { coupons: Coupon[] }) {
   /* Стабилен „сега" при mount — react-compiler забранява Date.now() в render. */
   const [now] = useState(() => Date.now());
   const [draft, setDraft] = useState<Draft | null>(null);
+  /* Снапшот при отваряне за редакция (dirty-guard); create → null → винаги dirty. */
+  const [opened, setOpened] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<{ id: string; code: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const dirty = opened === null || JSON.stringify(draft) !== opened;
+
+  /* Отваряне: create (снапшот null → активен) или edit (снапшот за сравнение). */
+  function openCreate() {
+    setDraft({ ...EMPTY });
+    setOpened(null);
+  }
+  function openEdit(c: Coupon) {
+    const d = toDraft(c);
+    setDraft(d);
+    setOpened(JSON.stringify(d));
+  }
 
   function set(patch: Partial<Draft>) {
     setDraft((d) => (d ? { ...d, ...patch } : d));
@@ -120,7 +135,7 @@ export function CouponsManager({ coupons }: { coupons: Coupon[] }) {
             Кодове за отстъпка, които клиентите въвеждат при поръчка.
           </p>
         </div>
-        <Button size="sm" onClick={() => setDraft({ ...EMPTY })}>
+        <Button size="sm" onClick={openCreate}>
           <Icon name="plus" size={15} className="-ml-0.5" />
           Нов код
         </Button>
@@ -164,7 +179,7 @@ export function CouponsManager({ coupons }: { coupons: Coupon[] }) {
                   >
                     {c.active ? "Изключи" : "Включи"}
                   </Button>
-                  <Button variant="ghost" size="sm" aria-label="Редактирай" onClick={() => setDraft(toDraft(c))}>
+                  <Button variant="ghost" size="sm" aria-label="Редактирай" onClick={() => openEdit(c)}>
                     <Icon name="pencil" size={16} />
                   </Button>
                   <Button
@@ -187,7 +202,7 @@ export function CouponsManager({ coupons }: { coupons: Coupon[] }) {
         onClose={() => setDraft(null)}
         title={draft?.id ? "Редактирай код" : "Нов промо код"}
         footer={
-          <Button onClick={save} loading={saving}>
+          <Button onClick={save} loading={saving} disabled={!dirty}>
             Запази
           </Button>
         }

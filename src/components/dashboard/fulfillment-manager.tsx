@@ -26,6 +26,7 @@ import {
   Select,
   Textarea,
 } from "@/components/ui";
+import { isValidBgIban } from "@/lib/iban";
 import { centsToInput, formatPrice } from "@/lib/money";
 import { PAYMENT_TYPES, SHIPPING_TYPES } from "@/schemas/fulfillment";
 import { WorkingHoursEditor } from "@/components/dashboard/working-hours-editor";
@@ -60,6 +61,23 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
   const [toDelete, setToDelete] = useState<{ kind: "shipping" | "payment"; id: string; name: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  /* Снапшот на draft-а при отваряне (JSON) — за dirty-guard на „Запази".
+     Сетва се само при отваряне за редакция; create → null → винаги dirty. */
+  const [shippingOpened, setShippingOpened] = useState<string | null>(null);
+  const [paymentOpened, setPaymentOpened] = useState<string | null>(null);
+  const shippingDirty =
+    shippingOpened === null || JSON.stringify(shippingDraft) !== shippingOpened;
+  const paymentDirty = paymentOpened === null || JSON.stringify(paymentDraft) !== paymentOpened;
+
+  /* Отваряне на draft: за редакция пазим снапшот (dirty-guard); за нов — null. */
+  function openShipping(draft: ShippingDraft) {
+    setShippingDraft(draft);
+    setShippingOpened(draft.id === null ? null : JSON.stringify(draft));
+  }
+  function openPayment(draft: PaymentDraft) {
+    setPaymentDraft(draft);
+    setPaymentOpened(draft.id === null ? null : JSON.stringify(draft));
+  }
   /* Кой ред има текущо действие (toggle) — за spinner на бутона. */
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -126,7 +144,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
             size="sm"
             variant="secondary"
             onClick={() =>
-              setShippingDraft({ id: null, type: "courier", name: "", price: "", freeOver: "", deliveryHours: null })
+              openShipping({ id: null, type: "courier", name: "", price: "", freeOver: "", deliveryHours: null })
             }
           >
             + Добави
@@ -165,7 +183,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
                 size="sm"
                 aria-label="Редактирай"
                 onClick={() =>
-                  setShippingDraft({
+                  openShipping({
                     id: m.id,
                     type: m.type,
                     name: m.name,
@@ -200,7 +218,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => setPaymentDraft({ id: null, type: "cod", name: "", details: "" })}
+            onClick={() => openPayment({ id: null, type: "cod", name: "", details: "" })}
           >
             + Добави
           </Button>
@@ -232,7 +250,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
                 size="sm"
                 aria-label="Редактирай"
                 onClick={() =>
-                  setPaymentDraft({ id: m.id, type: m.type, name: m.name, details: m.details })
+                  openPayment({ id: m.id, type: m.type, name: m.name, details: m.details })
                 }
               >
                 <Icon name="pencil" size={18} />
@@ -255,7 +273,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
         onClose={() => setShippingDraft(null)}
         title={shippingDraft?.id ? "Редактирай доставка" : "Нов метод за доставка"}
         footer={
-          <Button onClick={handleSaveShipping} loading={saving}>
+          <Button onClick={handleSaveShipping} loading={saving} disabled={!shippingDirty}>
             Запази
           </Button>
         }
@@ -322,7 +340,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
         onClose={() => setPaymentDraft(null)}
         title={paymentDraft?.id ? "Редактирай плащане" : "Нов метод за плащане"}
         footer={
-          <Button onClick={handleSavePayment} loading={saving}>
+          <Button onClick={handleSavePayment} loading={saving} disabled={!paymentDirty}>
             Запази
           </Button>
         }
@@ -348,7 +366,26 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
               rows={2}
               placeholder="IBAN при банков превод, инструкции..."
               value={paymentDraft.details}
-              onChange={(e) => setPaymentDraft({ ...paymentDraft, details: e.target.value })}
+              onChange={(e) => {
+                setPaymentDraft({ ...paymentDraft, details: e.target.value });
+                /* Изчисти грешката веднага щом стойността стане валидна (докато пише). */
+                if (errors.details) {
+                  const ok =
+                    paymentDraft.type !== "bank_transfer" || isValidBgIban(e.target.value);
+                  if (ok) setErrors((prev) => ({ ...prev, details: "" }));
+                }
+              }}
+              onBlur={(e) => {
+                /* Валидирай IBAN при напускане на полето — само за банков превод. */
+                if (paymentDraft.type !== "bank_transfer") return;
+                const value = e.target.value.trim();
+                if (value !== "" && !isValidBgIban(value)) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    details: "Въведи валиден IBAN (напр. BG80 BNBG 9661 1020 3456 78)",
+                  }));
+                }
+              }}
               error={errors.details}
               hint="Показва се на купувача при избор на метода."
             />

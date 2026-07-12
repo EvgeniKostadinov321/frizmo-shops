@@ -41,9 +41,17 @@ export function ShopForm({ initial = {}, slug, action }: ShopFormProps) {
   const [address, setAddress] = useState(initial.address ?? "");
   const [city, setCity] = useState(initial.city ?? "");
   const [days, setDays] = useState<WorkingDay[]>(initial.workingDays ?? defaultWorkingDays());
+  /* Формата смесва controlled (адрес/град/часове) и uncontrolled (defaultValue)
+     полета → dirty се засича чрез native onInput/onChange на самия <form>
+     (бълбука от всички полета). Нулира се след успешен запис. */
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (state.ok) toast.success("Промените са запазени.");
+    if (state.ok) {
+      toast.success("Промените са запазени.");
+      /* queueMicrotask: setState синхронно в effect чупи react-compiler lint. */
+      queueMicrotask(() => setDirty(false));
+    }
     if (state.error) toast.error(state.error);
   }, [state]);
 
@@ -127,7 +135,13 @@ export function ShopForm({ initial = {}, slug, action }: ShopFormProps) {
 
   return (
     <Card>
-      <form action={formAction} className="flex flex-col gap-4" noValidate>
+      <form
+        action={formAction}
+        onInput={() => setDirty(true)}
+        onChange={() => setDirty(true)}
+        className="flex flex-col gap-4"
+        noValidate
+      >
         <input type="hidden" name="workingHours" value={JSON.stringify({ days })} />
         {slug && (
           <div className="rounded-control border border-surface-200 bg-surface-50 px-3 py-2.5">
@@ -164,9 +178,8 @@ export function ShopForm({ initial = {}, slug, action }: ShopFormProps) {
 
         {detailFields}
 
-        {state.error && <p className="text-sm text-danger-600">{state.error}</p>}
         <div>
-          <Button type="submit" loading={pending}>
+          <Button type="submit" loading={pending} disabled={!dirty}>
             Запази промените
           </Button>
         </div>

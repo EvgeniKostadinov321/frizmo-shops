@@ -60,6 +60,13 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
     setEditor({ mode: "edit", category });
   }
 
+  /* Dirty: при редакция — само сменено име (updateCategory приема само име);
+     при създаване — непразно име. */
+  const canSave =
+    editor.mode === "edit"
+      ? name.trim() !== "" && name.trim() !== editor.category.name
+      : name.trim() !== "";
+
   async function save() {
     setSaving(true);
     try {
@@ -198,7 +205,7 @@ export function CategoriesManager({ tree }: CategoriesManagerProps) {
             <Button variant="secondary" onClick={() => setEditor({ mode: "closed" })}>
               Отказ
             </Button>
-            <Button onClick={save} loading={saving}>
+            <Button onClick={save} loading={saving} disabled={!canSave}>
               Запази
             </Button>
           </>

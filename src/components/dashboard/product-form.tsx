@@ -31,6 +31,7 @@ import {
   type OptionAxis,
   type VariantDraft,
 } from "@/lib/variants";
+import { isDirty } from "@/lib/is-dirty";
 
 export interface ProductFormInitial {
   name: string;
@@ -138,6 +139,26 @@ export function ProductForm({
   /* „Бързо/Детайлно": onboarding е закован „Бързо" (simple); иначе от localStorage. */
   const mode = useSyncExternalStore(onModeChange, getModeSnapshot, getServerModeSnapshot);
   const showDetailed = !simple && mode === "detailed";
+
+  /* Dirty-guard само за редакция (при създаване всичко е ново → бутонът е активен). */
+  const current = {
+    name, description, categoryId, price, promoPrice, stock, active, images,
+    attributes, axes, variants, deal, weight, length, width, height,
+    netQuantityValue, netQuantityUnit, sku, gtin, brand, cost, seoTitle,
+    seoDescription, sizeGuideId,
+  };
+  const initialSnapshot = {
+    name: initial.name, description: initial.description, categoryId: initial.categoryId,
+    price: initial.price, promoPrice: initial.promoPrice, stock: initial.stock,
+    active: initial.status === "active", images: initial.images, attributes: initial.attributes,
+    axes: initial.options, variants: initial.variants, deal: initial.deal, weight: initial.weight,
+    length: initial.length, width: initial.width, height: initial.height,
+    netQuantityValue: initial.netQuantityValue, netQuantityUnit: initial.netQuantityUnit,
+    sku: initial.sku, gtin: initial.gtin, brand: initial.brand, cost: initial.cost,
+    seoTitle: initial.seoTitle, seoDescription: initial.seoDescription,
+    sizeGuideId: initial.sizeGuideId,
+  };
+  const dirty = !productId || isDirty(current, initialSnapshot);
 
   function handleAxesChange(nextAxes: OptionAxis[]) {
     setAxes(nextAxes);
@@ -576,7 +597,7 @@ export function ProductForm({
       {/* Футерът е отделна карта с горен отстъп — не се слива с последната
           секция (feedback от 2026-07-04, снимка от мобилно). */}
       <div className="mt-2 flex items-center gap-3 rounded-card border border-surface-200 bg-surface-0 p-4">
-        <Button type="submit" loading={saving}>
+        <Button type="submit" loading={saving} disabled={!dirty}>
           {productId ? "Запази промените" : "Създай продукта"}
         </Button>
         <Button type="button" variant="ghost" onClick={() => router.push(redirectTo)}>

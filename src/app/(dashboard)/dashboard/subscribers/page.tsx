@@ -52,11 +52,9 @@ export default async function SubscribersPage() {
           </div>
           <Table>
             <THead>
-              <TRow>
-                <TH>Абонат</TH>
-                <TH>Код</TH>
-                <TH>Доведени</TH>
-              </TRow>
+              <TH>Абонат</TH>
+              <TH>Код</TH>
+              <TH>Доведени</TH>
             </THead>
             <TBody>
               {referralsList.map((r) => (
@@ -109,10 +107,8 @@ export default async function SubscribersPage() {
         <Card>
           <Table>
             <THead>
-              <TRow>
-                <TH>Имейл</TH>
-                <TH>Потвърден на</TH>
-              </TRow>
+              <TH>Имейл</TH>
+              <TH>Потвърден на</TH>
             </THead>
             <TBody>
               {rows.map((r) => (
