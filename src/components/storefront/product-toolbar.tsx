@@ -37,8 +37,8 @@ interface ProductToolbarProps {
 interface DropdownOption {
   value: string;
   label: string;
-  /** Подкатегория → отстъп в панела. */
-  indent?: boolean;
+  /** Ниво на влагане за отстъп: 0 = корен, 1 = подкатегория, 2 = под-подкатегория. */
+  depth?: number;
 }
 
 /**
@@ -118,7 +118,7 @@ function ThemedDropdown({
                       onChoose(opt.value);
                     }}
                     className={`flex w-full items-center whitespace-nowrap py-2 pr-4 text-left text-sm transition-colors ${
-                      opt.indent ? "pl-8" : "pl-4"
+                      opt.depth === 2 ? "pl-12" : opt.depth === 1 ? "pl-8" : "pl-4"
                     } ${
                       active
                         ? "bg-(--sf-primary) font-medium text-(--sf-on-primary)"
@@ -203,13 +203,13 @@ export function StorefrontProductToolbar({
   /* Категориите като dropdown — „Всички" + корени + подкатегории (с отстъп). */
   const categoryOptions: DropdownOption[] = [
     { value: "", label: "Всички категории" },
-    ...roots.flatMap((r) => {
-      const kids = childrenOf(r.id);
-      return [
-        { value: r.id, label: r.name },
-        ...kids.map((c) => ({ value: c.id, label: c.name, indent: true })),
-      ];
-    }),
+    ...roots.flatMap((r) => [
+      { value: r.id, label: r.name, depth: 0 },
+      ...childrenOf(r.id).flatMap((c) => [
+        { value: c.id, label: c.name, depth: 1 },
+        ...childrenOf(c.id).map((g) => ({ value: g.id, label: g.name, depth: 2 })),
+      ]),
+    ]),
   ];
   const categoryDropdown = roots.length > 0 && (
     <ThemedDropdown
