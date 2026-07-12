@@ -4,11 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Button, Icon, Input, Logo } from "@/components/ui";
-import type { AuthFormState } from "@/actions/auth";
+import { signInWithProvider, type AuthFormState } from "@/actions/auth";
 
 interface AuthFormProps {
   mode: "login" | "register";
   action: (prev: AuthFormState, formData: FormData) => Promise<AuthFormState>;
+  oauthError?: string;
 }
 
 /** Тихи доказателства до маскота — същият език като landing trust лентата. */
@@ -18,7 +19,7 @@ const PROOFS = [
   "30 дни безплатно, плащане след 30 дни",
 ];
 
-export function AuthForm({ mode, action }: AuthFormProps) {
+export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
   /* Маскотът „закрива очи", докато полето за парола е на фокус — дискретна
      интеракция, която прави екрана жив без да отвлича. Един state контролира и
@@ -100,6 +101,43 @@ export function AuthForm({ mode, action }: AuthFormProps) {
                 ? "Няколко полета и си готов да продаваш. Без ангажимент, без договори."
                 : "Радваме се да те видим отново."}
             </p>
+          </div>
+
+          {/* Social login — над имейл формата, с „или" divider. Отделен контрол от
+              useActionState формата: собствен form с action-а. Google „G" лого inline
+              (multicolor, не се вписва в монохромния Icon set). */}
+          {oauthError && <p className="text-sm text-danger-600">{oauthError}</p>}
+          <form action={signInWithProvider.bind(null, undefined)}>
+            <Button type="submit" variant="secondary" size="lg" className="w-full gap-3">
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+                <path
+                  fill="#4285F4"
+                  d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.34A9 9 0 0 0 9 18Z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.02-2.34Z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.42 0 9 0A9 9 0 0 0 .96 4.94l3.02 2.34C4.68 5.16 6.66 3.58 9 3.58Z"
+                />
+              </svg>
+              Продължи с Google
+            </Button>
+          </form>
+
+          {/* „или" divider */}
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="h-px flex-1 bg-surface-200" />
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-500">
+              или
+            </span>
+            <span aria-hidden className="h-px flex-1 bg-surface-200" />
           </div>
 
           <form action={formAction} className="flex flex-col gap-4" noValidate>
