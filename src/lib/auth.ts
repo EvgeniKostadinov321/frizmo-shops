@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { db, profiles, shops } from "@/db";
+import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 /** Връща auth потребителя или пренасочва към login. За Server Components/Actions. */
@@ -13,9 +14,16 @@ export async function requireUser() {
   return user;
 }
 
-/** Идемпотентно гарантира ред в profiles (предпазна мрежа при прекъснат signup). */
-export async function ensureProfile(userId: string) {
-  await db.insert(profiles).values({ id: userId }).onConflictDoNothing();
+/**
+ * Идемпотентно гарантира ред в profiles (предпазна мрежа при прекъснат signup +
+ * OAuth първо влизане). При OAuth подаваме името от провайдъра → записва се при
+ * insert; повторно влизане не презаписва (onConflictDoNothing).
+ */
+export async function ensureProfile(userId: string, fullName?: string) {
+  await db
+    .insert(profiles)
+    .values({ id: userId, fullName: fullName ? sanitizeText(fullName, 100) : "" })
+    .onConflictDoNothing();
 }
 
 /** Магазинът на текущия потребител или null (за UI разклонения). */
