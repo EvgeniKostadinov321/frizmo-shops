@@ -35,6 +35,16 @@ export const metadata: Metadata = {
   title: "Frizmo Shops",
   description: "Твоят онлайн магазин. Готов днес. Без програмист.",
   applicationName: "Frizmo Shops",
+  /* Глобални OG/Twitter дефолти — наследяват се от всички страници. Страниците
+     със свой generateMetadata (продукт, магазин) допълват с images/title. */
+  openGraph: {
+    type: "website",
+    siteName: "Frizmo Shops",
+    locale: "bg_BG",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
