@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { db, profiles } from "@/db";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { loginSchema, registerSchema } from "@/schemas/auth";
@@ -72,4 +74,28 @@ export async function signOut(): Promise<void> {
   const supabase = await createSupabaseServer();
   await supabase.auth.signOut();
   redirect("/auth/login");
+}
+
+/**
+ * Стартира OAuth flow (засега само Google). `next` носи дестинацията след вход —
+ * търговец → /dashboard; купувачески акаунт (S3) → друг път по-късно. redirectTo
+ * сочи нашия callback (виж app/(auth)/auth/callback/route.ts). base URL от заявката,
+ * за да работи и на localhost, и на прод домейна.
+ */
+export async function signInWithProvider(next?: string): Promise<void> {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const base = `${proto}://${h.get("host")}`;
+  const safeNext = safeNextPath(next);
+
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${base}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+    },
+  });
+
+  if (error || !data.url) redirect("/auth/login?error=oauth");
+  redirect(data.url);
 }
