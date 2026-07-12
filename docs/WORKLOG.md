@@ -37,54 +37,30 @@
 
 ---
 
-## Текущо състояние (2026-07-11)
+## Текущо състояние (2026-07-12)
 
-> **ТЕСТ-СЕСИЯ ПРИКЛЮЧЕНА (2026-07-11):** всичките 7 pure-code функции тествани на живо и
-> **push-нати** на прод (чек-лист: `docs/testing-checklist.md`). **Оставаща пътна карта,
-> разделена на „чисто с код" vs „иска външна настройка" → `docs/remaining-roadmap.md`.**
+> **ВСИЧКИ pure-code функции завършени, тествани на живо и push-нати на прод** (Пакети А–Д +
+> 7-те по-ранни). **UX инициатива Фаза 1 (табове) + Фаза 2 (режим на сложност) завършени и
+> push-нати.** Оставаща пътна карта → `docs/remaining-roadmap.md`. **СЛЕДВА: външната работа**
+> (домейн `frizmoshops.bg` поръчан, чака setup; Stripe live; Еконт/Спиди; Social login; inv.bg;
+> Sentry). Пълните детайли — в „Дневник" по-долу.
 
 - **Клонове:** **`dev` = Vercel PRODUCTION** (потвърдено 2026-07-08 от Deployments таба: `dev` носи Production badge). Работим и качваме САМО на `dev`. **`main` НЕ се ползва** (стара грешна презумпция „main=prod"). Push към `dev` (=prod): агентът ПИТА преди качване, качва само при изрично разрешение.
 - **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
 - **`getShopPlan()` е stub** (src/lib/plan.ts) → всички магазини са "pro" до прод активиране на билинга.
 - **Website builder Вълни 1–3Б ✅** (dev+prod, тествани). Остава Вълна 4 (undo/версии, домейн, i18n).
-- **Одит цикли ✅**: 4 одита 2026-07-07 (security/a11y/perf/UX) + production readiness одит 2026-07-09 (12/19 оправени, 2 критични concurrency бъга фикснати). `docs/superpowers/audits/`.
-
-### „Pure code" функции (2026-07-11) — 4 завършени + PUSH-нати на dev(=prod), чакат ръчна проверка на живо
-
-Четири чисто-кодови функции (spec→plan→TDD код), `pnpm check` минава, **push-нати на `dev` (= production) на 2026-07-11.** Остава САМО ръчна проверка на живо от потребителя (Playwright не се ползва за естетика). **Листа за тестване:**
-
-1. **Тегло/размери/количество на продукт** — 6 nullable колони на `products`, всичко по избор; `db:push` изпълнен. Спец `2026-07-10-product-weight-design.md`, план `2026-07-10-product-weight.md`. **Тест:** форма (нов/edit), публична страница количество + Product JSON-LD, CSV експорт/импорт, мобилно 375px.
-2. **Product feed** (Google Merchant/FB) — `/s/{slug}/feed.xml` (ISR), нула конфиг. Спец/план `2026-07-10-product-feed*`. **Тест:** feed.xml в браузър (валиден XML), Copy бутон в `/dashboard/store` (само published), мобилно.
-3. **Abandoned cart recovery имейл** — таблица `abandoned_carts` + opt-in checkbox + Vercel Cron (`CRON_SECRET`). `db:push` изпълнен. Спец/план `2026-07-10-abandoned-cart*`. **⚠️ След push на prod → Vercel Redeploy** (за да се приложи `CRON_SECRET`). **Тест:** opt-in checkbox на checkout, cron след 1ч → 1 имейл; **без Redeploy cron гардът връща 401.**
-4. **„Провери поръчка" (order lookup)** — публична `/s/{slug}/order-status`, номер+телефон → confirmation (DRY, преизползва UI-я), обща грешка, rate-limit 5/15мин на IP, footer линк 2-та варианта. Спец/план `2026-07-10-order-lookup*`. **Тест:** реален номер+телефон → пренасочва; грешен телефон → обща грешка; 6+ опита → rate-limit; footer 2-та варианта; мобилно 375px.
-
-**+ Изтриване на акаунт (GDPR чл.17)** — 5-та pure-code функция: код готов + обективен verify скрипт (9/9 ✓) + `pnpm check` ✓, но **PUSH-нато на prod 2026-07-11.** Спец `2026-07-09-account-deletion-design.md`, план `2026-07-11-account-deletion.md`, `scripts/verify-account-deletion.mjs`. **Тест:** „Опасна зона" в /dashboard/store → modal (въведи името на магазина) → трие акаунт+магазин+auth → redirect към landing с toast; грешно име → бутонът disabled.
-
-### Пакети A · Б · В · Г · Д (2026-07-11) — групираните pure-code пакети
-
-Оставащите pure-code функции бяха групирани в 5 тематични пакета (spec→plan→TDD→gate→push):
-- **Пакет A „Продуктова форма 2.0"** ✅ ТЕСТВАН + PUSH-нат — identifiers/GTIN/SEO/size guides/тогъл.
-- **Пакет Б „Доверие на продукта"** ✅ PUSH-нат (Q&A потокът чака функц. проверка) — „X продадени" + Q&A.
-- **Пакет В „Растеж"** ✅ КОД (не push) — welcome купон · реферали · 4 analytics разреза.
-- **Пакет Г „Поръчков поток"** ✅ КОД (не push) — reorder · печат складова бележка.
-- **Пакет Д „Setup & доставка"** ✅ КОД (не push) — IBAN · зони доставка · категории 3 нива · онбординг чеклист.
-
-**В+Г+Д: ✅ ТЕСТВАНИ НА ЖИВО + PUSH-НАТИ (2026-07-12, push `b10ffb2..a829ea2`).** Пътьом
-редизайн на зоните (адрес autocomplete + авто-мач по град, без picker) + ~10 UX поправки.
-Спец: `2026-07-11-growth-orders-setup-design.md` + `2026-07-12-address-autocomplete-auto-zones-design.md`.
-
-**С това ВСИЧКИ pure-code функции от `remaining-roadmap.md` (категория 1) са имплементирани.**
-Остава само „голямото самостоятелно" (мулти-user екипи, купувачески акаунт) + категория 2 (иска
-външна намеса). **СЛЕДВАЩА ФАЗА (започва след теста на В+Г+Д): външната работа** — Stripe live
-активиране, Еконт/Спиди, Social login (Google), inv.bg фактури, Sentry, custom домейн. Виж
-`docs/remaining-roadmap.md` категория 2.
+- **Одит цикли ✅**: 4 одита 2026-07-07 (security/a11y/perf/UX) + production readiness одит 2026-07-09 (12/19 оправени, 2 критични concurrency бъга фикснати) + Next.js плюсове одит 2026-07-12 (SEO enrichment + cache safe wins). `docs/superpowers/audits/`.
+- **Всички pure-code пакети (А–Д) ✅ ТЕСТВАНИ + PUSH-НАТИ** (2026-07-12). Категория 1 от `remaining-roadmap.md` е приключена. Остава „голямото самостоятелно" (мулти-user екипи, купувачески акаунт) + категория 2 (иска външна намеса).
+- **UX инициатива ✅**: Фаза 1 (табове на 5 претрупани страници, `ui/Tabs` примитив) + Фаза 2 (режим на сложност Хоби/Малък бизнес/Пълна) — тествани на живо + push-нати 2026-07-12.
 
 **Открити нишки (не спешни):**
-- Кеш архитектура — отложена (пълно решение = Next `cacheComponents`). Анализ: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
-- Sentry — чака DSN. Backup/PITR — за преценка.
+- Кеш архитектура — частично адресирана 2026-07-12 (cookie-guard + terms кеш, Пакет B); пълното решение = Next `cacheComponents` (отделна сесия). Анализ: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
+- Sentry — чака DSN (същият акаунт, нов проект). Backup/PITR — за преценка.
 - **Vercel prod env vars при push:** увери се, че `CRON_SECRET` е там (за cron) + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `NEXT_PUBLIC_SITE_URL`; всяко добавяне → **Redeploy**.
 
-**Какво следва:** ръчна проверка на живо на 4-те push-нати + **push на 5-та (изтриване на акаунт)** (+ Vercel Redeploy за #3 abandoned cart) → после следващ кандидат. + `2026-07-07-post-audit-roadmap.md` + `2026-07-06-builder-roadmap.md` (Вълна 4).
+**Какво следва:** външната работа (виж дневника 2026-07-12) — домейн setup (чака SuperHosting до 24ч),
+Stripe live активиране (кодът готов), Еконт/Спиди, Social login (Google), inv.bg фактури (Случай A),
+Sentry. + `2026-07-06-builder-roadmap.md` (Вълна 4).
 
 ---
 
