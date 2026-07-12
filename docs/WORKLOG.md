@@ -69,9 +69,9 @@
 - **Пакет Г „Поръчков поток"** ✅ КОД (не push) — reorder · печат складова бележка.
 - **Пакет Д „Setup & доставка"** ✅ КОД (не push) — IBAN · зони доставка · категории 3 нива · онбординг чеклист.
 
-**В+Г+Д: `pnpm check` ✓ (317 теста), `db:push` изпълнен, ЧАКАТ push разрешение.** УТРЕ (2026-07-12):
-тест на живо → поправки → push. Спец: `2026-07-11-growth-orders-setup-design.md`; планове:
-`2026-07-11-paket-{v-rastezh,g-porachkov-potok,d-setup-dostavka}.md`.
+**В+Г+Д: ✅ ТЕСТВАНИ НА ЖИВО + PUSH-НАТИ (2026-07-12, push `b10ffb2..a829ea2`).** Пътьом
+редизайн на зоните (адрес autocomplete + авто-мач по град, без picker) + ~10 UX поправки.
+Спец: `2026-07-11-growth-orders-setup-design.md` + `2026-07-12-address-autocomplete-auto-zones-design.md`.
 
 **С това ВСИЧКИ pure-code функции от `remaining-roadmap.md` (категория 1) са имплементирани.**
 Остава само „голямото самостоятелно" (мулти-user екипи, купувачески акаунт) + категория 2 (иска
@@ -101,6 +101,23 @@
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-12 (ТЕСТ-СЕСИЯ В+Г+Д + PUSH · `b10ffb2..a829ea2`, 37 commit-а на prod)** —
+  **Всички pure-code пакети (А–Д) вече ТЕСТВАНИ НА ЖИВО и PUSH-НАТИ.** Потребителят изтества
+  В (welcome/реферали/analytics), Г (reorder/печат), Д (IBAN/зони/категории 3 нива/онбординг).
+  **Пътьом поправени на живо:** (1) THead/TRow hydration bug (THead сам обвива в `<tr>` → не се
+  слага TRow вътре); (2) IBAN blur-валидация (не чака submit); (3) growth field грешки под полето
+  + toast вместо голи цветни редове; (4) **dirty-guard на всички редакционни форми** (`isDirty`
+  helper — бутонът „Запази" неактивен без промени; форма без промени правеше заявки); (5) success/
+  error → единни toast (sonner, вече установен стандарт); (6) **зони на доставка редизайн** —
+  оригиналният picker объркващ → адрес autocomplete → авто-мач по град БЕЗ picker (нов спец/план
+  `2026-07-12-address-autocomplete-auto-zones`; `matchZone` TDD; `shipping_zones.cities`+`isFallback`;
+  редактор „град=цена"; `SfAddressAutocomplete` + споделен `useAddressSuggest` hook; manual-order +
+  shop-form autocomplete); (7) **3-нивен category dropdown fix** (продуктовият избор + storefront
+  filter строяха само 2 нива → `flattenCategoryOptions` helper + toolbar depth 0/1/2); (8) онбординг
+  CTA „Публикувай"→/website. `pnpm check` зелен (330 теста) на всяка стъпка; финалният хвана type
+  грешка (CategoryLeaf.children) → оправена преди push. **СЛЕДВА: външната работа (Stripe live/
+  Еконт-Спиди/Social login/inv.bg/Sentry/домейн).**
 
 - **2026-07-11 (ПАКЕТИ В+Г+Д — ✅ КОД, НЕ push-нато) · спец `f429b43` · планове `3ee2a0d` · В `1506fa9`→`d1b4758` · Г `1c704e4`→`97fb22e` · Д `8ef30d0`→`b04479d`** —
   **Последните 3 pure-code пакета планирани заедно + имплементирани, inline, TDD.** Един обединен
