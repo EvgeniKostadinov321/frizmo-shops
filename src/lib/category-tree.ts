@@ -6,11 +6,15 @@ export function categoryDepth(parentLevel: number): number {
   return parentLevel + 1;
 }
 
-/** Минимален тип за сплескване на дървото до опции (id + име + деца до 3 нива). */
+/**
+ * Минимален тип за сплескване до опции. `children` е опционален и хлабав, за да
+ * приема и дърво, чиито листа не носят собствено `children` поле (напр. CategoryLeaf,
+ * чиито деца са CategoryWithCount без children).
+ */
 export interface CategoryTreeNode {
   id: string;
   name: string;
-  children: CategoryTreeNode[];
+  children?: CategoryTreeNode[];
 }
 
 /**
@@ -24,9 +28,9 @@ export function flattenCategoryOptions(
   const options: { value: string; label: string }[] = [];
   for (const root of tree) {
     options.push({ value: root.id, label: root.name });
-    for (const child of root.children) {
+    for (const child of root.children ?? []) {
       options.push({ value: child.id, label: `${root.name} → ${child.name}` });
-      for (const grand of child.children) {
+      for (const grand of child.children ?? []) {
         options.push({
           value: grand.id,
           label: `${root.name} → ${child.name} → ${grand.name}`,
