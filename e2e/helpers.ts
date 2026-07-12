@@ -17,7 +17,7 @@ export async function selectOption(page: Page, label: string, optionLabel: strin
 }
 
 /**
- * Минава shop wizard-а (Основно → Контакти → Работно време) с минимума
+ * Минава shop wizard-а (Основно → Контакти → Работно време → Сложност) с минимума
  * задължителни полета и създава магазина. Чака индикатора да маркира всяка
  * под-стъпка (бутонът „Напред"→„Създай магазина" се сменя при re-render).
  */
@@ -32,6 +32,12 @@ export async function createShopViaWizard(page: Page, name: string, category: st
   );
   await page.getByRole("button", { name: "Напред" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: "Работно време" })).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  /* Ф2: 4-та стъпка „Сложност" (default „Малък бизнес" е предизбран) → продължаваме. */
+  await page.getByRole("button", { name: "Напред" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Сложност" })).toHaveAttribute(
     "data-active",
     "true",
   );
