@@ -23,6 +23,9 @@ export const shopStatusEnum = pgEnum("shop_status", [
 /** Тип отстъпка за купон/welcome/referral (дефиниран рано — ползва се в shops). */
 export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
 
+/** Ф2: режим на сложност на dashboard-а (прогресивно разкриване). Default full → съществуващите не губят нищо. */
+export const complexityModeEnum = pgEnum("complexity_mode", ["hobby", "business", "full"]);
+
 /**
  * 1:1 със Supabase auth.users (id = auth user id).
  * enableRLS без политики: достъпът е само през сървъра (Drizzle, direct Postgres) —
@@ -74,6 +77,8 @@ export const shops = pgTable(
     referralValue: integer("referral_value").notNull().default(10),
     referralMinSubtotalCents: integer("referral_min_subtotal_cents").notNull().default(0),
     status: shopStatusEnum("status").notNull().default("draft"),
+    /** Ф2: режим на сложност — скрива напреднали nav секции/полета. Default full (стари магазини не губят нищо). */
+    complexityMode: complexityModeEnum("complexity_mode").notNull().default("full"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

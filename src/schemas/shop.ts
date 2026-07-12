@@ -43,3 +43,6 @@ export const shopSchema = z.object({
 });
 
 export type ShopInput = z.infer<typeof shopSchema>;
+
+/** Ф2: режим на сложност на dashboard-а. */
+export const complexityModeSchema = z.enum(["hobby", "business", "full"]);
