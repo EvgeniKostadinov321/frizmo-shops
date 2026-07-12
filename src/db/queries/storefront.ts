@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, ilike, inArray, isNotNull, ne, notInArray, sql, type SQL } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import { cache } from "react";
 import {
   categories,
@@ -15,6 +16,7 @@ import {
 } from "@/db";
 import { getSiteSettingsRow, parseSiteSettings } from "@/db/queries/site-settings";
 import { defaultSiteSettings } from "@/lib/sections";
+import { hasSupabaseAuthCookie } from "@/lib/supabase/auth-cookie";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export const STOREFRONT_PAGE_SIZE = 12;
@@ -61,11 +63,18 @@ export const getPublicShop = cache(async (slug: string) => {
   const shop = await db.query.shops.findFirst({ where: eq(shops.slug, slug) });
   if (!shop) return null;
 
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const viewerIsOwner = user?.id === shop.ownerId;
+  /* Cookie-guard: анонимен посетител (без Supabase auth cookie) пропуска
+     getUser() round-trip. ~99% от трафика е анонимен → по-бърз SSR. Логиката е
+     идентична (анонимен и без това получава viewerIsOwner=false). */
+  const cookieNames = (await cookies()).getAll().map((c) => c.name);
+  let viewerIsOwner = false;
+  if (hasSupabaseAuthCookie(cookieNames)) {
+    const supabase = await createSupabaseServer();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    viewerIsOwner = user?.id === shop.ownerId;
+  }
 
   if (shop.status !== "published" && !viewerIsOwner) return null;
 
