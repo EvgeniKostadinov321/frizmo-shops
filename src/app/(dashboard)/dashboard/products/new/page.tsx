@@ -18,7 +18,11 @@ export default async function NewProductPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold text-ink-900">Нов продукт</h1>
-      <ProductForm categories={categoryOptions} sizeGuides={sizeGuideOptions} />
+      <ProductForm
+        complexityMode={shop.complexityMode}
+        categories={categoryOptions}
+        sizeGuides={sizeGuideOptions}
+      />
     </div>
   );
 }

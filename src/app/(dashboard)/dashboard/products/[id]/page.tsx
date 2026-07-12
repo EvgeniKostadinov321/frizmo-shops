@@ -32,6 +32,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
       <h1 className="text-2xl font-bold text-ink-900">Редакция: {product.name}</h1>
       <ProductForm
         productId={product.id}
+        complexityMode={shop.complexityMode}
         categories={categoryOptions}
         sizeGuides={sizeGuideOptions}
         initial={{

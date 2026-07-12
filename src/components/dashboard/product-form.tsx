@@ -1,15 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { saveProduct } from "@/actions/products";
-import {
-  getModeSnapshot,
-  getServerModeSnapshot,
-  onModeChange,
-  setMode,
-} from "@/lib/product-form-mode";
+import { isVisible, type ComplexityMode } from "@/lib/complexity";
 import { AttributesEditor, type AttributeRow } from "./attributes-editor";
 import { ImageUploader } from "./image-uploader";
 import { OptionsEditor } from "./options-editor";
@@ -71,6 +66,8 @@ interface ProductFormProps {
   sizeGuides: { value: string; label: string }[];
   /** Опростен режим за onboarding: без характеристики и варианти. */
   simple?: boolean;
+  /** Ф2: режим на сложност — определя кои табове/полета се показват. */
+  complexityMode?: ComplexityMode;
   redirectTo?: string;
 }
 
@@ -108,6 +105,7 @@ export function ProductForm({
   categories,
   sizeGuides,
   simple = false,
+  complexityMode = "full",
   redirectTo = "/dashboard/products",
 }: ProductFormProps) {
   const router = useRouter();
@@ -139,9 +137,13 @@ export function ProductForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  /* „Бързо/Детайлно": onboarding е закован „Бързо" (simple); иначе от localStorage. */
-  const mode = useSyncExternalStore(onModeChange, getModeSnapshot, getServerModeSnapshot);
-  const showDetailed = !simple && mode === "detailed";
+  /* Ф2: продуктовите полета следват режима на сложност. simple (onboarding) =
+     най-прост изглед. Иначе по режима: hobby=3 карти без табове; business=main+
+     logistics; full=всичко. */
+  const effectiveMode: ComplexityMode = simple ? "hobby" : complexityMode;
+  const showLogistics = isVisible(1, effectiveMode); // Характеристики, Тегло/размер
+  const showAdvanced = isVisible(2, effectiveMode); // Кодове, SEO, Варианти, Промоция, Size guide
+  const showTabs = showLogistics; // business+ → табове; hobby → колона
 
   /* Dirty-guard само за редакция (при създаване всичко е ново → бутонът е активен). */
   const current = {
@@ -575,7 +577,8 @@ export function ProductForm({
     </Card>
   );
 
-  /* Кой таб съдържа поле с грешка → marker точка (само в детайлен режим). */
+  /* Кой таб съдържа поле с грешка → marker точка. Табовете codes/variants
+     съществуват само при showAdvanced → трябва да съвпадат с панелите по-долу. */
   const fe = fieldErrors;
   const productTabs: TabItem[] = [
     {
@@ -592,12 +595,16 @@ export function ProductForm({
       ),
     },
     { key: "logistics", label: "Логистика", marker: !!(fe.weight || fe.length || fe.width || fe.height) },
-    {
-      key: "codes",
-      label: "Кодове и SEO",
-      marker: !!(fe.sku || fe.gtin || fe.brand || fe.cost || fe.seoTitle || fe.seoDescription),
-    },
-    { key: "variants", label: "Варианти", marker: !!fe.deal },
+    ...(showAdvanced
+      ? ([
+          {
+            key: "codes",
+            label: "Кодове и SEO",
+            marker: !!(fe.sku || fe.gtin || fe.brand || fe.cost || fe.seoTitle || fe.seoDescription),
+          },
+          { key: "variants", label: "Варианти", marker: !!fe.deal },
+        ] as TabItem[])
+      : []),
   ];
 
   return (
@@ -609,36 +616,7 @@ export function ProductForm({
       }}
       noValidate
     >
-      {!simple && (
-        <div className="flex items-center gap-1 self-start rounded-control border border-surface-200 bg-surface-0 p-1">
-          <button
-            type="button"
-            onClick={() => setMode("quick")}
-            aria-pressed={mode === "quick"}
-            className={`h-9 rounded-control px-4 text-sm font-medium transition-colors ${
-              mode === "quick"
-                ? "bg-brand-600 text-surface-0"
-                : "text-ink-700 hover:bg-surface-100"
-            }`}
-          >
-            Бързо
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("detailed")}
-            aria-pressed={mode === "detailed"}
-            className={`h-9 rounded-control px-4 text-sm font-medium transition-colors ${
-              mode === "detailed"
-                ? "bg-brand-600 text-surface-0"
-                : "text-ink-700 hover:bg-surface-100"
-            }`}
-          >
-            Детайлно
-          </button>
-        </div>
-      )}
-
-      {!showDetailed ? (
+      {!showTabs ? (
         <>
           {cardBasics}
           {cardPricing}
@@ -657,21 +635,25 @@ export function ProductForm({
           <TabPanel tabKey="logistics">
             <div className="flex flex-col gap-4">
               {cardWeight}
-              {cardSizeGuide}
+              {showAdvanced && cardSizeGuide}
             </div>
           </TabPanel>
-          <TabPanel tabKey="codes">
-            <div className="flex flex-col gap-4">
-              {cardCodes}
-              {cardSeo}
-            </div>
-          </TabPanel>
-          <TabPanel tabKey="variants">
-            <div className="flex flex-col gap-4">
-              {cardVariants}
-              {cardDeal}
-            </div>
-          </TabPanel>
+          {showAdvanced && (
+            <TabPanel tabKey="codes">
+              <div className="flex flex-col gap-4">
+                {cardCodes}
+                {cardSeo}
+              </div>
+            </TabPanel>
+          )}
+          {showAdvanced && (
+            <TabPanel tabKey="variants">
+              <div className="flex flex-col gap-4">
+                {cardVariants}
+                {cardDeal}
+              </div>
+            </TabPanel>
+          )}
         </Tabs>
       )}
 
