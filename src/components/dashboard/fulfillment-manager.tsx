@@ -42,6 +42,8 @@ interface FulfillmentManagerProps {
   zones: ShippingZone[];
   /** Рендерира само едната секция (за табове). undefined = двете (обратна съвместимост). */
   only?: "shipping" | "payment";
+  /** Магазинът има поне един свързан куриер → показва Куриер/Доставка до полетата. */
+  hasCourier?: boolean;
 }
 
 type ShippingDraft = {
@@ -52,10 +54,19 @@ type ShippingDraft = {
   freeOver: string;
   /** null = не се показва време за доставка; масив = включено. */
   deliveryHours: WorkingDay[] | null;
+  /** "" = ръчен куриер; иначе Еконт/Спиди. */
+  courierProvider: string;
+  deliveryTarget: string;
 };
 type PaymentDraft = { id: string | null; type: string; name: string; details: string };
 
-export function FulfillmentManager({ shipping, payment, zones, only }: FulfillmentManagerProps) {
+export function FulfillmentManager({
+  shipping,
+  payment,
+  zones,
+  only,
+  hasCourier = false,
+}: FulfillmentManagerProps) {
   const router = useRouter();
   const showShipping = !only || only === "shipping";
   const showPayment = !only || only === "payment";
@@ -147,7 +158,16 @@ export function FulfillmentManager({ shipping, payment, zones, only }: Fulfillme
             size="sm"
             variant="secondary"
             onClick={() =>
-              openShipping({ id: null, type: "courier", name: "", price: "", freeOver: "", deliveryHours: null })
+              openShipping({
+                id: null,
+                type: "courier",
+                name: "",
+                price: "",
+                freeOver: "",
+                deliveryHours: null,
+                courierProvider: "",
+                deliveryTarget: "address",
+              })
             }
           >
             + Добави
@@ -193,6 +213,8 @@ export function FulfillmentManager({ shipping, payment, zones, only }: Fulfillme
                     price: centsToInput(m.priceCents),
                     freeOver: centsToInput(m.freeOverCents),
                     deliveryHours: m.deliveryHours ? parseWorkingHours(m.deliveryHours) : null,
+                    courierProvider: m.courierProvider ?? "",
+                    deliveryTarget: m.deliveryTarget ?? "address",
                   })
                 }
               >
@@ -317,6 +339,37 @@ export function FulfillmentManager({ shipping, payment, zones, only }: Fulfillme
                 hint="Празно = никога"
               />
             </div>
+
+            {/* Куриерска интеграция — само за courier метод и ако магазинът има свързан куриер. */}
+            {hasCourier && shippingDraft.type === "courier" && (
+              <div className="grid gap-4 border-t border-surface-100 pt-4 sm:grid-cols-2">
+                <Select
+                  label="Куриер"
+                  hint="За автоматична товарителница"
+                  options={[
+                    { value: "", label: "Ръчно (без куриер)" },
+                    { value: "econt", label: "Еконт" },
+                    { value: "speedy", label: "Спиди" },
+                  ]}
+                  value={shippingDraft.courierProvider}
+                  onChange={(e) =>
+                    setShippingDraft({ ...shippingDraft, courierProvider: e.target.value })
+                  }
+                />
+                <Select
+                  label="Доставка до"
+                  options={[
+                    { value: "address", label: "Адрес" },
+                    { value: "office", label: "Офис на куриера" },
+                  ]}
+                  value={shippingDraft.deliveryTarget}
+                  onChange={(e) =>
+                    setShippingDraft({ ...shippingDraft, deliveryTarget: e.target.value })
+                  }
+                  disabled={shippingDraft.courierProvider === ""}
+                />
+              </div>
+            )}
 
             {/* Опционално време за доставка — само инфо за клиента на checkout. */}
             <div className="flex flex-col gap-3 border-t border-surface-100 pt-4">

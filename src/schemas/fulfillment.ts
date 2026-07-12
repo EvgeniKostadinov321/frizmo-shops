@@ -29,6 +29,13 @@ export const shippingMethodSchema = z.object({
   freeOver: optionalPriceString.default(""),
   /** Опционално време за доставка (само инфо на клиента). null = не се показва. */
   deliveryHours: z.union([workingHoursSchema, z.null()]).default(null),
+  /** Куриер за товарителница (null/"" = ръчен метод, обратна съвместимост). */
+  courierProvider: z
+    .union([z.enum(["econt", "speedy"]), z.literal("")])
+    .default("")
+    .transform((v) => (v === "" ? null : v)),
+  /** До адрес или до офис на куриера. */
+  deliveryTarget: z.enum(["address", "office"]).default("address"),
 });
 
 export const paymentMethodSchema = z

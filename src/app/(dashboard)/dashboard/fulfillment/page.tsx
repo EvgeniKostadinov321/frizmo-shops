@@ -1,6 +1,8 @@
+import { CourierAccounts } from "@/components/dashboard/courier-accounts";
 import { FulfillmentManager } from "@/components/dashboard/fulfillment-manager";
 import { OrderSettings } from "@/components/dashboard/order-settings";
 import { Tabs, TabPanel } from "@/components/ui";
+import { getCourierAccounts } from "@/db/queries/couriers";
 import {
   ensureDefaultMethods,
   getPaymentMethods,
@@ -15,11 +17,13 @@ export default async function FulfillmentPage() {
   const { shop } = await requireShop();
   await ensureDefaultMethods(shop.id);
 
-  const [shipping, payment, zones] = await Promise.all([
+  const [shipping, payment, zones, courierAccounts] = await Promise.all([
     getShippingMethods(shop.id),
     getPaymentMethods(shop.id),
     getZonesForShop(shop.id),
+    getCourierAccounts(shop.id),
   ]);
+  const hasCourier = courierAccounts.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,14 +33,24 @@ export default async function FulfillmentPage() {
         tabs={[
           { key: "shipping", label: "Доставка" },
           { key: "payment", label: "Плащане" },
+          { key: "couriers", label: "Куриери" },
           { key: "orders", label: "Поръчки и връщания" },
         ]}
       >
         <TabPanel tabKey="shipping">
-          <FulfillmentManager only="shipping" shipping={shipping} payment={payment} zones={zones} />
+          <FulfillmentManager
+            only="shipping"
+            shipping={shipping}
+            payment={payment}
+            zones={zones}
+            hasCourier={hasCourier}
+          />
         </TabPanel>
         <TabPanel tabKey="payment">
           <FulfillmentManager only="payment" shipping={shipping} payment={payment} zones={zones} />
+        </TabPanel>
+        <TabPanel tabKey="couriers">
+          <CourierAccounts accounts={courierAccounts} />
         </TabPanel>
         <TabPanel tabKey="orders">
           <OrderSettings

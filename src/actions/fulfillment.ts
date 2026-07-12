@@ -58,12 +58,16 @@ export async function saveShippingMethod(
   if (!parsed.success) return zodFail(parsed.error);
 
   const { shop } = await requireShop();
+  /* Куриер/офис имат смисъл само за courier метод; иначе ги нулираме. */
+  const isCourier = parsed.data.type === "courier";
   const values = {
     type: parsed.data.type,
     name: sanitizeText(parsed.data.name, 60),
     priceCents: toCents(parsed.data.price)!,
     freeOverCents: parsed.data.freeOver ? toCents(parsed.data.freeOver) : null,
     deliveryHours: parsed.data.deliveryHours,
+    courierProvider: isCourier ? parsed.data.courierProvider : null,
+    deliveryTarget: isCourier ? parsed.data.deliveryTarget : "address",
     updatedAt: new Date(),
   };
 
