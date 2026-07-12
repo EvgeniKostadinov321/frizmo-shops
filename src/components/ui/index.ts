@@ -20,6 +20,7 @@ export { SelectCheckbox } from "./select-checkbox";
 export { Spinner } from "./spinner";
 export { Table, TBody, TCell, TH, THead, TRow } from "./table";
 export { TableRowLink } from "./table-row-link";
+export { Tabs, TabPanel, type TabItem } from "./tabs";
 export { Textarea } from "./textarea";
 export { TransitionLink } from "./transition-link";
 export { TimeSelect } from "./time-select";
