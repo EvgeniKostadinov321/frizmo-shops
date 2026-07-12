@@ -5,21 +5,11 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { db, profiles, shops } from "@/db";
+import { resolvePostAuthPath } from "@/lib/auth-redirect";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { loginSchema, registerSchema } from "@/schemas/auth";
-
-/** Дестинация след вход: магазин или продавач → dashboard; купувач → account или валиден next. */
-export function resolvePostAuthPath(
-  hasShop: boolean,
-  preferredRole: "buyer" | "seller" | null,
-  next?: string,
-): string {
-  if (hasShop || preferredRole === "seller") return "/dashboard";
-  const safe = safeNextPath(next);
-  return safe !== "/dashboard" ? safe : "/account";
-}
 
 export type AuthFormState = {
   error?: string;

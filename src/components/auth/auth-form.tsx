@@ -10,6 +10,10 @@ interface AuthFormProps {
   mode: "login" | "register";
   action: (prev: AuthFormState, formData: FormData) => Promise<AuthFormState>;
   oauthError?: string;
+  /** Роля от toggle-а: „buyer" (пазарувам) или „seller" (продавам). По подразбиране продавач. */
+  role?: "buyer" | "seller";
+  /** Дестинация след вход (напр. върнат в checkout). Прокарва се към Google + имейл входа. */
+  next?: string;
 }
 
 /** Тихи доказателства до маскота — същият език като landing trust лентата. */
@@ -19,7 +23,7 @@ const PROOFS = [
   "30 дни безплатно, плащане след 30 дни",
 ];
 
-export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
+export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
   /* Маскотът „закрива очи", докато полето за парола е на фокус — дискретна
      интеракция, която прави екрана жив без да отвлича. Един state контролира и
@@ -27,6 +31,25 @@ export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
   const [peeking, setPeeking] = useState(false);
   const isRegister = mode === "register";
   const beeSrc = peeking ? "/bee-peek.png" : "/bee-wave.png";
+  /* Роля от toggle-а. Default „seller" — запазва досегашния (продавачки) екран. */
+  const activeRole = role ?? "seller";
+  const isBuyer = activeRole === "buyer";
+  const roleHref = (r: "buyer" | "seller") =>
+    `/auth/${isRegister ? "register" : "login"}?role=${r}${next ? `&next=${encodeURIComponent(next)}` : ""}`;
+  /* Различен глас по роля (kicker + подзаглавие). */
+  const kicker = isBuyer
+    ? isRegister
+      ? "Нов купувач"
+      : "Добре дошъл"
+    : isRegister
+      ? "Нов магазин"
+      : "Добре дошъл";
+  const title = isRegister ? "Създай профил" : "Влез в профила си";
+  const subtitle = isBuyer
+    ? "Влез, за да следиш поръчките си, адресите и любимите."
+    : isRegister
+      ? "Няколко полета и си готов да продаваш. Без ангажимент, без договори."
+      : "Радваме се да те видим отново.";
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -72,42 +95,54 @@ export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
             />
             <div className="flex flex-col items-center gap-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
-                {isRegister ? "Нов магазин" : "Добре дошъл"}
+                {kicker}
               </p>
               <h1 className="text-balance font-display text-4xl font-extrabold tracking-tight text-ink-900">
-                {isRegister ? "Създай профил" : "Влез в профила си"}
+                {title}
               </h1>
-              <p className="max-w-xs text-pretty text-ink-500">
-                {isRegister
-                  ? "Няколко полета и си готов да продаваш. Без ангажимент, без договори."
-                  : "Радваме се да те видим отново."}
-              </p>
+              <p className="max-w-xs text-pretty text-ink-500">{subtitle}</p>
             </div>
           </div>
 
           {/* Desktop заглавен блок (ляво-подравнен; пчелата е в панела вдясно) */}
           <div className="hidden flex-col gap-2 lg:flex">
             <p className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
-              <span className="shrink-0">
-                {isRegister ? "Нов магазин" : "Добре дошъл"}
-              </span>
+              <span className="shrink-0">{kicker}</span>
               <span aria-hidden className="h-px flex-1 bg-surface-200" />
             </p>
             <h1 className="text-balance font-display text-4xl font-extrabold tracking-tight text-ink-900">
-              {isRegister ? "Създай профил" : "Влез в профила си"}
+              {title}
             </h1>
-            <p className="text-pretty text-ink-500">
-              {isRegister
-                ? "Няколко полета и си готов да продаваш. Без ангажимент, без договори."
-                : "Радваме се да те видим отново."}
-            </p>
+            <p className="text-pretty text-ink-500">{subtitle}</p>
+          </div>
+
+          {/* Toggle роля — „Пазарувам" / „Продавам". Линкове (не state) → сменят ?role
+              в URL-а: работи без JS, активният е подчертан. Сменя copy + къде отива входът. */}
+          <div className="flex rounded-control border border-surface-200 bg-surface-0 p-1 text-sm font-medium">
+            <Link
+              href={roleHref("buyer")}
+              className={`flex-1 rounded-[calc(var(--radius-control)-2px)] py-2 text-center transition-colors ${
+                isBuyer ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-900"
+              }`}
+            >
+              Пазарувам
+            </Link>
+            <Link
+              href={roleHref("seller")}
+              className={`flex-1 rounded-[calc(var(--radius-control)-2px)] py-2 text-center transition-colors ${
+                !isBuyer ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-900"
+              }`}
+            >
+              Продавам
+            </Link>
           </div>
 
           {/* Social login — над имейл формата, с „или" divider. Отделен контрол от
               useActionState формата: собствен form с action-а. Google „G" лого inline
-              (multicolor, не се вписва в монохромния Icon set). */}
+              (multicolor, не се вписва в монохромния Icon set). Купувач → връща се в
+              профила (или подадения next); продавач → dashboard (default в action-а). */}
           {oauthError && <p className="text-sm text-danger-600">{oauthError}</p>}
-          <form action={signInWithProvider.bind(null, undefined)}>
+          <form action={signInWithProvider.bind(null, isBuyer ? (next ?? "/account") : next)}>
             <Button type="submit" variant="secondary" size="lg" className="w-full gap-3">
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
                 <path
@@ -141,6 +176,10 @@ export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
           </div>
 
           <form action={formAction} className="flex flex-col gap-4" noValidate>
+            {/* Роля + next пътуват със submit-а: signUp пише preferredRole, signIn/signUp
+                пренасочват по роля. */}
+            <input type="hidden" name="role" value={activeRole} />
+            {next && <input type="hidden" name="next" value={next} />}
             {isRegister && (
               <Input
                 label="Име и фамилия"
@@ -177,7 +216,7 @@ export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
                 Имаш профил?{" "}
                 <Link
                   className="font-medium text-brand-600 hover:underline"
-                  href="/auth/login"
+                  href={`/auth/login?role=${activeRole}${next ? `&next=${encodeURIComponent(next)}` : ""}`}
                 >
                   Влез
                 </Link>
@@ -187,7 +226,7 @@ export function AuthForm({ mode, action, oauthError }: AuthFormProps) {
                 Нямаш профил?{" "}
                 <Link
                   className="font-medium text-brand-600 hover:underline"
-                  href="/auth/register"
+                  href={`/auth/register?role=${activeRole}${next ? `&next=${encodeURIComponent(next)}` : ""}`}
                 >
                   Регистрирай се
                 </Link>

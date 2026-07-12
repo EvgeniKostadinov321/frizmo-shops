@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePostAuthPath } from "@/actions/auth";
+import { resolvePostAuthPath } from "@/lib/auth-redirect";
 
 describe("resolvePostAuthPath", () => {
   it("има магазин → dashboard", () => {
