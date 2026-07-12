@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { OrderActions } from "@/components/dashboard/order-actions";
 import { OrderStatusBadge } from "@/components/dashboard/order-status-badge";
+import { WaybillButton } from "@/components/dashboard/waybill-button";
 import { Card, Icon } from "@/components/ui";
 import { getOrderWithItems } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
+import { getCourier } from "@/lib/couriers";
 import { formatPrice } from "@/lib/money";
 
 export const metadata = { title: "Поръчка — Frizmo Shops" };
@@ -63,6 +65,21 @@ export default async function OrderDetailPage({ params }: PageProps) {
       )}
 
       <OrderActions orderId={order.id} status={order.status} />
+
+      {/* Куриерска товарителница — само за поръчки с куриерски метод. */}
+      {order.courierProvider && (
+        <WaybillButton
+          orderId={order.id}
+          provider={order.courierProvider}
+          waybillId={order.waybillId}
+          trackingNumber={order.trackingNumber}
+          trackingUrl={
+            order.trackingNumber
+              ? getCourier(order.courierProvider).trackingUrl(order.trackingNumber)
+              : null
+          }
+        />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="flex flex-col gap-1 text-sm">
