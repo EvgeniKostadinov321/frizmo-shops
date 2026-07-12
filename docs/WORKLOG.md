@@ -42,9 +42,12 @@
 > **ВСИЧКИ pure-code функции завършени, тествани на живо и push-нати на прод** (Пакети А–Д +
 > 7-те по-ранни). **UX инициатива Фаза 1 (табове) + Фаза 2 (режим на сложност) завършени и
 > push-нати.** **Social login (Google) ✅ имплементиран, тестван на живо и push-нат
-> (2026-07-13).** Оставаща пътна карта → `docs/remaining-roadmap.md`. **СЛЕДВА: външната работа**
-> (домейн `frizmoshops.bg` поръчан, чака setup; Stripe live; Еконт/Спиди — спец/план готови,
-> чакат ключове; inv.bg; Sentry). Пълните детайли — в „Дневник" по-долу.
+> (2026-07-13).** **Куриерска интеграция (Еконт+Спиди) ✅ имплементирана (10 задачи,
+> commit-ната на `dev` локално, НЕ push-ната); чака push разрешение + ръчна проверка + външни
+> ключове (Спиди, реален Еконт prod, жива проверка на createWaybill).** Оставаща пътна карта →
+> `docs/remaining-roadmap.md`. **СЛЕДВА: push на куриерите (при разрешение) + останалата външна
+> работа** (домейн `frizmoshops.bg` поръчан, чака setup; Stripe live; inv.bg; Sentry). Пълните
+> детайли — в „Дневник" по-долу.
 
 - **Клонове:** **`dev` = Vercel PRODUCTION** (потвърдено 2026-07-08 от Deployments таба: `dev` носи Production badge). Работим и качваме САМО на `dev`. **`main` НЕ се ползва** (стара грешна презумпция „main=prod"). Push към `dev` (=prod): агентът ПИТА преди качване, качва само при изрично разрешение.
 - **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
@@ -78,6 +81,29 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-13 (КУРИЕРИ Еконт+Спиди — имплементирани, commit-нати на `dev` локално, НЕ push-нати)** —
+  Спец `2026-07-12-courier-integration-design.md`, план `2026-07-12-courier-integration.md`
+  (изпълнен inline, 10 задачи, TDD). **Предусловието тегло-на-продукт беше вече готово.**
+  Commit-и `1ee23bd`…`0b5893d`. Гейт зелен (374/374 теста, lint, build). **Обхват:**
+  (1) схема — `shop_courier_accounts` (per-shop ключове в `credentials` jsonb), `courier_offices`
+  (кеш, unique по provider+officeId) + куриерски колони на метод/поръчка (всички nullable),
+  `db:push` изпълнен; (2) чисти функции (TDD) — `aggregateOrderWeight` (fallback 500г) +
+  `resolveCodAmount` (авто COD при наложен платеж); (3) `CourierProvider` интерфейс + `getCourier(id)`
+  registry — HTTP изолиран по провайдър; (4) **Еконт** провайдър — **сверен на живо срещу demo API**
+  (`iasp-dev`/`1Asp-dev` → `demo.econt.com`; getCities/getOffices минаха, 114 офиса София в правилен
+  `Office` формат; реални полета `o.address.city.name`, `isAPS→"apt"`); (5) **Спиди** провайдър —
+  skeleton + mock (REST `api.speedy.bg/v1`, чака ключове); (6) account Zod + queries + actions
+  (save/delete/test/refresh офиси); (7) dashboard таб „Куриери" (свързване/тест/изтриване, refresh);
+  (8) checkout офис-picker по град (публичен `searchOfficesForShop(shopId, provider, city)` — купувачите
+  са анонимни; офисите са несензитивна номенклатура) + сървърна валидация (без офис при
+  `deliveryTarget==="office"` → блокирана поръчка) + snapshot; (9) `generateWaybill(orderId)` —
+  идемпотентен, tenant guard по `shopId`, tracking линк + бутон на поръчката (само при
+  `courierProvider != null`). **Демо Еконт ключове в `.env.local` = само DEV fallback**
+  (`ECONT_DEMO_USERNAME/PASSWORD/API_BASE`; Спиди коментирани). Ключове никога не се логват,
+  не са `NEXT_PUBLIC_`, маскирани в UI. **Чака (външно, не мога аз):** push разрешение → `dev`(=прод);
+  ръчна проверка на живо; Спиди ключове (имейл до `api.registration@speedy.bg`); реален Еконт prod
+  ключ (per-shop в dashboard); жива проверка на `createWaybill` payload срещу реален акаунт.
 
 - **2026-07-13 (SOCIAL LOGIN Google — имплементиран, тестван на живо + PUSH)** —
   Първата външна функция, за която ключовете дойдоха. Спец `2026-07-12-social-login-design.md`,
