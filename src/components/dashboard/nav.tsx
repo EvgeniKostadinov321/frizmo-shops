@@ -3,19 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS, isActive } from "@/components/dashboard/nav-items";
+import { isVisible, type ComplexityMode } from "@/lib/complexity";
 
 /**
  * Десктоп странична навигация (sidebar). На мобилно навигацията е в header-а
  * като burger меню (`MobileMenuButton`) — този компонент е скрит под md.
  */
 export function DashboardNav({
+  mode,
   pendingReviews = 0,
   pendingQuestions = 0,
 }: {
+  mode: ComplexityMode;
   pendingReviews?: number;
   pendingQuestions?: number;
 }) {
   const pathname = usePathname();
+  const items = NAV_ITEMS.filter((item) => isVisible(item.minMode, mode));
 
   /* Badge с чакащи — „Ревюта" (одобрение) и „Въпроси" (отговор). */
   const badgeFor = (href: string) => {
@@ -26,7 +30,7 @@ export function DashboardNav({
 
   return (
     <nav aria-label="Основна навигация" className="hidden flex-col gap-1 md:flex">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const a = isActive(pathname, item);
         return (
           <Link

@@ -26,6 +26,7 @@ export default async function DashboardLayout({
         {shop && (
           <div className="md:hidden">
             <MobileMenuButton
+              mode={shop.complexityMode}
               pendingReviews={pendingReviews}
               pendingQuestions={pendingQuestions}
             />
@@ -51,6 +52,7 @@ export default async function DashboardLayout({
         <div className="mx-auto flex max-w-7xl flex-col gap-4 p-4 md:flex-row md:gap-6 md:p-6">
           <aside className="hidden md:block md:w-48 md:shrink-0">
             <DashboardNav
+              mode={shop.complexityMode}
               pendingReviews={pendingReviews}
               pendingQuestions={pendingQuestions}
             />

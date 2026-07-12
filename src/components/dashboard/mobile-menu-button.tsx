@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { signOut } from "@/actions/auth";
 import { Icon } from "@/components/ui";
 import { NAV_ITEMS, isActive } from "@/components/dashboard/nav-items";
+import { isVisible, type ComplexityMode } from "@/lib/complexity";
 
 /**
  * Мобилен burger триггер (в header-а) + fullscreen overlay меню. Съдържа
@@ -13,14 +14,17 @@ import { NAV_ITEMS, isActive } from "@/components/dashboard/nav-items";
  * Десктоп навигацията е отделно (`DashboardNav`, страничен sidebar).
  */
 export function MobileMenuButton({
+  mode,
   pendingReviews = 0,
   pendingQuestions = 0,
 }: {
+  mode: ComplexityMode;
   pendingReviews?: number;
   pendingQuestions?: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const items = NAV_ITEMS.filter((item) => isVisible(item.minMode, mode));
 
   const badgeFor = (href: string) => {
     if (href === "/dashboard/reviews" && pendingReviews > 0) return pendingReviews;
@@ -72,7 +76,7 @@ export function MobileMenuButton({
             aria-label="Основна навигация"
             className="flex flex-1 flex-col gap-1 overflow-y-auto p-4"
           >
-            {NAV_ITEMS.map((item) => {
+            {items.map((item) => {
               const a = isActive(pathname, item);
               return (
                 <Link
