@@ -312,6 +312,10 @@ export const shippingZones = pgTable(
     /** Напр. „София“, „Областни градове“, „Села“. */
     name: text("name").notNull(),
     priceCents: integer("price_cents").notNull(),
+    /** Д3.1: градове в тази зона (comma-separated, за авто-мач по града на клиента). */
+    cities: text("cities").notNull().default(""),
+    /** Д3.1: „Останала страна“ — мач при непокрит град (най-много една смислена per метод). */
+    isFallback: boolean("is_fallback").notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

@@ -202,6 +202,8 @@ export async function saveShippingZone(input: unknown): Promise<ActionResult> {
     shippingMethodId: method.id,
     name: sanitizeText(parsed.data.name, 60),
     priceCents: toCents(parsed.data.price)!,
+    cities: sanitizeText(parsed.data.cities, 500),
+    isFallback: parsed.data.isFallback,
     sortOrder: (orderRow?.maxOrder ?? 0) + 1,
   });
 

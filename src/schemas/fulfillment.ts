@@ -53,6 +53,9 @@ export const zoneSchema = z.object({
   shippingMethodId: z.uuid(),
   name: z.string().trim().min(2, "Въведи име на зона").max(60),
   price: priceString,
+  /** Градове (comma-separated). Празно е ОК, ако зоната е fallback. */
+  cities: z.string().trim().max(500).default(""),
+  isFallback: z.boolean().default(false),
 });
 
 export type ShippingMethodInput = z.infer<typeof shippingMethodSchema>;
