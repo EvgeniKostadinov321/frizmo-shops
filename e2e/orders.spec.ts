@@ -19,8 +19,9 @@ test("пълен поръчков цикъл: deal промоция → checkout
   test.setTimeout(240_000);
   await register(page, `frizmo.e2e+ord${Date.now()}@gmail.com`);
 
-  /* Магазин + продукт с наличност 5 и промоция „2 за 30" */
-  await createShopViaWizard(page, "Е2Е Поръчки", "Храни и напитки");
+  /* Магазин + продукт с наличност 5 и промоция „2 за 30". Пълен режим —
+     тестът ползва „Количествена промоция" (deal), която е само в пълен режим (Ф2). */
+  await createShopViaWizard(page, "Е2Е Поръчки", "Храни и напитки", "full");
 
   await page.getByLabel("Име на продукта").fill("Козе сирене");
   await page.getByLabel("Цена", { exact: true }).fill("20");
@@ -37,9 +38,13 @@ test("пълен поръчков цикъл: deal промоция → checkout
   await page.getByRole("button", { name: "Запази промените" }).click();
   await expect(page).toHaveURL(/\/dashboard\/products$/);
 
-  /* Отваряме таб „Плащане и доставка" (сийдва дефолтите) и публикуваме */
+  /* Отваряме таб „Плащане и доставка" (сийдва дефолтите) и публикуваме.
+     Ф1: секцията е разделена на табове — доставката е на таб „Доставка"
+     (default), плащането на таб „Плащане". */
   await page.getByRole("link", { name: "Плащане и доставка" }).click();
   await expect(page.getByText("Куриер до адрес")).toBeVisible();
+  /* Превключваме на таб „Плащане" за да видим наложения платеж. */
+  await page.getByRole("tab", { name: "Плащане" }).click();
   await expect(page.getByText("Наложен платеж")).toBeVisible();
 
   /* Първото влизане в Уебсайт = onboarding wizard; публикуваме от финала му */

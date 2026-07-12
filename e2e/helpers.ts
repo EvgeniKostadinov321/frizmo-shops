@@ -20,8 +20,16 @@ export async function selectOption(page: Page, label: string, optionLabel: strin
  * Минава shop wizard-а (Основно → Контакти → Работно време → Сложност) с минимума
  * задължителни полета и създава магазина. Чака индикатора да маркира всяка
  * под-стъпка (бутонът „Напред"→„Създай магазина" се сменя при re-render).
+ *
+ * `mode`: режим на сложност (Ф2). Default „business" (default в wizard-а). Подай
+ * „full" ако тестът ползва напреднали продуктови полета (варианти, промоция).
  */
-export async function createShopViaWizard(page: Page, name: string, category: string) {
+export async function createShopViaWizard(
+  page: Page,
+  name: string,
+  category: string,
+  mode: "business" | "full" = "business",
+) {
   await page.getByRole("link", { name: "Създай магазин" }).click();
   await page.getByLabel("Име на магазина").fill(name);
   await selectOption(page, "Категория на бизнеса", category);
@@ -35,12 +43,15 @@ export async function createShopViaWizard(page: Page, name: string, category: st
     "data-active",
     "true",
   );
-  /* Ф2: 4-та стъпка „Сложност" (default „Малък бизнес" е предизбран) → продължаваме. */
+  /* Ф2: 4-та стъпка „Сложност" (default „Малък бизнес" е предизбран). */
   await page.getByRole("button", { name: "Напред" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: "Сложност" })).toHaveAttribute(
     "data-active",
     "true",
   );
+  if (mode === "full") {
+    await page.getByRole("button", { name: /Пълна настройка/ }).click();
+  }
   await page.getByRole("button", { name: "Създай магазина" }).click();
   await expect(page.getByRole("heading", { name: "Добави първия си продукт" })).toBeVisible();
 }

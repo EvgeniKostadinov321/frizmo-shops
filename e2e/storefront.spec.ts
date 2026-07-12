@@ -24,7 +24,9 @@ test("персонализация → публикуване → публиче
   await register(page, `frizmo.e2e+sf${Date.now()}@gmail.com`);
 
   /* Магазин + продукт с вариант */
-  await createShopViaWizard(page, "Е2Е Витрина", "Дрехи и мода");
+  /* Пълен режим — тестът ползва опции/варианти („+ Добави опция"), които са
+     само в пълен режим (Ф2). */
+  await createShopViaWizard(page, "Е2Е Витрина", "Дрехи и мода", "full");
 
   await page.getByLabel("Име на продукта").fill("Синя тениска");
   await page.getByLabel("Цена", { exact: true }).fill("20");
