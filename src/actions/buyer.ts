@@ -1,10 +1,10 @@
 "use server";
 
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import { clientIp } from "@/actions/cart";
-import { buyerAddresses, buyerFavorites, db, profiles } from "@/db";
-import { getBuyerFavoriteIds } from "@/db/queries/buyer";
+import { buyerAddresses, buyerFavorites, db, orders, profiles } from "@/db";
+import { countGuestOrdersByPhone, getBuyerFavoriteIds } from "@/db/queries/buyer";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireBuyer } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
@@ -141,4 +141,33 @@ export async function updateBuyerProfile(rawInput: unknown): Promise<ActionResul
     })
     .where(eq(profiles.id, profile.id));
   return ok(null);
+}
+
+/** Колко минали гост-поръчки могат да се свържат (по телефона на профила). */
+export async function countLinkableGuestOrders(): Promise<ActionResult<{ count: number }>> {
+  const { profile } = await requireBuyer();
+  if (!profile.phone) return ok({ count: 0 });
+  const phone = parseBgPhone(profile.phone);
+  if (!phone.ok) return ok({ count: 0 });
+  const n = await countGuestOrdersByPhone(phone.e164);
+  return ok({ count: n });
+}
+
+/** Свързва миналите гост-поръчки с акаунта (по потвърден телефон). Вдига phoneVerified.
+    Броим ПРЕДИ update-а (колко ще свържем) — точен резултат за toast-а. */
+export async function linkGuestOrders(): Promise<ActionResult<{ linked: number }>> {
+  const { profile } = await requireBuyer();
+  if (!profile.phone) return fail("Добави телефон в профила, за да свържеш минали поръчки.");
+  const phone = parseBgPhone(profile.phone);
+  if (!phone.ok) return fail("Телефонът в профила е невалиден.");
+  const toLink = await countGuestOrdersByPhone(phone.e164);
+  await db
+    .update(orders)
+    .set({ buyerId: profile.id, updatedAt: new Date() })
+    .where(and(isNull(orders.buyerId), eq(orders.customerPhone, phone.e164)));
+  await db
+    .update(profiles)
+    .set({ phoneVerified: true, updatedAt: new Date() })
+    .where(eq(profiles.id, profile.id));
+  return ok({ linked: toLink });
 }
