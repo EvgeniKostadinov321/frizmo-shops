@@ -18,6 +18,7 @@ import {
   shops,
 } from "@/db";
 import { clientIp } from "@/actions/cart";
+import { matchZone } from "@/lib/match-zone";
 import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
@@ -190,8 +191,8 @@ export async function createOrder(
   if (!shipping) return fail("Избери валиден метод за доставка.");
   if (!payment) return fail("Избери валиден метод за плащане.");
 
-  /* Д3: зони на доставка. Ако методът има ≥1 зона → цената идва от избраната зона
-     (изисква се); без зони → базовата цена на метода. Всичко се решава на сървъра. */
+  /* Д3.1: зони по град. Ако методът има зони → мачваме по града на клиента (matchZone);
+     мач → цена от зоната; непознат град → fallback зона или базовата цена на метода. */
   const methodZones =
     shipping.type === "courier"
       ? await db.query.shippingZones.findMany({
@@ -204,10 +205,12 @@ export async function createOrder(
   let shippingDisplayName = shipping.name;
   let shippingBasePriceCents = shipping.priceCents;
   if (methodZones.length > 0) {
-    const zone = methodZones.find((z) => z.id === input.shippingZoneId);
-    if (!zone) return fail("Избери зона на доставка.");
-    shippingDisplayName = `${shipping.name} — ${zone.name}`;
-    shippingBasePriceCents = zone.priceCents;
+    const zone = matchZone(input.city, methodZones);
+    if (zone) {
+      shippingDisplayName = `${shipping.name} — ${zone.name}`;
+      shippingBasePriceCents = zone.priceCents;
+    }
+    /* Няма мач и няма fallback → базовата цена на метода (никога не блокира). */
   }
 
   if (shipping.type !== "pickup" && input.address.trim().length < 5) {
