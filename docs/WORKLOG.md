@@ -102,6 +102,29 @@
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-12 (UX ФАЗА 2: РЕЖИМ НА СЛОЖНОСТ — код готов, тестван на живо, ЧАКА PUSH)** —
+  Втората фаза от UX инициативата (виж Фаза 1 по-долу). **Режим на сложност** — глобален
+  превключвател на магазина (Хоби/Малък бизнес/Пълна настройка), който скрива напреднали
+  nav секции + продуктови полета. **Разделен от плана** (безплатен за всеки; план=лимити,
+  режим=UI). **Чисто презентационен — НИКОГА не трие/спира данни** (скрит welcome купон пак
+  работи на storefront; downgrade философия от CLAUDE-backend.md). НЕ е security gate —
+  директен URL към скрита страница работи. Механика: всяка секция/поле носи `minMode` (число);
+  показва се ако `MODE_LEVEL[mode] >= minMode`. Централен модул `src/lib/complexity.ts`
+  (`ComplexityMode`, `MODE_LEVEL` hobby=0/business=1/full=2, `MODE_META`, `isVisible`, TDD).
+  Нова колона `shops.complexityMode` (pgEnum `complexity_mode`, **default full → съществуващите
+  магазини не губят нищо**; `db:push` приложен). `setComplexityMode` action + `createShop` чете
+  избора от wizard (default business за нови). Nav филтриране: `NAV_ITEMS[].minMode` + layout
+  подава `shop.complexityMode` на DashboardNav/MobileMenuButton. `ComplexityModeSwitcher` —
+  десктоп компактен popover в хедъра; **мобилно = ИНЛАЙН в burger менюто** (popover се
+  разливаше извън екрана — фикс след обратна връзка). Onboarding: 4-та стъпка „Сложност".
+  **Продуктовата форма чете `complexityMode` prop → localStorage Бързо/Детайлно тогълът е
+  ПРЕМАХНАТ** (`product-form-mode.ts` изтрит): hobby=3 карти без табове; business=Основно+
+  Логистика; full=4 таба. Матрица: Хоби 7 nav секции, Малък бизнес 11, Пълна 14. Спец/план:
+  `2026-07-12-complexity-mode-design.md` / `2026-07-12-complexity-mode.md`. `pnpm check` зелен
+  (342 теста). Гоч: `db:push` на тази машина иска ръчно зареждане на `DATABASE_URL_MIGRATIONS`
+  от `.env.local` (скриптът е гол `drizzle-kit push`, не зарежда env). **С Фаза 1+2 двата
+  дълбоки UX проблема са адресирани.** ЧАКА PUSH разрешение.
+
 - **2026-07-12 (UX ФАЗА 1: ТАБОВЕ + PUSH · `72a5d9f..e5091ac`, 9 commit-а на prod)** —
   Нова инициатива след разговор за 2 дълбоки UX проблема: (1) претрупани страници →
   табове; (2) твърде много функции за начинаещ → режим на сложност (Хоби/Бизнес/Пълен,
