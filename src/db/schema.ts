@@ -35,6 +35,11 @@ export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey(),
   fullName: text("full_name").notNull().default(""),
   phone: text("phone"),
+  /* S3: само redirect памет (последен избор на toggle-а); НЕ е гард — истинската
+     роля е производна от „има ли магазин". */
+  preferredRole: text("preferred_role"),
+  /* S3: true след клик-свързване на минали гост-поръчки по телефон. */
+  phoneVerified: boolean("phone_verified").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS();
@@ -487,6 +492,9 @@ export const orders = pgTable(
     /* Непубличен ключ за страницата с потвърждение: URL-ът носи token, не само
        id — иначе всеки с познат orderId (UUID) вижда личните данни на клиента. */
     publicToken: uuid("public_token").notNull().defaultRandom(),
+    /* S3: свързва поръчката с купувачески акаунт (NULL = гост, както преди).
+       Попълва се при checkout ако купувачът е логнат, или при клик-свързване. */
+    buyerId: uuid("buyer_id").references(() => profiles.id, { onDelete: "set null" }),
     status: orderStatusEnum("status").notNull().default("new"),
     /* Куриерска товарителница — снапшоти (null докато не се генерира). */
     courierProvider: courierProviderEnum("courier_provider"),
@@ -501,6 +509,7 @@ export const orders = pgTable(
     uniqueIndex("orders_shop_number_idx").on(t.shopId, t.orderNumber),
     index("orders_shop_status_idx").on(t.shopId, t.status),
     index("orders_shop_created_idx").on(t.shopId, t.createdAt),
+    index("orders_buyer_idx").on(t.buyerId, t.createdAt),
     /* Partial unique: два опита със същия ключ в един магазин не могат да станат
        две поръчки. WHERE idempotency_key IS NOT NULL → ръчните поръчки (NULL) не
        се засягат. */
@@ -784,7 +793,52 @@ export const productQuestions = pgTable(
   ],
 ).enableRLS();
 
+/* S3: адресна книга на купувача — покрива адрес-до-врата И запазен куриерски офис. */
+export const buyerAddresses = pgTable(
+  "buyer_addresses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    label: text("label").notNull().default(""),
+    receiverName: text("receiver_name").notNull(),
+    receiverPhone: text("receiver_phone").notNull(),
+    city: text("city").notNull().default(""),
+    address: text("address").notNull().default(""),
+    /* Ако е запазен ОФИС вместо адрес до врата — тези се попълват. */
+    courierProvider: courierProviderEnum("courier_provider"),
+    courierOfficeId: text("courier_office_id"),
+    courierOfficeName: text("courier_office_name"),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("buyer_addresses_buyer_idx").on(t.buyerId)],
+).enableRLS();
+
+/* S3: любими per-акаунт (синхрон между устройства; заместник на localStorage за логнати). */
+export const buyerFavorites = pgTable(
+  "buyer_favorites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("buyer_favorites_uid").on(t.buyerId, t.productId),
+    index("buyer_favorites_buyer_idx").on(t.buyerId),
+  ],
+).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
+export type BuyerAddress = typeof buyerAddresses.$inferSelect;
+export type BuyerFavorite = typeof buyerFavorites.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
 export type ShippingMethod = typeof shippingMethods.$inferSelect;
