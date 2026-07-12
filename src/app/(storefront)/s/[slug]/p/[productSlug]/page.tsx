@@ -25,6 +25,7 @@ import {
 } from "@/db/queries/storefront";
 import { publicImageUrl } from "@/lib/storage";
 import { jsonLdHtml } from "@/lib/json-ld";
+import { buildProductJsonLd } from "@/lib/product-json-ld";
 import { formatNetQuantity } from "@/lib/money";
 import { count, NOUNS } from "@/lib/plural";
 
@@ -84,36 +85,33 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
   const effectivePrice = product.promoPriceCents ?? product.priceCents;
   const inStock = product.stock === null || product.stock > 0;
 
+  /* priceValidUntil ~1 година напред (Google предупреждава за offers без нея).
+     Смята се тук (server), не в чистата функция (без new Date в тестван модул). */
+  const validUntil = new Date();
+  validUntil.setFullYear(validUntil.getFullYear() + 1);
+  const priceValidUntil = validUntil.toISOString().slice(0, 10);
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: jsonLdHtml({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: product.name,
-            description: product.description.slice(0, 500),
-            ...(product.images[0] && { image: publicImageUrl(product.images[0]) }),
-            offers: {
-              "@type": "Offer",
-              priceCurrency: "EUR",
-              price: (effectivePrice / 100).toFixed(2),
-              availability: inStock
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
-            },
-            ...(rating && {
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: rating.avg.toFixed(1),
-                reviewCount: rating.count,
-              },
+          __html: jsonLdHtml(
+            buildProductJsonLd({
+              name: product.name,
+              description: product.description,
+              image: product.images[0] ? publicImageUrl(product.images[0]) : undefined,
+              priceEur: (effectivePrice / 100).toFixed(2),
+              availability: inStock ? "InStock" : "OutOfStock",
+              brandName: product.brand || shop.name,
+              sku: product.sku || undefined,
+              gtin: product.gtin || undefined,
+              ratingValue: rating ? rating.avg.toFixed(1) : undefined,
+              ratingCount: rating ? rating.count : undefined,
+              weightGrams: product.weightGrams ?? undefined,
+              priceValidUntil,
             }),
-            ...(product.weightGrams !== null && {
-              weight: { "@type": "QuantitativeValue", value: product.weightGrams, unitCode: "GRM" },
-            }),
-          }),
+          ),
         }}
       />
 
