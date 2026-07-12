@@ -6,7 +6,7 @@ import { saveAbandonedCart } from "@/actions/abandoned-cart";
 import { priceCartAction } from "@/actions/cart";
 import { validateCoupon } from "@/actions/coupons";
 import { createOrder } from "@/actions/orders";
-import type { PaymentMethod, ShippingMethod, ShippingZone } from "@/db";
+import type { BuyerAddress, PaymentMethod, ShippingMethod, ShippingZone } from "@/db";
 import {
   clearCart,
   getCartSnapshot,
@@ -33,6 +33,8 @@ interface CheckoutFormProps {
   giftWrapFeeCents?: number;
   /** N9: подаръчна картичка (текст поздрав) — независима от опаковката. */
   giftCardEnabled?: boolean;
+  /** S3: запазени адреси на логнат купувач (гост → празно; за autofill). */
+  savedAddresses?: BuyerAddress[];
 }
 
 /* Storefront полета — стилизирани със --sf-* променливите на темата. */
@@ -130,6 +132,7 @@ export function CheckoutForm({
   giftWrapEnabled = false,
   giftWrapFeeCents = 0,
   giftCardEnabled = false,
+  savedAddresses = [],
 }: CheckoutFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -348,6 +351,41 @@ export function CheckoutForm({
   return (
     <form ref={formRef} onSubmit={submit} noValidate className="grid gap-8 md:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-4">
+        {/* S3: логнат купувач с адресна книга → бърз избор на запазен адрес.
+            „Нов адрес" изчиства нищо (просто спира autofill). */}
+        {savedAddresses.length > 0 && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-(--sf-text)">Запазен адрес</span>
+            <select
+              className={inputClass}
+              defaultValue=""
+              onChange={(e) => {
+                const a = savedAddresses.find((x) => x.id === e.target.value);
+                if (!a) return;
+                setForm((f) => ({
+                  ...f,
+                  customerName: a.receiverName,
+                  customerPhone: a.receiverPhone,
+                  city: a.city,
+                  address: a.address,
+                }));
+                if (a.courierProvider && a.courierOfficeId) {
+                  setCourierOffice({
+                    officeId: a.courierOfficeId,
+                    officeName: a.courierOfficeName ?? "",
+                  });
+                }
+              }}
+            >
+              <option value="">— Нов адрес —</option>
+              {savedAddresses.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label || a.receiverName} · {a.courierOfficeName || a.address || a.city}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <Field label="Име и фамилия" required error={fieldErrors.customerName}>
           <input
             className={inputClass}

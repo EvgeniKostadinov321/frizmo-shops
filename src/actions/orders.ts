@@ -25,6 +25,8 @@ import { normalizeCouponCode } from "@/db/queries/coupons";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
+import { resolveBuyerId } from "@/lib/buyer-id";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
 import { parseOrderNumber } from "@/lib/order-number";
@@ -226,6 +228,10 @@ export async function createOrder(
   const phone = parseBgPhone(input.customerPhone);
   if (!phone.ok) return fail("Невалиден телефонен номер.");
 
+  /* Логнат купувач → закачаме поръчката към акаунта му (гост → null, както преди). */
+  const supabase = await createSupabaseServer();
+  const buyerId = await resolveBuyerId(supabase);
+
   let created: {
     orderId: string;
     publicToken: string;
@@ -342,6 +348,7 @@ export async function createOrder(
           giftWrapFeeCents,
           totalCents: cart.totalCents,
           idempotencyKey: input.idempotencyKey ?? null,
+          buyerId,
           /* Куриерски снапшот — за товарителницата после (null за не-куриерски методи). */
           courierProvider: shipping.courierProvider ?? null,
           courierOfficeId: input.courierOfficeId || null,

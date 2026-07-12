@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { CheckoutForm } from "@/components/storefront/checkout-form";
 import { CheckoutTrustBadges } from "@/components/storefront/checkout-trust-badges";
 import { PageHeader } from "@/components/storefront/page-header";
+import { getBuyerAddresses } from "@/db/queries/buyer";
 import { getPaymentMethods, getShippingMethods } from "@/db/queries/fulfillment";
 import { getZonesForShop } from "@/db/queries/shipping-zones";
 import { getPublicShop } from "@/db/queries/storefront";
 import { isShopActive } from "@/lib/plan";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -33,6 +35,14 @@ export default async function CheckoutPage({ params }: PageProps) {
   ]);
   const activeShipping = shipping.filter((m) => m.active);
   const activePayment = payment.filter((m) => m.active);
+
+  /* Логнат купувач → зареждаме адресната му книга за бърз autofill (гост → празно;
+     checkout остава публичен, не изисква вход). */
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const savedAddresses = user ? await getBuyerAddresses(user.id) : [];
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:py-10">
@@ -61,6 +71,7 @@ export default async function CheckoutPage({ params }: PageProps) {
             giftWrapEnabled={shop.giftWrapEnabled}
             giftWrapFeeCents={shop.giftWrapFeeCents}
             giftCardEnabled={shop.giftCardEnabled}
+            savedAddresses={savedAddresses}
           />
         </>
       )}
