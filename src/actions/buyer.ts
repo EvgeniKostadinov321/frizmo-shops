@@ -3,13 +3,14 @@
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { clientIp } from "@/actions/cart";
-import { buyerAddresses, db } from "@/db";
+import { buyerAddresses, buyerFavorites, db, profiles } from "@/db";
+import { getBuyerFavoriteIds } from "@/db/queries/buyer";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireBuyer } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
-import { addressSchema } from "@/schemas/buyer";
+import { addressSchema, buyerProfileSchema } from "@/schemas/buyer";
 
 /** Създава или обновява адрес на купувача (own only). Санитизира текста, нормализира телефона. */
 export async function saveAddress(
@@ -86,5 +87,58 @@ export async function setDefaultAddress(addressId: string): Promise<ActionResult
     .set({ isDefault: true, updatedAt: new Date() })
     .where(eq(buyerAddresses.id, addressId));
   await clearOtherDefaults(profile.id, addressId);
+  return ok(null);
+}
+
+/** Добавя/маха продукт от любимите на купувача (сървърен синхрон). */
+export async function toggleBuyerFavorite(
+  productId: string,
+): Promise<ActionResult<{ favorited: boolean }>> {
+  const { profile } = await requireBuyer();
+  if (!z.uuid().safeParse(productId).success) return fail("Невалидна заявка.");
+  const existing = await db.query.buyerFavorites.findFirst({
+    where: and(eq(buyerFavorites.buyerId, profile.id), eq(buyerFavorites.productId, productId)),
+  });
+  if (existing) {
+    await db
+      .delete(buyerFavorites)
+      .where(and(eq(buyerFavorites.buyerId, profile.id), eq(buyerFavorites.productId, productId)));
+    return ok({ favorited: false });
+  }
+  await db.insert(buyerFavorites).values({ buyerId: profile.id, productId }).onConflictDoNothing();
+  return ok({ favorited: true });
+}
+
+/** Влива localStorage любимите в акаунта при вход (upsert, uniqueIndex пази от дубли). */
+export async function mergeFavoritesOnLogin(
+  localIds: string[],
+): Promise<ActionResult<{ ids: string[] }>> {
+  const { profile } = await requireBuyer();
+  const valid = z.array(z.uuid()).max(100).safeParse(localIds);
+  if (!valid.success) return fail("Невалидна заявка.");
+  if (valid.data.length > 0) {
+    await db
+      .insert(buyerFavorites)
+      .values(valid.data.map((productId) => ({ buyerId: profile.id, productId })))
+      .onConflictDoNothing();
+  }
+  const ids = await getBuyerFavoriteIds(profile.id);
+  return ok({ ids });
+}
+
+/** Обновява име/телефон на купувача (own). */
+export async function updateBuyerProfile(rawInput: unknown): Promise<ActionResult> {
+  const { profile } = await requireBuyer();
+  const parsed = buyerProfileSchema.safeParse(rawInput);
+  if (!parsed.success) return zodFail(parsed.error);
+  const phone = parseBgPhone(parsed.data.phone);
+  await db
+    .update(profiles)
+    .set({
+      fullName: sanitizeText(parsed.data.fullName, 100),
+      phone: phone.ok ? phone.e164 : sanitizeText(parsed.data.phone, 30),
+      updatedAt: new Date(),
+    })
+    .where(eq(profiles.id, profile.id));
   return ok(null);
 }
