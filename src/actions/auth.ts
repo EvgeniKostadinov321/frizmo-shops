@@ -1,13 +1,25 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
-import { db, profiles } from "@/db";
+import { db, profiles, shops } from "@/db";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { loginSchema, registerSchema } from "@/schemas/auth";
+
+/** Дестинация след вход: магазин или продавач → dashboard; купувач → account или валиден next. */
+export function resolvePostAuthPath(
+  hasShop: boolean,
+  preferredRole: "buyer" | "seller" | null,
+  next?: string,
+): string {
+  if (hasShop || preferredRole === "seller") return "/dashboard";
+  const safe = safeNextPath(next);
+  return safe !== "/dashboard" ? safe : "/account";
+}
 
 export type AuthFormState = {
   error?: string;
@@ -31,6 +43,7 @@ export async function signUp(
     fullName: formData.get("fullName"),
     email: formData.get("email"),
     password: formData.get("password"),
+    role: formData.get("role") ?? undefined,
   });
   if (!parsed.success) return { fieldErrors: toFieldErrors(parsed.error) };
 
@@ -44,12 +57,18 @@ export async function signUp(
     return { error: "Регистрацията не бе успешна. Имейлът може вече да е зает." };
   }
 
+  const role = parsed.data.role ?? null;
   await db
     .insert(profiles)
-    .values({ id: data.user.id, fullName: sanitizeText(parsed.data.fullName, 100) })
+    .values({
+      id: data.user.id,
+      fullName: sanitizeText(parsed.data.fullName, 100),
+      preferredRole: role,
+    })
     .onConflictDoNothing();
 
-  redirect("/dashboard");
+  /* Нов акаунт няма магазин → купувач отива в профила, продавач в dashboard. */
+  redirect(resolvePostAuthPath(false, role));
 }
 
 export async function signIn(
@@ -67,7 +86,26 @@ export async function signIn(
 
   if (error) return { error: "Грешен имейл или парола." };
 
-  redirect("/dashboard");
+  /* Redirect по роля: има магазин / preferredRole=seller → dashboard; купувач → account
+     или валиден next (напр. върнат в checkout, откъдето е дошъл). */
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData.user?.id;
+  const next = (formData.get("next") as string | null) ?? undefined;
+  let hasShop = false;
+  let preferredRole: "buyer" | "seller" | null = null;
+  if (uid) {
+    const shop = await db.query.shops.findFirst({
+      where: eq(shops.ownerId, uid),
+      columns: { id: true },
+    });
+    hasShop = Boolean(shop);
+    const prof = await db.query.profiles.findFirst({
+      where: eq(profiles.id, uid),
+      columns: { preferredRole: true },
+    });
+    preferredRole = (prof?.preferredRole as "buyer" | "seller" | null) ?? null;
+  }
+  redirect(resolvePostAuthPath(hasShop, preferredRole, next));
 }
 
 export async function signOut(): Promise<void> {
