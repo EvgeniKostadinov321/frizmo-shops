@@ -40,6 +40,8 @@ interface FulfillmentManagerProps {
   shipping: ShippingMethod[];
   payment: PaymentMethod[];
   zones: ShippingZone[];
+  /** Рендерира само едната секция (за табове). undefined = двете (обратна съвместимост). */
+  only?: "shipping" | "payment";
 }
 
 type ShippingDraft = {
@@ -53,8 +55,10 @@ type ShippingDraft = {
 };
 type PaymentDraft = { id: string | null; type: string; name: string; details: string };
 
-export function FulfillmentManager({ shipping, payment, zones }: FulfillmentManagerProps) {
+export function FulfillmentManager({ shipping, payment, zones, only }: FulfillmentManagerProps) {
   const router = useRouter();
+  const showShipping = !only || only === "shipping";
+  const showPayment = !only || only === "payment";
   const zonesByMethod = (methodId: string) => zones.filter((z) => z.shippingMethodId === methodId);
   const [shippingDraft, setShippingDraft] = useState<ShippingDraft | null>(null);
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft | null>(null);
@@ -135,8 +139,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-ink-900">Плащане и доставка</h1>
-
+      {showShipping && (
       <Card className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-ink-900">Методи за доставка</h2>
@@ -211,7 +214,9 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
           </div>
         ))}
       </Card>
+      )}
 
+      {showPayment && (
       <Card className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-ink-900">Методи за плащане</h2>
@@ -267,7 +272,9 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
           </div>
         ))}
       </Card>
+      )}
 
+      {showShipping && (
       <Drawer
         open={shippingDraft !== null}
         onClose={() => setShippingDraft(null)}
@@ -334,7 +341,9 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
           </div>
         )}
       </Drawer>
+      )}
 
+      {showPayment && (
       <Drawer
         open={paymentDraft !== null}
         onClose={() => setPaymentDraft(null)}
@@ -392,6 +401,7 @@ export function FulfillmentManager({ shipping, payment, zones }: FulfillmentMana
           </div>
         )}
       </Drawer>
+      )}
 
       <ConfirmDialog
         open={toDelete !== null}

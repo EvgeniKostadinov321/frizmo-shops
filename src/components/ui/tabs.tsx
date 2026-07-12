@@ -49,7 +49,9 @@ export function Tabs({ tabs, children, paramName = "tab", ariaLabel }: TabsProps
 
   useEffect(() => {
     const fromUrl = readParam(paramName);
-    if (fromUrl && validKeys.includes(fromUrl)) setActive(fromUrl);
+    /* queueMicrotask: setState синхронно в effect чупи react-compiler lint
+       (проектна конвенция — виж CLAUDE-frontend.md). */
+    if (fromUrl && validKeys.includes(fromUrl)) queueMicrotask(() => setActive(fromUrl));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramName]);
 

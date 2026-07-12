@@ -28,15 +28,17 @@ describe("Tabs", () => {
     expect(screen.getByRole("tab", { name: /Втори/ })).toHaveAttribute("aria-selected", "false");
   });
 
-  it("уважава валиден ?tab от URL", () => {
+  it("уважава валиден ?tab от URL", async () => {
     window.history.replaceState(null, "", "/?tab=b");
     setup();
-    expect(screen.getByRole("tab", { name: /Втори/ })).toHaveAttribute("aria-selected", "true");
+    /* URL синхронизацията е в effect (queueMicrotask) → изчакваме я. */
+    expect(await screen.findByRole("tab", { name: /Втори/, selected: true })).toBeInTheDocument();
   });
 
   it("пада на първия таб при невалиден ?tab", () => {
     window.history.replaceState(null, "", "/?tab=zzz");
     setup();
+    /* Невалиден таб → остава първия (без setState в effect). Синхронно. */
     expect(screen.getByRole("tab", { name: "Първи" })).toHaveAttribute("aria-selected", "true");
   });
 
