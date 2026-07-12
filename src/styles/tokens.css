@@ -24,6 +24,9 @@
   /* Ember/кехлибар — САМО за промоции, badges, акцентната дума в hero H1. */
   --color-ember-500: #c97b2d;
   --color-ember-600: #a8631f;
+  /* ember-700: за ember ТЕКСТ на светъл фон (напр. wordmark „Shops") — минава
+     WCAG AA 4.5 (ember-500/600 падат под 4.5 на бяло). */
+  --color-ember-700: #9c5a18;
   --color-accent-soft: #f7ecdd;
 
   /* Мастило — топло тъмно, НЕ черно. ink-500 минава AA (4.5:1) и върху surface-100. */
@@ -94,6 +97,8 @@
 
   --color-ember-500: #de9a4e;
   --color-ember-600: #c9853d;
+  /* ember-700: ember текст на тъмен surface-0 (по-светъл тон за AA 4.5). */
+  --color-ember-700: #d68f45;
   --color-accent-soft: #33271a;
 
   --color-ink-900: #eae8e1;

@@ -83,7 +83,7 @@ export function InstallAppSection() {
                   className="rounded-[22%] shadow-card"
                 />
                 <span className="font-display text-base font-extrabold tracking-tight text-ink-900">
-                  Frizmo <span className="text-ember-500">Shops</span>
+                  Frizmo <span className="text-ember-700">Shops</span>
                 </span>
               </div>
             </div>
