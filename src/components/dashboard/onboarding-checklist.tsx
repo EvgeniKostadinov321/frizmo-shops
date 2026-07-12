@@ -41,7 +41,7 @@ export function OnboardingChecklist({ result }: { result: ChecklistResult }) {
             </span>
             {!step.done && (
               <Link href={step.href} className="text-sm font-medium text-brand-600 hover:underline">
-                Добави
+                {step.cta}
               </Link>
             )}
           </li>

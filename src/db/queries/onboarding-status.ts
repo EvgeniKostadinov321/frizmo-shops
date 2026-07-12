@@ -6,6 +6,8 @@ export interface ChecklistStep {
   label: string;
   done: boolean;
   href: string;
+  /** Текст на действащия линк за недовършена стъпка („Добави“/„Публикувай“…). */
+  cta: string;
 }
 
 export interface ChecklistResult {
@@ -26,12 +28,12 @@ export interface ChecklistFlags {
 /** Чиста логика: флагове → стъпки + прогрес. „Магазин създаден“ е винаги done тук. */
 export function computeChecklist(f: ChecklistFlags): ChecklistResult {
   const steps: ChecklistStep[] = [
-    { key: "shop", label: "Магазинът е създаден", done: true, href: "/dashboard/store" },
-    { key: "product", label: "Добави първи продукт", done: f.hasProduct, href: "/dashboard/products/new" },
-    { key: "contacts", label: "Попълни контакти и адрес", done: f.hasContacts, href: "/dashboard/store" },
-    { key: "shipping", label: "Добави метод на доставка", done: f.hasShipping, href: "/dashboard/fulfillment" },
-    { key: "payment", label: "Добави метод на плащане", done: f.hasPayment, href: "/dashboard/fulfillment" },
-    { key: "publish", label: "Публикувай магазина", done: f.published, href: "/dashboard/store" },
+    { key: "shop", label: "Магазинът е създаден", done: true, href: "/dashboard/store", cta: "Провери" },
+    { key: "product", label: "Добави първи продукт", done: f.hasProduct, href: "/dashboard/products/new", cta: "Добави" },
+    { key: "contacts", label: "Попълни контакти и адрес", done: f.hasContacts, href: "/dashboard/store", cta: "Попълни" },
+    { key: "shipping", label: "Добави метод на доставка", done: f.hasShipping, href: "/dashboard/fulfillment", cta: "Добави" },
+    { key: "payment", label: "Добави метод на плащане", done: f.hasPayment, href: "/dashboard/fulfillment", cta: "Добави" },
+    { key: "publish", label: "Публикувай магазина", done: f.published, href: "/dashboard/website", cta: "Публикувай" },
   ];
   const done = steps.filter((s) => s.done).length;
   return { steps, done, total: steps.length, complete: done === steps.length };
