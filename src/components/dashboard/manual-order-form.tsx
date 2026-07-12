@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createManualOrder } from "@/actions/orders";
 import type { CartProductView } from "@/db/queries/cart";
 import { Button, Icon, Input, PriceInput, Select, SelectCheckbox, Textarea } from "@/components/ui";
+import { AddressAutocomplete } from "@/components/dashboard/address-autocomplete";
 import { formatPrice, toCents } from "@/lib/money";
 import { priceCart, type CartLine } from "@/lib/pricing";
 
@@ -266,10 +267,13 @@ export function ManualOrderForm({
               error={fieldErrors.city}
             />
             <div className="sm:col-span-2">
-              <Input
-                label="Адрес"
+              <AddressAutocomplete
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={setAddress}
+                onSelect={(r) => {
+                  setAddress(r.fullAddress);
+                  if (r.city) setCity(r.city);
+                }}
                 error={fieldErrors.address}
               />
             </div>
