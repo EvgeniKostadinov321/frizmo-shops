@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AccountButton,
   Brand,
   buildNav,
   CartButton,
@@ -27,6 +28,7 @@ export function HeaderVariant1({
   settings,
   rootCategories = [],
   heroOverlay = false,
+  viewerLoggedIn = false,
 }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
   const nav = buildNav(base, rootCategories, settings.navLinks);
@@ -58,12 +60,14 @@ export function HeaderVariant1({
           ))}
           <NavOverflow items={overflow} />
           <HeaderSearch base={base} />
+          <AccountButton base={base} loggedIn={viewerLoggedIn} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
         </nav>
 
         <div className="flex items-center gap-1 md:hidden">
           <HeaderSearch base={base} />
+          <AccountButton base={base} loggedIn={viewerLoggedIn} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
           <MenuButton onOpen={() => setMenuOpen(true)} expanded={menuOpen} />

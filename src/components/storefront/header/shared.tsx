@@ -23,6 +23,8 @@ export interface HeaderVariantProps {
    * ляга ВЪРХУ него: прозрачен на върха, „втвърдява" се при скрол.
    */
   heroOverlay?: boolean;
+  /** S3: логнат ли е посетителят (купувач) — сменя профил иконата към акаунт/вход. */
+  viewerLoggedIn?: boolean;
 }
 
 export interface NavItem {
@@ -345,6 +347,22 @@ export function MenuButton({ onOpen, expanded }: { onOpen: () => void; expanded:
     >
       <Icon name="menu" size={24} />
     </button>
+  );
+}
+
+/** S3: профил икона в хедъра. Логнат → акаунт табло; гост → вход (с връщане към акаунта). */
+export function AccountButton({ base, loggedIn }: { base: string; loggedIn: boolean }) {
+  const href = loggedIn
+    ? `${base}/account`
+    : `/auth/login?role=buyer&next=${encodeURIComponent(`${base}/account`)}`;
+  return (
+    <Link
+      href={href}
+      aria-label={loggedIn ? "Моят профил" : "Вход"}
+      className="flex size-11 shrink-0 items-center justify-center rounded-(--sf-radius) text-current transition-opacity hover:opacity-70"
+    >
+      <Icon name="user" size={22} />
+    </Link>
   );
 }
 

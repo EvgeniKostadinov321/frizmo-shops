@@ -10,6 +10,7 @@ import { AnnouncementSection } from "@/components/storefront/sections/announceme
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicCategories, getPublicShop } from "@/db/queries/storefront";
 import { isShopActive } from "@/lib/plan";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { THEME_PRESETS, themeStyle } from "@/lib/themes";
 
 interface StorefrontLayoutProps {
@@ -36,11 +37,14 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
   const { shop, settings, viewerIsOwner, viewingDraft } = result;
   /* Основните категории влизат в навигацията на header-а (ако са до 4);
      прагът за безплатна доставка — за прогреса в mini-cart drawer-а. */
-  const [categories, shippingMethods, sellingAllowed] = await Promise.all([
+  const supabase = await createSupabaseServer();
+  const [categories, shippingMethods, sellingAllowed, { data: userData }] = await Promise.all([
     getPublicCategories(shop.id),
     getShippingMethods(shop.id),
     isShopActive(shop.id, shop.createdAt),
+    supabase.auth.getUser(),
   ]);
+  const viewerLoggedIn = Boolean(userData.user);
   /* Спрян билинг → „временно затворено" (видимо за всеки, не само собственика).
      checkout е блокиран отделно на сървъра (createOrder) + на checkout страницата. */
   const billingClosed = !sellingAllowed;
@@ -135,6 +139,7 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
         settings={settings}
         rootCategories={rootCategories}
         heroOverlay={heroOverlay}
+        viewerLoggedIn={viewerLoggedIn}
       />
       <main className="flex-1">{children}</main>
       <StorefrontFooter shop={shop} settings={settings} />

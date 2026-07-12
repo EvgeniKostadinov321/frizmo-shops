@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AccountButton,
   Brand,
   buildNav,
   CartButton,
@@ -24,7 +25,12 @@ import { NavOverflow } from "./nav-overflow";
  * логото стои в центъра на композицията. Не участва в hero overlay (плътен
  * фон). На мобилно: бургер вляво, лого център, количка вдясно.
  */
-export function HeaderVariant2({ shop, settings, rootCategories = [] }: HeaderVariantProps) {
+export function HeaderVariant2({
+  shop,
+  settings,
+  rootCategories = [],
+  viewerLoggedIn = false,
+}: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
   const nav = buildNav(base, rootCategories, settings.navLinks);
   const { inline, overflow } = splitNav(nav);
@@ -77,6 +83,7 @@ export function HeaderVariant2({ shop, settings, rootCategories = [] }: HeaderVa
             <NavOverflow items={overflow} />
           </nav>
           <HeaderSearch base={base} />
+          <AccountButton base={base} loggedIn={viewerLoggedIn} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
         </div>
