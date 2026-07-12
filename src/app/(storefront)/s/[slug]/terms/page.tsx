@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/storefront/page-header";
-import { getPublicShop } from "@/db/queries/storefront";
+import { getPublicShopCached } from "@/db/queries/storefront";
 import { legalSections } from "@/lib/legal-template";
 
 interface PageProps {
@@ -10,7 +10,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const result = await getPublicShop(slug);
+  const result = await getPublicShopCached(slug);
   if (!result) return {};
   return {
     title: `Условия — ${result.shop.name}`,
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 export default async function TermsPage({ params }: PageProps) {
   const { slug } = await params;
-  const result = await getPublicShop(slug);
+  const result = await getPublicShopCached(slug);
   if (!result) notFound();
   const { shop, settings } = result;
 
