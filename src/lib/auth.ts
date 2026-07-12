@@ -19,10 +19,14 @@ export async function requireUser() {
  * OAuth първо влизане). При OAuth подаваме името от провайдъра → записва се при
  * insert; повторно влизане не презаписва (onConflictDoNothing).
  */
-export async function ensureProfile(userId: string, fullName?: string) {
+export async function ensureProfile(userId: string, fullName?: string, phone?: string) {
   await db
     .insert(profiles)
-    .values({ id: userId, fullName: fullName ? sanitizeText(fullName, 100) : "" })
+    .values({
+      id: userId,
+      fullName: fullName ? sanitizeText(fullName, 100) : "",
+      phone: phone ? sanitizeText(phone, 30) : null,
+    })
     .onConflictDoNothing();
 }
 
@@ -38,6 +42,26 @@ export async function requireShop() {
   const { user, shop } = await getOwnShop();
   if (!shop) redirect("/dashboard/onboarding");
   return { user, shop };
+}
+
+/** За купувачки страници/мутации: auth + гарантиран profile ред (без магазин изискване). */
+export async function requireBuyer() {
+  const user = await requireUser();
+  await ensureProfile(user.id, user.user_metadata?.full_name as string | undefined);
+  const profile = await db.query.profiles.findFirst({ where: eq(profiles.id, user.id) });
+  /* ensureProfile гарантира реда; при рядка гонка findFirst пак може да върне null →
+     минимален fallback със същата форма (id/fullName/phone/preferredRole/phoneVerified). */
+  return {
+    user,
+    profile:
+      profile ?? {
+        id: user.id,
+        fullName: "",
+        phone: null,
+        preferredRole: null,
+        phoneVerified: false,
+      },
+  };
 }
 
 /** Платформен админ: имейлът е в PLATFORM_ADMIN_EMAILS; иначе 404 (без издаване). */
