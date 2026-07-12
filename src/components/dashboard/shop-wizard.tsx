@@ -7,6 +7,7 @@ import { AddressAutocomplete } from "./address-autocomplete";
 import { WorkingHoursEditor } from "./working-hours-editor";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
 import { defaultWorkingDays, type WorkingDay } from "@/lib/working-hours";
+import { MODE_META, type ComplexityMode } from "@/lib/complexity";
 import { BUSINESS_CATEGORIES } from "@/schemas/shop";
 
 interface ShopWizardProps {
@@ -20,9 +21,10 @@ const STEPS = [
   { label: "Основно", required: true },
   { label: "Контакти", required: false },
   { label: "Работно време", required: false },
+  { label: "Сложност", required: false },
 ] as const;
 
-type StepIndex = 0 | 1 | 2;
+type StepIndex = 0 | 1 | 2 | 3;
 
 /**
  * Многостъпков wizard за създаване на магазин. Всички полета живеят в един
@@ -48,6 +50,9 @@ export function ShopWizard({ action }: ShopWizardProps) {
   /* Live preview на публичния адрес — на blur на полето „Име". */
   const [slug, setSlug] = useState<{ slug: string; taken: boolean } | null>(null);
   const [slugLoading, setSlugLoading] = useState(false);
+
+  /* Ф2: режим на сложност (стъпка 4). Default „Малък бизнес". */
+  const [complexityMode, setComplexityMode] = useState<ComplexityMode>("business");
 
   async function checkSlug() {
     const trimmed = name.trim();
@@ -86,14 +91,14 @@ export function ShopWizard({ action }: ShopWizardProps) {
       }
       setStep1Error(null);
     }
-    setStep((s) => Math.min(2, s + 1) as StepIndex);
+    setStep((s) => Math.min(3, s + 1) as StepIndex);
   }
 
   function goBack() {
     setStep((s) => Math.max(0, s - 1) as StepIndex);
   }
 
-  const isLast = step === 2;
+  const isLast = step === 3;
 
   return (
     <div className="flex flex-col gap-6">
@@ -148,6 +153,7 @@ export function ShopWizard({ action }: ShopWizardProps) {
           noValidate
         >
           <input type="hidden" name="workingHours" value={JSON.stringify({ days })} />
+          <input type="hidden" name="complexityMode" value={complexityMode} />
 
           {/* Стъпка 1 — Основно (винаги в DOM; скрита, ако не е активна) */}
           <div className={step === 0 ? "flex flex-col gap-4" : "hidden"}>
@@ -251,6 +257,32 @@ export function ShopWizard({ action }: ShopWizardProps) {
           {/* Стъпка 3 — Работно време */}
           <div className={step === 2 ? "flex flex-col gap-4" : "hidden"}>
             <WorkingHoursEditor value={days} onChange={setDays} />
+          </div>
+
+          {/* Стъпка 4 — Сложност */}
+          <div className={step === 3 ? "flex flex-col gap-3" : "hidden"}>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-ink-900">Колко подробен да е панелът?</span>
+              <span className="text-sm text-ink-500">
+                Можеш да смениш това по всяко време от менюто горе. Започни просто.
+              </span>
+            </div>
+            {MODE_META.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => setComplexityMode(m.value)}
+                aria-pressed={complexityMode === m.value}
+                className={`flex flex-col gap-0.5 rounded-card border p-4 text-left transition-colors ${
+                  complexityMode === m.value
+                    ? "border-brand-500 bg-brand-50"
+                    : "border-surface-200 bg-surface-0 hover:border-surface-300"
+                }`}
+              >
+                <span className="text-sm font-bold text-ink-900">{m.label}</span>
+                <span className="text-xs text-ink-500">{m.description}</span>
+              </button>
+            ))}
           </div>
 
           {state.error && <p className="text-sm text-danger-600">{state.error}</p>}
