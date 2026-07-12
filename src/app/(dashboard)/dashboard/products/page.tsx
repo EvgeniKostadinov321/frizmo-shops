@@ -4,6 +4,7 @@ import { LinkButton } from "@/components/ui";
 import { getCategoriesTree } from "@/db/queries/categories";
 import { getProducts } from "@/db/queries/products";
 import { requireShop } from "@/lib/auth";
+import { flattenCategoryOptions } from "@/lib/category-tree";
 
 export const metadata = { title: "Продукти — Frizmo Shops" };
 
@@ -32,10 +33,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     getCategoriesTree(shop.id),
   ]);
 
-  const categoryOptions = tree.flatMap((root) => [
-    { value: root.id, label: root.name },
-    ...root.children.map((c) => ({ value: c.id, label: `${root.name} → ${c.name}` })),
-  ]);
+  const categoryOptions = flattenCategoryOptions(tree);
 
   return (
     <div className="flex flex-col gap-4">

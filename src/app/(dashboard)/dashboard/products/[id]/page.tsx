@@ -4,6 +4,7 @@ import { getCategoriesTree } from "@/db/queries/categories";
 import { getProductWithRelations } from "@/db/queries/products";
 import { getSizeGuides } from "@/db/queries/size-guides";
 import { requireShop } from "@/lib/auth";
+import { flattenCategoryOptions } from "@/lib/category-tree";
 import { centsToInput, scaledToInput } from "@/lib/money";
 
 export const metadata = { title: "Редакция на продукт — Frizmo Shops" };
@@ -23,10 +24,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     getCategoriesTree(shop.id),
     getSizeGuides(shop.id),
   ]);
-  const categoryOptions = tree.flatMap((root) => [
-    { value: root.id, label: root.name },
-    ...root.children.map((c) => ({ value: c.id, label: `${root.name} → ${c.name}` })),
-  ]);
+  const categoryOptions = flattenCategoryOptions(tree);
   const sizeGuideOptions = guides.map((g) => ({ value: g.id, label: g.name }));
 
   return (

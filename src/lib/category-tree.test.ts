@@ -1,5 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { categoryDepth, collectDescendantIds, MAX_CATEGORY_DEPTH } from "./category-tree";
+import {
+  categoryDepth,
+  collectDescendantIds,
+  flattenCategoryOptions,
+  MAX_CATEGORY_DEPTH,
+} from "./category-tree";
+
+describe("flattenCategoryOptions", () => {
+  const tree = [
+    {
+      id: "a",
+      name: "Дрехи",
+      children: [
+        {
+          id: "b",
+          name: "Дамски",
+          children: [{ id: "c", name: "Рокли", children: [] }],
+        },
+      ],
+    },
+  ];
+  it("сплесква 3 нива с „→“ път", () => {
+    expect(flattenCategoryOptions(tree)).toEqual([
+      { value: "a", label: "Дрехи" },
+      { value: "b", label: "Дрехи → Дамски" },
+      { value: "c", label: "Дрехи → Дамски → Рокли" },
+    ]);
+  });
+  it("празно дърво → празни опции", () => {
+    expect(flattenCategoryOptions([])).toEqual([]);
+  });
+});
 
 describe("categoryDepth guard", () => {
   it("корен (ниво 1) → детето е ниво 2 → ок", () => {

@@ -9,6 +9,7 @@ import { countProducts } from "@/db/queries/products";
 import { getSiteSettingsRow, parseSiteSettings } from "@/db/queries/site-settings";
 import { defaultSiteSettings } from "@/lib/sections";
 import { requireShop } from "@/lib/auth";
+import { flattenCategoryOptions } from "@/lib/category-tree";
 
 export const metadata = { title: "Уебсайт — Frizmo Shops" };
 
@@ -92,10 +93,7 @@ export default async function WebsitePage({ searchParams }: PageProps) {
   const initial = raw != null ? parseSiteSettings(raw, shop.name) : defaultSiteSettings(shop.name);
   const hasUnpublishedInitial = row?.draft != null;
 
-  const categoryOptions = tree.flatMap((root) => [
-    { value: root.id, label: root.name },
-    ...root.children.map((c) => ({ value: c.id, label: `${root.name} → ${c.name}` })),
-  ]);
+  const categoryOptions = flattenCategoryOptions(tree);
   const productOptions = productRows.map((p) => ({ value: p.id, label: p.name }));
 
   const social = (shop.socialLinks as Record<string, string> | null) ?? {};

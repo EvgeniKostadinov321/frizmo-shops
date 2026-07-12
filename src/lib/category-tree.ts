@@ -6,6 +6,37 @@ export function categoryDepth(parentLevel: number): number {
   return parentLevel + 1;
 }
 
+/** Минимален тип за сплескване на дървото до опции (id + име + деца до 3 нива). */
+export interface CategoryTreeNode {
+  id: string;
+  name: string;
+  children: CategoryTreeNode[];
+}
+
+/**
+ * Д2: сплесква категорийното дърво (до 3 нива) в опции за select — с „→“ път:
+ * „Дрехи“, „Дрехи → Дамски“, „Дрехи → Дамски → Рокли“. Използва се от продуктовата
+ * форма (избор на категория) — трябва да покрива И трето ниво.
+ */
+export function flattenCategoryOptions(
+  tree: CategoryTreeNode[],
+): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = [];
+  for (const root of tree) {
+    options.push({ value: root.id, label: root.name });
+    for (const child of root.children) {
+      options.push({ value: child.id, label: `${root.name} → ${child.name}` });
+      for (const grand of child.children) {
+        options.push({
+          value: grand.id,
+          label: `${root.name} → ${child.name} → ${grand.name}`,
+        });
+      }
+    }
+  }
+  return options;
+}
+
 /**
  * Д2: id-тата на категория + всичките ѝ наследници (поддърво). За филтъра по
  * категория, който включва подкатегориите. Пази се от цикли (visited).
