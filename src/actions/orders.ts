@@ -678,7 +678,7 @@ export async function requestReturn(
 }
 
 /** Възстановява наличностите по редовете на поръчка (отказ/прието връщане). */
-async function restoreStock(tx: Tx, orderId: string) {
+export async function restoreStock(tx: Tx, orderId: string) {
   const items = await tx.query.orderItems.findMany({ where: eq(orderItems.orderId, orderId) });
   for (const item of items) {
     if (!item.productId) continue;
