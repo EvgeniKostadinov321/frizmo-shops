@@ -88,6 +88,23 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-13 (PROD СРЕДА ОТДЕЛЯНЕ — В ХОД: прод база готова, чака Vercel достъп)** —
+  Отделяме реална production среда от dev (беше една база). Спец
+  `2026-07-13-prod-environment-split-design.md`, план `2026-07-13-prod-environment-split.md`
+  (runbook, 7 задачи, роли потребител/агент + health-check). **Решения:** отделна PROD Supabase
+  база **чиста БЕЗ демо** (тест от 0); Vercel „Production" scope = prod база (същият проект,
+  `dev`=Production deploy); `.env.local` остава dev; база първо, домейн паралелно. **✅ Готово
+  (агент, Tasks 1-3):** health-check скрипт (`bd8dfdc`); прод Supabase проект (ref
+  `vhpiskaugipevkvwduwd`, Frankfurt); `db:push` (34 таблици) + `setup-storage` (bucket) +
+  `setup-search` (pg_trgm/GIN) срещу прод → **чиста, готова**. Прод ключове в `.env.prod.local`
+  (gitignored, НЕ за приложението). **Гоча:** и 6543 (app), и 5432 (миграции) са pooler хост
+  (не direct `db.<ref>` — ENOTFOUND); различават се само по порт. **⏳ ЧАКА Vercel достъп**
+  (потребителят заключен — 2FA recovery в поддръжката, забавяне): Task 4 (env в Production scope
+  + първи прод деплой = носи неpush-натия ePay+профил код, ~21 commit-а, изисква push разрешение),
+  Task 5 (пълен поток от 0 — ePay webhook става публичен), Task 6 (домейн frizmoshops.bg + Resend).
+  **⚠️ Ресетни прод паролата** (мина през чата) щом всичко работи. Детайли: [[prod-environment]],
+  [[env-vars-reference]].
+
 - **2026-07-13 (ОНЛАЙН ПЛАЩАНЕ ePay.bg — имплементирано, commit-нато на `dev` локално, НЕ push-нато)** —
   Marketplace плащане (**Модел А**: купувачът плаща на ТЪРГОВЕЦА, не на платформата — без лиценз/AML).
   Спец `2026-07-13-online-payments-design.md`, план `2026-07-13-online-payments.md` (12 задачи, inline,
