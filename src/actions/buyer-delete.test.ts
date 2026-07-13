@@ -30,6 +30,12 @@ vi.mock("@/db", () => ({
     update: () => ({ set: () => ({ where: updateWhere }) }),
     delete: () => ({ where: deleteWhere }),
     insert: () => ({ values: () => ({ onConflictDoNothing: vi.fn() }) }),
+    /* P4-01: DB стъпките на изтриването сега са в транзакция → tx има същия shape. */
+    transaction: (fn: (tx: unknown) => unknown) =>
+      fn({
+        update: () => ({ set: () => ({ where: updateWhere }) }),
+        delete: () => ({ where: deleteWhere }),
+      }),
   },
   shops: { ownerId: "ownerId" },
   orders: { buyerId: "buyerId" },

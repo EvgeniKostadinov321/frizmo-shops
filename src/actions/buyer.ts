@@ -240,17 +240,23 @@ export async function deleteBuyerAccount(rawInput: unknown): Promise<ActionResul
     return fail("Имаш магазин — изтрий първо него от настройките на магазина.");
   }
   try {
-    /* 1) Анонимизирай поръчките (търговецът ги пази за счетоводство). */
-    await db
-      .update(orders)
-      .set({ buyerId: null, updatedAt: new Date() })
-      .where(eq(orders.buyerId, profile.id));
-    /* 2) Изтрий купувачките данни. */
-    await db.delete(buyerAddresses).where(eq(buyerAddresses.buyerId, profile.id));
-    await db.delete(buyerFavorites).where(eq(buyerFavorites.buyerId, profile.id));
-    await db.delete(buyerFavoriteShops).where(eq(buyerFavoriteShops.buyerId, profile.id));
-    await db.delete(profiles).where(eq(profiles.id, profile.id));
-    /* 3) Изтрий auth юзъра (best-effort). */
+    /* P4-01: DB стъпките (анонимизация + триене) в ЕДНА транзакция — или всички,
+       или нито една. Иначе грешка по средата оставя акаунта полуизтрит (GDPR чл.17
+       обещава пълно изтриване). Supabase auth (стъпка 3) е извън DB → best-effort
+       след commit. */
+    await db.transaction(async (tx) => {
+      /* 1) Анонимизирай поръчките (търговецът ги пази за счетоводство). */
+      await tx
+        .update(orders)
+        .set({ buyerId: null, updatedAt: new Date() })
+        .where(eq(orders.buyerId, profile.id));
+      /* 2) Изтрий купувачките данни. */
+      await tx.delete(buyerAddresses).where(eq(buyerAddresses.buyerId, profile.id));
+      await tx.delete(buyerFavorites).where(eq(buyerFavorites.buyerId, profile.id));
+      await tx.delete(buyerFavoriteShops).where(eq(buyerFavoriteShops.buyerId, profile.id));
+      await tx.delete(profiles).where(eq(profiles.id, profile.id));
+    });
+    /* 3) Изтрий auth юзъра (best-effort, след DB commit). */
     const admin = createSupabaseAdmin();
     const { error } = await admin.auth.admin.deleteUser(user.id);
     if (error) {

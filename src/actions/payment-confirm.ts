@@ -37,7 +37,25 @@ export async function confirmEpayPayment(body: {
     if (!note) continue; // подписът не пасва на този магазин
 
     /* Идемпотентност: вече обработен. */
-    if (intent.status !== "pending") return { invoice: decoded, result: "ignored" };
+    if (intent.status !== "pending") {
+      /* S3-02: PAID пристига за intent, който вече е expired/cancelled (cron auto-cancel
+         или ръчен отказ изпревариха плащането) → клиентът е таксуван, а поръчката е
+         отменена. Тихо ignored крие пари без насрещна поръчка → логвай видимо, за да
+         може търговецът да върне сумата или да реактивира ръчно. */
+      if (note.status === "paid" && (intent.status === "expired" || intent.status === "denied")) {
+        console.error(
+          JSON.stringify({
+            scope: "epay-paid-after-expire",
+            invoice: decoded,
+            orderId: intent.orderId,
+            shopId: intent.shopId,
+            intentStatus: intent.status,
+            amountCents: note.amountCents,
+          }),
+        );
+      }
+      return { invoice: decoded, result: "ignored" };
+    }
 
     /* Сверка на сумата (защита срещу подправяне). */
     if (note.amountCents !== null && note.amountCents !== intent.amountCents) {

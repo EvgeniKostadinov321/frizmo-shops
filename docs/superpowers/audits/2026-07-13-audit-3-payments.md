@@ -58,7 +58,7 @@ Severity: 🔴 критична · 🟠 важна · 🟡 дребна
 
 ---
 
-## 🟠 S3-02 — Cron auto-cancel vs закъсняла PAID: клиентът плаща, поръчката е вече отменена — без alert
+## 🟠 S3-02 — Cron auto-cancel vs закъсняла PAID: клиентът плаща, поръчката е вече отменена — без alert — ✅ ПОПРАВЕНО
 
 **Къде:**
 - `src/app/api/cron/expire-payments/route.ts:8` — `EXP_MS = 2ч`
@@ -173,7 +173,7 @@ webhook vs cron, late-paid след cancel (S3-01/02), multi-tenant `providerRef
 - [x] **S3-01 🔴 — ПОПРАВЕНО** (2026-07-13): `updateOrderStatus` cancel клонът маркира
       `payment_intents.status = "expired"` за orderId в същата транзакция, когато
       поръчката е `pending_payment` (`orders.ts`); unit тест `order-cancel-intent.test.ts`.
-- [ ] S3-02 🟠 — cron vs late-paid: логвай „paid-after-expire" + cron граница > ePay граница
+- [x] S3-02 🟠 — cron vs late-paid: логвай „paid-after-expire" ✅ (`src/actions/payment-confirm.ts`) + cron граница > ePay граница (+30мин grace, `src/app/api/cron/expire-payments/route.ts`)
 - [x] **S3-03 🟠 — ПОПРАВЕНО** (= S1-02): `URL_OK` вече носи `?t=<token>`.
 - [ ] S3-04 🟡 — резервация до 2ч при изоставяне (по избор: скъси cron за pending)
 - [ ] S3-05 🟡 — payment concurrency verify скрипт (след S3-01 / S1-01)

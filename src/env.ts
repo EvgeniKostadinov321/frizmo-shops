@@ -49,6 +49,10 @@ export function validateEnv(): void {
     warnings.push("NEXT_PUBLIC_SITE_URL — имейл линковете ще ползват fallback домейн.");
   if (!process.env.PLATFORM_ADMIN_EMAILS)
     warnings.push("PLATFORM_ADMIN_EMAILS — /admin ще е недостъпен.");
+  if (!process.env.CRON_SECRET)
+    warnings.push(
+      "CRON_SECRET — Vercel Cron ще връща 401: expire-payments (неплатени поръчки не се отменят, наличности заседват) и abandoned-carts няма да работят.",
+    );
   if (!process.env.STRIPE_SECRET_KEY) warnings.push("STRIPE_SECRET_KEY — билингът е изключен.");
   if (!process.env.STRIPE_WEBHOOK_SECRET) warnings.push("STRIPE_WEBHOOK_SECRET — Stripe webhook няма да работи.");
   if (!process.env.STRIPE_PRICE_STARTER || !process.env.STRIPE_PRICE_PRO)

@@ -2,16 +2,21 @@ import { eq } from "drizzle-orm";
 import { db, orders, paymentIntents } from "@/db";
 import { restoreStock } from "@/actions/orders";
 import { getExpiredPendingOrders } from "@/db/queries/payment-reconcile";
+import { EPAY_EXP_SECONDS } from "@/lib/payments/build-order-package";
 
 export const dynamic = "force-dynamic";
 
-const EXP_MS = 2 * 60 * 60 * 1000; // 2 часа
+/* S3-02: cron границата е СЛЕД ePay-валидността (+30 мин grace), за да отменяме
+   поръчка едва след като ePay гарантирано вече е отказал плащането — това затваря
+   race прозореца „cron отменя точно преди закъсняла PAID нотификация". */
+const CANCEL_GRACE_MS = 30 * 60 * 1000; // 30 мин буфер над ePay EXP_TIME
+const EXP_MS = EPAY_EXP_SECONDS * 1000 + CANCEL_GRACE_MS; // 2ч30мин
 
 /**
- * Vercel Cron: auto-cancel на неплатени онлайн поръчки (pending_payment >2ч) —
- * връща наличността + маркира intent-а expired. Гард с CRON_SECRET. Guard по
- * статус: заявката филтрира по pending_payment, така че вече потвърдена (от webhook)
- * поръчка не попада в списъка.
+ * Vercel Cron: auto-cancel на неплатени онлайн поръчки (pending_payment над
+ * ePay-валидността + grace) — връща наличността + маркира intent-а expired. Гард с
+ * CRON_SECRET. Guard по статус: заявката филтрира по pending_payment, така че вече
+ * потвърдена (от webhook) поръчка не попада в списъка.
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;

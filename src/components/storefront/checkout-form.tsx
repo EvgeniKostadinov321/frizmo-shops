@@ -332,6 +332,8 @@ export function CheckoutForm({
     setSubmitting(true);
     setError(null);
     setFieldErrors({});
+    /* P5-01: true при успех (страницата ще навигира) → пази бутона disabled в finally. */
+    let navigating = false;
     try {
       const result = await createOrder(slug, {
         ...form,
@@ -356,6 +358,11 @@ export function CheckoutForm({
         return;
       }
       clearCart(shopId);
+      /* P5-01: и двата успешни пътя НАПУСКАТ страницата (ePay redirect или push към
+         потвърждението). Навигацията е асинхронна → НЕ реставяме бутона, иначе на
+         бавна мрежа купувачът вижда пак активен „Потвърди" и може да кликне повторно
+         (двоен createOrder / втори ePay redirect). Бутонът остава заключен до навигацията. */
+      navigating = true;
       /* Онлайн плащане: сървърът върна ePay пакет → auto-submit към ePay (redirect).
          Иначе (офлайн) → потвърждение на поръчката. */
       if (result.data.epay) {
@@ -368,7 +375,9 @@ export function CheckoutForm({
          непокътната → потребителят просто натиска пак. Без тиха гола грешка. */
       setError("Няма връзка със сървъра. Провери интернета и опитай пак.");
     } finally {
-      setSubmitting(false);
+      /* Реставяме бутона само ако ОСТАВАМЕ на страницата (грешка). При навигация
+         остава disabled — компонентът се демонтира при redirect. */
+      if (!navigating) setSubmitting(false);
     }
   }
 
