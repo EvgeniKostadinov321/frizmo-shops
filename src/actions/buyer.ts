@@ -3,13 +3,24 @@
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import { clientIp } from "@/actions/cart";
-import { buyerAddresses, buyerFavoriteShops, buyerFavorites, db, orders, profiles } from "@/db";
+import {
+  buyerAddresses,
+  buyerFavoriteShops,
+  buyerFavorites,
+  db,
+  orders,
+  profiles,
+  shops,
+} from "@/db";
 import { countGuestOrdersByPhone, getBuyerFavoriteIds } from "@/db/queries/buyer";
+import { confirmDeleteWord } from "@/lib/account-deletion";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireBuyer } from "@/lib/auth";
 import { parseBgPhone } from "@/lib/phone";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { addressSchema, buyerProfileSchema } from "@/schemas/buyer";
 
 /** Създава или обновява адрес на купувача (own only). Санитизира текста, нормализира телефона. */
@@ -189,4 +200,53 @@ export async function toggleFavoriteShop(
   }
   await db.insert(buyerFavoriteShops).values({ buyerId: profile.id, shopId }).onConflictDoNothing();
   return ok({ favorited: true });
+}
+
+/**
+ * Изтрива купувачки акаунт: анонимизира поръчките (buyerId→null — търговецът ги пази),
+ * трие адреси/любими/любими магазини + Supabase auth юзъра. Гард: акаунт с магазин
+ * НЕ се трие оттук (иска триене на магазина първо). Потвърждение с думата „ИЗТРИЙ".
+ */
+export async function deleteBuyerAccount(rawInput: unknown): Promise<ActionResult<null>> {
+  const { user, profile } = await requireBuyer();
+  const parsed = z.object({ confirm: z.string().min(1).max(40) }).safeParse(rawInput);
+  if (!parsed.success || !confirmDeleteWord(parsed.data.confirm)) {
+    return fail("Напиши „ИЗТРИЙ“ за потвърждение.");
+  }
+  const ownShop = await db.query.shops.findFirst({
+    where: eq(shops.ownerId, user.id),
+    columns: { id: true },
+  });
+  if (ownShop) {
+    return fail("Имаш магазин — изтрий първо него от настройките на магазина.");
+  }
+  try {
+    /* 1) Анонимизирай поръчките (търговецът ги пази за счетоводство). */
+    await db
+      .update(orders)
+      .set({ buyerId: null, updatedAt: new Date() })
+      .where(eq(orders.buyerId, profile.id));
+    /* 2) Изтрий купувачките данни. */
+    await db.delete(buyerAddresses).where(eq(buyerAddresses.buyerId, profile.id));
+    await db.delete(buyerFavorites).where(eq(buyerFavorites.buyerId, profile.id));
+    await db.delete(buyerFavoriteShops).where(eq(buyerFavoriteShops.buyerId, profile.id));
+    await db.delete(profiles).where(eq(profiles.id, profile.id));
+    /* 3) Изтрий auth юзъра (best-effort). */
+    const admin = createSupabaseAdmin();
+    const { error } = await admin.auth.admin.deleteUser(user.id);
+    if (error) {
+      console.error(JSON.stringify({ scope: "delete-buyer", userId: user.id, error: error.message }));
+    }
+    /* 4) Изчисти сесията. */
+    try {
+      const supabase = await createSupabaseServer();
+      await supabase.auth.signOut();
+    } catch {
+      /* игнорирай */
+    }
+    return ok(null);
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "delete-buyer", userId: user.id, error: String(e) }));
+    return fail("Изтриването не бе успешно. Опитай пак.");
+  }
 }
