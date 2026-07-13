@@ -3,7 +3,7 @@
 import { and, eq, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import { clientIp } from "@/actions/cart";
-import { buyerAddresses, buyerFavorites, db, orders, profiles } from "@/db";
+import { buyerAddresses, buyerFavoriteShops, buyerFavorites, db, orders, profiles } from "@/db";
 import { countGuestOrdersByPhone, getBuyerFavoriteIds } from "@/db/queries/buyer";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireBuyer } from "@/lib/auth";
@@ -170,4 +170,23 @@ export async function linkGuestOrders(): Promise<ActionResult<{ linked: number }
     .set({ phoneVerified: true, updatedAt: new Date() })
     .where(eq(profiles.id, profile.id));
   return ok({ linked: toLink });
+}
+
+/** Добавя/маха магазин от любимите на купувача (own синхрон). */
+export async function toggleFavoriteShop(
+  shopId: string,
+): Promise<ActionResult<{ favorited: boolean }>> {
+  const { profile } = await requireBuyer();
+  if (!z.uuid().safeParse(shopId).success) return fail("Невалидна заявка.");
+  const existing = await db.query.buyerFavoriteShops.findFirst({
+    where: and(eq(buyerFavoriteShops.buyerId, profile.id), eq(buyerFavoriteShops.shopId, shopId)),
+  });
+  if (existing) {
+    await db
+      .delete(buyerFavoriteShops)
+      .where(and(eq(buyerFavoriteShops.buyerId, profile.id), eq(buyerFavoriteShops.shopId, shopId)));
+    return ok({ favorited: false });
+  }
+  await db.insert(buyerFavoriteShops).values({ buyerId: profile.id, shopId }).onConflictDoNothing();
+  return ok({ favorited: true });
 }
