@@ -32,6 +32,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
 import { parseOrderNumber } from "@/lib/order-number";
+import { ALLOWED_TRANSITIONS } from "@/lib/order-status";
 import { isShopActive } from "@/lib/plan";
 import { type PaymentCreds, type PaymentPackage } from "@/lib/payments";
 import { buildEpayForOrder } from "@/lib/payments/build-order-package";
@@ -675,18 +676,6 @@ export async function requestReturn(
   revalidatePath("/dashboard/orders");
   return ok(null);
 }
-
-/** Смяна на статус от търговеца; отказ/връщане възстановява наличностите.
- *  N12: completed → return_requested е САМО купувачески преход (requestReturn). */
-const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  new: ["confirmed", "cancelled"],
-  confirmed: ["shipped", "cancelled"],
-  shipped: ["completed", "cancelled"],
-  completed: [],
-  cancelled: [],
-  return_requested: ["returned", "completed"],
-  returned: [],
-};
 
 /** Възстановява наличностите по редовете на поръчка (отказ/прието връщане). */
 async function restoreStock(tx: Tx, orderId: string) {

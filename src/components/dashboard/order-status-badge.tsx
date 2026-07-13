@@ -4,6 +4,7 @@ export const ORDER_STATUS_LABELS: Record<
   string,
   { label: string; tone: "neutral" | "brand" | "warning" | "success" | "danger" }
 > = {
+  pending_payment: { label: "Чака плащане", tone: "warning" },
   new: { label: "Нова", tone: "brand" },
   confirmed: { label: "Потвърдена", tone: "warning" },
   shipped: { label: "Изпратена", tone: "neutral" },

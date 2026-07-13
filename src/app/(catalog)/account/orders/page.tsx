@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/money";
 export const metadata: Metadata = { title: "Моите поръчки — Frizmo Shops", robots: { index: false } };
 
 const STATUS_LABELS: Record<string, string> = {
+  pending_payment: "Чака плащане",
   new: "Приета",
   confirmed: "Потвърдена",
   shipped: "Изпратена",
