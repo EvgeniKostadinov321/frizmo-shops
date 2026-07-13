@@ -159,7 +159,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               (multicolor, не се вписва в монохромния Icon set). Купувач → връща се в
               профила (или подадения next); продавач → dashboard (default в action-а). */}
           {oauthError && <p className="text-sm text-danger-600">{oauthError}</p>}
-          <form action={signInWithProvider.bind(null, isBuyer ? (next ?? "/shops") : next)}>
+          <form action={signInWithProvider.bind(null, isBuyer ? (next ?? "/account") : next)}>
             <Button type="submit" variant="secondary" size="lg" className="w-full gap-3">
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
                 <path

@@ -2,9 +2,7 @@ import { safeNextPath } from "@/lib/safe-redirect";
 
 /**
  * Дестинация след вход: магазин или продавач → dashboard; купувач → валиден next
- * (обикновено профилът на магазина, откъдето е дошъл). Профилът на купувача живее
- * под /s/{slug}/account (per-магазин), затова БЕЗ next купувачът отива в каталога
- * /shops — няма самостоятелно „/account" извън контекста на магазин.
+ * (обикновено откъдето е дошъл, напр. checkout), иначе глобалният профил /account.
  */
 export function resolvePostAuthPath(
   hasShop: boolean,
@@ -13,5 +11,5 @@ export function resolvePostAuthPath(
 ): string {
   if (hasShop || preferredRole === "seller") return "/dashboard";
   const safe = safeNextPath(next);
-  return safe !== "/dashboard" ? safe : "/shops";
+  return safe !== "/dashboard" ? safe : "/account";
 }
