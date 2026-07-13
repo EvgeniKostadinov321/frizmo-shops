@@ -33,6 +33,11 @@ test("любим магазин от storefront хедъра → показва 
   await registerBuyer(page, `frizmo.e2e+favshop${Date.now()}@gmail.com`);
   await page.goto("/s/atelie-glina");
   await page.getByRole("button", { name: "Добави в любими магазини" }).click();
+  /* Изчакай server action-а да приключи (иначе goto прекъсва POST-а):
+     бутонът флипва на „Премахни" и се re-enable-ва след като busy падне. */
+  const removeBtn = page.getByRole("button", { name: "Премахни от любими магазини" });
+  await expect(removeBtn).toBeVisible();
+  await expect(removeBtn).toBeEnabled();
   await page.goto("/account/favorites");
   await page.getByRole("button", { name: /Магазини/ }).click();
   /* Демо магазинът трябва да се появи в таба. */

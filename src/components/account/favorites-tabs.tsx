@@ -35,7 +35,7 @@ export function FavoritesTabs({ products, shops }: { products: FavProduct[]; sho
             Още нямаш любими продукти.
           </p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
               <li key={p.id}>
                 <Link
