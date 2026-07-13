@@ -1,6 +1,7 @@
 import { CourierAccounts } from "@/components/dashboard/courier-accounts";
 import { FulfillmentManager } from "@/components/dashboard/fulfillment-manager";
 import { OrderSettings } from "@/components/dashboard/order-settings";
+import { PaymentAccounts } from "@/components/dashboard/payment-accounts";
 import { Tabs, TabPanel } from "@/components/ui";
 import { getCourierAccounts } from "@/db/queries/couriers";
 import {
@@ -8,6 +9,7 @@ import {
   getPaymentMethods,
   getShippingMethods,
 } from "@/db/queries/fulfillment";
+import { getShopPaymentAccount } from "@/db/queries/payment-accounts";
 import { getZonesForShop } from "@/db/queries/shipping-zones";
 import { requireShop } from "@/lib/auth";
 
@@ -17,11 +19,12 @@ export default async function FulfillmentPage() {
   const { shop } = await requireShop();
   await ensureDefaultMethods(shop.id);
 
-  const [shipping, payment, zones, courierAccounts] = await Promise.all([
+  const [shipping, payment, zones, courierAccounts, paymentAccount] = await Promise.all([
     getShippingMethods(shop.id),
     getPaymentMethods(shop.id),
     getZonesForShop(shop.id),
     getCourierAccounts(shop.id),
+    getShopPaymentAccount(shop.id, "epay"),
   ]);
   const hasCourier = courierAccounts.length > 0;
 
@@ -47,7 +50,10 @@ export default async function FulfillmentPage() {
           />
         </TabPanel>
         <TabPanel tabKey="payment">
-          <FulfillmentManager only="payment" shipping={shipping} payment={payment} zones={zones} />
+          <div className="flex flex-col gap-6">
+            <FulfillmentManager only="payment" shipping={shipping} payment={payment} zones={zones} />
+            <PaymentAccounts account={paymentAccount ?? null} />
+          </div>
         </TabPanel>
         <TabPanel tabKey="couriers">
           <CourierAccounts accounts={courierAccounts} />
