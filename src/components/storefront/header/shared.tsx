@@ -25,6 +25,8 @@ export interface HeaderVariantProps {
   heroOverlay?: boolean;
   /** S3: логнат ли е посетителят (купувач) — сменя профил иконата към акаунт/вход. */
   viewerLoggedIn?: boolean;
+  /** S3-глобален: любим ли е този магазин за текущия купувач. */
+  shopFavorited?: boolean;
 }
 
 export interface NavItem {

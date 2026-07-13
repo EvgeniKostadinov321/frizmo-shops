@@ -13,6 +13,7 @@ import {
   MobileMenu,
   useHeaderState,
 } from "./shared";
+import { ShopFavoriteButton } from "../shop-favorite-button";
 
 /**
  * Вариант 3 — Minimal: лого вляво, само количка + бургер вдясно (навигацията
@@ -26,6 +27,7 @@ export function HeaderVariant3({
   rootCategories = [],
   heroOverlay = false,
   viewerLoggedIn = false,
+  shopFavorited = false,
 }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
   const nav = buildNav(base, rootCategories, settings.navLinks);
@@ -48,7 +50,8 @@ export function HeaderVariant3({
           <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
           <div className="flex items-center gap-1">
             <HeaderSearch base={base} />
-            <AccountButton base={base} loggedIn={viewerLoggedIn} />
+            <ShopFavoriteButton shopId={shop.id} initialFavorited={shopFavorited} loggedIn={viewerLoggedIn} />
+            <AccountButton loggedIn={viewerLoggedIn} />
             <FavoritesButton shopId={shop.id} base={base} />
             <CartButton shopId={shop.id} base={base} />
             <MenuButton onOpen={() => setMenuOpen(true)} expanded={menuOpen} />

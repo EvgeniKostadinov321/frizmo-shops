@@ -8,6 +8,7 @@ import { StorefrontFooter } from "@/components/storefront/footer";
 import { StorefrontHeader } from "@/components/storefront/header";
 import { PreviewListener } from "@/components/storefront/preview-listener";
 import { AnnouncementSection } from "@/components/storefront/sections/announcement";
+import { getBuyerFavoriteShopIds } from "@/db/queries/buyer-global";
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicCategories, getPublicShop } from "@/db/queries/storefront";
 import { isShopActive } from "@/lib/plan";
@@ -46,6 +47,9 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
     supabase.auth.getUser(),
   ]);
   const viewerLoggedIn = Boolean(userData.user);
+  /* Любим ли е този магазин за логнатия купувач (сърцето в хедъра). */
+  const favShopIds = userData.user ? await getBuyerFavoriteShopIds(userData.user.id) : [];
+  const shopFavorited = favShopIds.includes(shop.id);
   /* Спрян билинг → „временно затворено" (видимо за всеки, не само собственика).
      checkout е блокиран отделно на сървъра (createOrder) + на checkout страницата. */
   const billingClosed = !sellingAllowed;
@@ -142,6 +146,7 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
         rootCategories={rootCategories}
         heroOverlay={heroOverlay}
         viewerLoggedIn={viewerLoggedIn}
+        shopFavorited={shopFavorited}
       />
       <main className="flex-1">{children}</main>
       <StorefrontFooter shop={shop} settings={settings} />
