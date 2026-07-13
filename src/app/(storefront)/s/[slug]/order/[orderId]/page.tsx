@@ -101,6 +101,19 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pa
         <p className="text-sm text-(--sf-muted)">Плащане: {order.paymentName}</p>
       </div>
 
+      {/* Онлайн плащане: чака потвърждение от ePay (webhook), или вече получено. */}
+      {order.status === "pending_payment" && (
+        <p className="mt-6 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4 text-center text-sm text-(--sf-text)">
+          Чакаме потвърждение на плащането от ePay. Ако вече плати, статусът ще се обнови до
+          минута — презареди страницата.
+        </p>
+      )}
+      {order.status !== "pending_payment" && order.paymentType === "online_card" && (
+        <p className="mt-6 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4 text-center text-sm text-(--sf-text)">
+          Плащането е получено. Благодарим!
+        </p>
+      )}
+
       {/* N12: заявка за връщане — само „завършена" и в срока на магазина */}
       {order.status === "completed" &&
         withinReturnWindow(order.updatedAt, shop.returnWindowDays) && (
