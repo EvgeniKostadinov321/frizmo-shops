@@ -20,6 +20,7 @@ export const PAYMENT_TYPES = [
   { value: "cod", label: "Наложен платеж" },
   { value: "bank_transfer", label: "Банков превод" },
   { value: "on_site", label: "Плащане на място" },
+  { value: "online_card", label: "Карта (ePay)" },
 ] as const;
 
 export const shippingMethodSchema = z.object({
@@ -40,7 +41,7 @@ export const shippingMethodSchema = z.object({
 
 export const paymentMethodSchema = z
   .object({
-    type: z.enum(["cod", "bank_transfer", "on_site"]),
+    type: z.enum(["cod", "bank_transfer", "on_site", "online_card"]),
     name: z.string().trim().min(2, "Въведи име").max(60),
     details: z.string().trim().max(300).default(""),
   })

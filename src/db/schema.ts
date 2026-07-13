@@ -273,8 +273,15 @@ export const siteSettings = pgTable(
 ).enableRLS();
 
 export const shippingTypeEnum = pgEnum("shipping_type", ["courier", "pickup", "local"]);
-export const paymentTypeEnum = pgEnum("payment_type", ["cod", "bank_transfer", "on_site"]);
+export const paymentTypeEnum = pgEnum("payment_type", [
+  "cod",
+  "bank_transfer",
+  "on_site",
+  "online_card",
+]);
 export const orderStatusEnum = pgEnum("order_status", [
+  /* Онлайн плащане: поръчката е резервирала наличност, но плащането не е потвърдено. */
+  "pending_payment",
   "new",
   "confirmed",
   "shipped",
@@ -334,6 +341,68 @@ export const courierOffices = pgTable(
 ).enableRLS();
 
 export type CourierOffice = typeof courierOffices.$inferSelect;
+
+/* Онлайн картично плащане (ePay) — per-shop акаунт + плащане-намерение (Модел А). */
+export const paymentProviderEnum = pgEnum("payment_provider", ["epay"]);
+
+/** Per-shop платежен акаунт (KIN + secret). Tenant-изолиран; ключове само сървърно. */
+export const shopPaymentAccounts = pgTable(
+  "shop_payment_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    provider: paymentProviderEnum("provider").notNull(),
+    /** { kin, secret } — само сървърно, никога NEXT_PUBLIC_, маскирани в UI. */
+    credentials: jsonb("credentials").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("shop_payment_provider_idx").on(t.shopId, t.provider)],
+).enableRLS();
+
+export type ShopPaymentAccount = typeof shopPaymentAccounts.$inferSelect;
+
+export const paymentIntentStatusEnum = pgEnum("payment_intent_status", [
+  "pending",
+  "paid",
+  "denied",
+  "expired",
+]);
+
+/** Плащане-намерение: одит + идемпотентност (providerRef unique) + reconciliation. */
+export const paymentIntents = pgTable(
+  "payment_intents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    provider: paymentProviderEnum("provider").notNull(),
+    /** ePay INVOICE (= поредният номер на поръчката). Unique per provider. */
+    providerRef: text("provider_ref").notNull(),
+    /** Очаквана сума в центове — сверяваме срещу нотификацията. */
+    amountCents: integer("amount_cents").notNull(),
+    status: paymentIntentStatusEnum("status").notNull().default("pending"),
+    /** Суровата нотификация (одит/дебъг). */
+    rawNotification: jsonb("raw_notification"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("payment_intents_ref_idx").on(t.provider, t.providerRef),
+    index("payment_intents_order_idx").on(t.orderId),
+    index("payment_intents_shop_idx").on(t.shopId),
+  ],
+).enableRLS();
+
+export type PaymentIntent = typeof paymentIntents.$inferSelect;
 
 export const shippingMethods = pgTable(
   "shipping_methods",
