@@ -157,8 +157,9 @@ guard-ът и idempotency guard-ът се прилагат СЛЕД `if (!note) 
 
 ## Статус на находките
 
-- [x] **S1-01 🔴 — ПОПРАВЕНО** (2026-07-13): индексът е `(shopId, provider, providerRef)`
-      (`schema.ts:399`); `db:push` приложен на dev; чака прод push докато е чист (P4-03).
+- [x] **S1-01 🔴 — ПОПРАВЕНО + НА ПРОД** (2026-07-13): индексът е `(shopId, provider, providerRef)`
+      (`schema.ts:399`); приложен на dev (push) И на прод (таргетиран SQL, докато прод беше чист — P4-03);
+      `verify-schema-parity` потвърди dev↔прод съвпадение.
 - [x] **S1-02 🟠 — ПОПРАВЕНО** (2026-07-13): `buildEpayForOrder` носи `token` →
       `URL_OK ?paid=1&t=<token>` (`build-order-package.ts`); `createOrder` подава
       `publicToken`; тест добавен.

@@ -71,7 +71,7 @@ DB commit → profiles вече е изтрит, auth user е orphan, но `requ
 
 ---
 
-## 🟡 P4-03 — Следващ `db:push` на прод (за S1-01) е безопасен САМО докато прод е чист — формулирай правилото
+## 🟡 P4-03 — Следващ `db:push` на прод (за S1-01) е безопасен САМО докато прод е чист — формулирай правилото — ✅ ПРИЛОЖЕНО НА ПРОД
 
 **Къде:** [[env-vars-reference]] (db:push без migration файлове) · Одит #1 S1-01
 (изисква нов индекс `payment_intents_ref_idx` + `shopId`)
@@ -95,6 +95,20 @@ health-check) → `db:push` за S1-01 е напълно безопасен СЕ
   индекс сблъсква ли се със съществуващи редове? преименуване = загуба на данни при
   push?). `drizzle-kit push` няма rollback — за рискови промени пиши ръчен SQL/
   backup първо.
+
+**✅ ПРИЛОЖЕНО (2026-07-13):** S1-01 индексът е сложен на прод с **таргетиран SQL**
+(НЕ `drizzle-kit push`), защото push-ът щеше да поиска да ИЗТРИЕ 3-те `pg_trgm`
+search индекса (те са само в `setup-search.mjs`, не в `schema.ts`):
+```sql
+DROP INDEX IF EXISTS payment_intents_ref_idx;
+CREATE UNIQUE INDEX payment_intents_ref_idx ON payment_intents (shop_id, provider, provider_ref);
+```
+Прод беше чист (0 реда, 0 дубликата — проверено преди). `verify-schema-parity` след
+това: **dev ↔ прод съвпадат напълно** (колони+enum+индекси, exit 0). Пуснат и
+`setup-search.mjs` на dev (изравни trgm индексите там). **Правило научено:** trgm
+GIN индексите живеят извън `schema.ts` → `drizzle-kit push` ги третира като
+„премахнати"; на прод ползвай таргетиран SQL или възстановявай search индексите след
+push.
 
 ---
 
@@ -175,7 +189,7 @@ S1-01 поправката на ОБЕТЕ бази.
 
 - [x] P4-01 🟠 — обви `deleteBuyerAccount` DB операциите в транзакция ✅ (`src/actions/buyer.ts`; auth deleteUser/signOut остават извън — външна услуга)
 - [ ] P4-02 🟠 — реши: изтрит магазин трие ли поръчковата история (cascade) — документирай или промени
-- [ ] P4-03 🟡 — приложи S1-01 schema поправка на прод ДОКАТО е чист (преди Task 5)
+- [x] P4-03 🟡 — приложи S1-01 schema поправка на прод ДОКАТО е чист ✅ (таргетиран SQL, не push; parity dev↔прод чист)
 - [x] P4-04 🟡 — schema parity проверка dev↔прод ✅ (`scripts/verify-schema-parity.mjs` — колони + enum-и + ИНДЕКСИ). ⚠️ Реалният пуск ОТКРИ дрифт (виж бележката долу).
 
 Свързано: [[prod-environment]], [[env-vars-reference]], [[buyer-account-feature]],
