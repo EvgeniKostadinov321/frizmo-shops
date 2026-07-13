@@ -93,13 +93,39 @@
 
 ---
 
-## Статус
+## Статус — ✅ ВСИЧКИ ИЗПЪЛНЕНИ (2026-07-13)
 
-- [ ] Одит 1 — Security
-- [ ] Одит 2 — Production readiness
-- [ ] Одит 3 — Payments correctness & concurrency
-- [ ] Одит 4 — Data-integrity & migrations
-- [ ] Одит 5 — UX / a11y регресия
+- [x] Одит 1 — Security → `2026-07-13-audit-1-security.md` (1🔴 + 3 по-леки)
+- [x] Одит 2 — Production readiness → `2026-07-13-audit-2-production.md` (1🔴⚙️ + 2🟠 + 2🟡)
+- [x] Одит 3 — Payments correctness & concurrency → `2026-07-13-audit-3-payments.md` (1🔴 + 2🟠 + 2🟡)
+- [x] Одит 4 — Data-integrity & migrations → `2026-07-13-audit-4-data-integrity.md` (2🟠 + 2🟡)
+- [x] Одит 5 — UX / a11y регресия → `2026-07-13-audit-5-ux-a11y.md` (1🟠 + 3🟡)
+
+### Обобщение — какво ТРЯБВА преди онлайн старт (3 малки поправки + ротация)
+
+**Блокери (малки, локализирани):**
+1. **S1-01 🔴** — `payment_intents` unique индекс + `shopId` (иначе 2-ри магазин
+   с ePay се чупи). `db:push` — приложи на прод ДОКАТО е чист (**P4-03**).
+2. **S1-02 / S3-03 🟠** — ePay `URL_OK` + `?t=<token>` (иначе 404 след плащане,
+   дори с 1 магазин).
+3. **S3-01 🔴** — ръчен cancel на `pending_payment` да отменя и intent-а (иначе
+   late webhook възкресява отменена поръчка).
+4. **P2-01 🔴⚙️** — ротирай прод DB парола + `SUPABASE_SECRET_KEY` (минаха през чата).
+
+**Силно препоръчани преди реален обем:**
+- **P2-02 🟠** — `CRON_SECRET` в `validateEnv` + провери във Vercel (иначе
+  expire-payments cron мълчи → застъпва S3-02).
+- **S3-02 🟠** — логвай „paid-after-expire" + cron граница > ePay граница.
+- **P4-01 🟠** — `deleteBuyerAccount` в транзакция (GDPR коректност).
+- **P4-02 🟠** — реши: изтрит магазин трие ли поръчковата история.
+- **P2-03 🟠** — Sentry (чака DSN).
+- **P5-01 🟠** — submit не се re-enable-ва при ePay redirect.
+
+**Дребни/по избор:** S1-03, S1-04, S3-04, S3-05, P2-04, P2-05, P4-04, P5-02/03/04.
+
+**Нула критични в стария код** — всички находки са в новия (плащане/куриери/
+профил). Основите (webhook подпис, buyer изолация, център-аритметика, RLS,
+snapshot оцеляване) са солидни.
 
 Свързано: `docs/superpowers/audits/2026-07-07-*` (предишни одити), [[online-payments-feature]],
 [[courier-integration-feature]], [[buyer-account-feature]], [[prod-environment]],
