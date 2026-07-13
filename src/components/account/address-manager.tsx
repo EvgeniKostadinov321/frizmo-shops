@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteAddress, saveAddress, setDefaultAddress } from "@/actions/buyer";
+import { AddressAutocomplete } from "@/components/dashboard/address-autocomplete";
 import { Button, Checkbox, ConfirmDialog, Drawer, Input } from "@/components/ui";
 import type { BuyerAddress } from "@/db";
 
@@ -13,6 +14,18 @@ export function AddressManager({ addresses }: { addresses: BuyerAddress[] }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /* Адрес + град са контролирани — HERE autocomplete попълва двете наведнъж
+     (адресът води, градът се допълва от избора; и двете остават редактируеми). */
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+
+  /** Отваря drawer-а за нов/редактиран адрес и синхронизира контролираните полета. */
+  function openDrawer(target: BuyerAddress | null) {
+    setEditing(target);
+    setAddress(target?.address ?? "");
+    setCity(target?.city ?? "");
+    setDrawerOpen(true);
+  }
 
   async function submit(formData: FormData) {
     setBusy(true);
@@ -22,8 +35,8 @@ export function AddressManager({ addresses }: { addresses: BuyerAddress[] }) {
           label: formData.get("label"),
           receiverName: formData.get("receiverName"),
           receiverPhone: formData.get("receiverPhone"),
-          city: formData.get("city"),
-          address: formData.get("address"),
+          city,
+          address,
           isDefault: formData.get("isDefault") === "on",
         },
         editing?.id,
@@ -40,14 +53,7 @@ export function AddressManager({ addresses }: { addresses: BuyerAddress[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Button
-        size="sm"
-        className="self-start"
-        onClick={() => {
-          setEditing(null);
-          setDrawerOpen(true);
-        }}
-      >
+      <Button size="sm" className="self-start" onClick={() => openDrawer(null)}>
         Добави адрес
       </Button>
       {addresses.length === 0 ? (
@@ -78,10 +84,7 @@ export function AddressManager({ addresses }: { addresses: BuyerAddress[] }) {
               <div className="flex shrink-0 flex-col items-end gap-1 text-sm">
                 <button
                   type="button"
-                  onClick={() => {
-                    setEditing(a);
-                    setDrawerOpen(true);
-                  }}
+                  onClick={() => openDrawer(a)}
                   className="text-brand-600 hover:underline"
                 >
                   Редактирай
@@ -120,8 +123,22 @@ export function AddressManager({ addresses }: { addresses: BuyerAddress[] }) {
           <Input label="Етикет (по избор)" name="label" defaultValue={editing?.label ?? ""} placeholder="Вкъщи" />
           <Input label="Име на получателя" name="receiverName" defaultValue={editing?.receiverName ?? ""} required />
           <Input label="Телефон" name="receiverPhone" defaultValue={editing?.receiverPhone ?? ""} required />
-          <Input label="Град" name="city" defaultValue={editing?.city ?? ""} />
-          <Input label="Адрес" name="address" defaultValue={editing?.address ?? ""} />
+          {/* Адресът води (HERE autocomplete), градът се допълва от избора и остава редактируем. */}
+          <AddressAutocomplete
+            value={address}
+            onChange={setAddress}
+            onSelect={(r) => {
+              setAddress(r.fullAddress);
+              if (r.city) setCity(r.city);
+            }}
+          />
+          <Input
+            label="Град"
+            name="city"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            autoComplete="address-level2"
+          />
           <Checkbox name="isDefault" defaultChecked={editing?.isDefault ?? false} label="Основен адрес" />
           <Button type="submit" loading={busy}>
             Запази
