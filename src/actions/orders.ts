@@ -432,6 +432,7 @@ export async function createOrder(
         creds: epayCreds,
         siteUrl,
         apiBase,
+        token: created.publicToken,
       });
     } catch (e) {
       console.error(
@@ -733,6 +734,16 @@ export async function updateOrderStatus(input: {
     /* Отказ / прието връщане → връщаме наличностите (симетрично на декремента). */
     if (parsed.data.status === "cancelled" || parsed.data.status === "returned") {
       await restoreStock(tx, order.id);
+    }
+
+    /* Ръчен отказ на ЧАКАЩА плащане поръчка → маркирай и intent-а expired, за да не
+       мине webhook guard-ът (intent=pending) при закъсняла PAID нотификация и да
+       „възкреси" отменената поръчка (одит 2026-07-13 S3-01). */
+    if (parsed.data.status === "cancelled" && order.status === "pending_payment") {
+      await tx
+        .update(paymentIntents)
+        .set({ status: "expired", updatedAt: new Date() })
+        .where(eq(paymentIntents.orderId, order.id));
     }
   });
 

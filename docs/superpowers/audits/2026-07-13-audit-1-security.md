@@ -157,8 +157,11 @@ guard-ът и idempotency guard-ът се прилагат СЛЕД `if (!note) 
 
 ## Статус на находките
 
-- [ ] S1-01 🔴 — `payment_intents` unique индекс + `shopId` (db:push) — **блокер за онлайн плащане с 2+ магазина**
-- [ ] S1-02 🟠 — ePay `URL_OK` + `?t=<token>` (споделя се с Одит #3)
+- [x] **S1-01 🔴 — ПОПРАВЕНО** (2026-07-13): индексът е `(shopId, provider, providerRef)`
+      (`schema.ts:399`); `db:push` приложен на dev; чака прод push докато е чист (P4-03).
+- [x] **S1-02 🟠 — ПОПРАВЕНО** (2026-07-13): `buildEpayForOrder` носи `token` →
+      `URL_OK ?paid=1&t=<token>` (`build-order-package.ts`); `createOrder` подава
+      `publicToken`; тест добавен.
 - [ ] S1-03 🟡 — webhook rate-limit устойчивост (по избор за старта)
 - [ ] S1-04 🟡 — регресионен тест за multi-tenant webhook (след S1-01)
 

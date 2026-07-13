@@ -12,6 +12,8 @@ export function buildEpayForOrder(args: {
   creds: PaymentCreds;
   siteUrl: string;
   apiBase: string;
+  /** Публичният token на поръчката — URL_OK го носи, иначе confirmation-ът е 404. */
+  token: string;
 }): PaymentPackage {
   const base = args.siteUrl.replace(/\/$/, "");
   return getPaymentProvider("epay").buildPackage(
@@ -20,7 +22,10 @@ export function buildEpayForOrder(args: {
       amountCents: args.totalCents,
       description: `Поръчка №${args.orderNumber} от ${args.shopName}`,
       expSeconds: EPAY_EXP_SECONDS,
-      urlOk: `${base}/s/${args.slug}/order/${args.orderId}?paid=1`,
+      /* ?t=<token> е ЗАДЪЛЖИТЕЛЕН — order confirmation страницата отхвърля достъп
+         без валиден token (IDOR защита), иначе успешно платена поръчка връща 404
+         (одит 2026-07-13 S1-02). */
+      urlOk: `${base}/s/${args.slug}/order/${args.orderId}?paid=1&t=${args.token}`,
       urlCancel: `${base}/s/${args.slug}/checkout?cancelled=1`,
     },
     args.creds,

@@ -396,7 +396,10 @@ export const paymentIntents = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex("payment_intents_ref_idx").on(t.provider, t.providerRef),
+    /* Unique per ТЕНАНТ: providerRef = orderNumber е per-shop (магазин А и Б може
+       да имат поръчка №1). Без shopId в ключа вторият магазин удря 23505 и онлайн
+       плащането му се чупи (одит 2026-07-13 S1-01). */
+    uniqueIndex("payment_intents_ref_idx").on(t.shopId, t.provider, t.providerRef),
     index("payment_intents_order_idx").on(t.orderId),
     index("payment_intents_shop_idx").on(t.shopId),
   ],

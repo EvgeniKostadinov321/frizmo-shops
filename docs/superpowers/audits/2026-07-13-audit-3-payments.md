@@ -170,9 +170,11 @@ webhook vs cron, late-paid след cancel (S3-01/02), multi-tenant `providerRef
 
 ## Статус на находките
 
-- [ ] S3-01 🔴 — ръчен cancel на pending не отменя intent → late-paid възкресяване (оправи at source)
+- [x] **S3-01 🔴 — ПОПРАВЕНО** (2026-07-13): `updateOrderStatus` cancel клонът маркира
+      `payment_intents.status = "expired"` за orderId в същата транзакция, когато
+      поръчката е `pending_payment` (`orders.ts`); unit тест `order-cancel-intent.test.ts`.
 - [ ] S3-02 🟠 — cron vs late-paid: логвай „paid-after-expire" + cron граница > ePay граница
-- [ ] S3-03 🟠 — ePay `URL_OK` + `?t=` (= S1-02; оправи заедно)
+- [x] **S3-03 🟠 — ПОПРАВЕНО** (= S1-02): `URL_OK` вече носи `?t=<token>`.
 - [ ] S3-04 🟡 — резервация до 2ч при изоставяне (по избор: скъси cron за pending)
 - [ ] S3-05 🟡 — payment concurrency verify скрипт (след S3-01 / S1-01)
 
