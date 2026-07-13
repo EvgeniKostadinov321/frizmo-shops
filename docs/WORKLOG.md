@@ -88,6 +88,30 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-13 (ОНЛАЙН ПЛАЩАНЕ ePay.bg — имплементирано, commit-нато на `dev` локално, НЕ push-нато)** —
+  Marketplace плащане (**Модел А**: купувачът плаща на ТЪРГОВЕЦА, не на платформата — без лиценз/AML).
+  Спец `2026-07-13-online-payments-design.md`, план `2026-07-13-online-payments.md` (12 задачи, inline,
+  TDD). Commit-и `ce723f3`…`7759196`. **Архитектура:** pluggable `PaymentProvider` интерфейс + registry
+  (`src/lib/payments/`, като куриерите); ePay първи (HMAC-SHA1 redirect протокол, `PAGE=paylogin`).
+  Per-shop KIN+secret в `shop_payment_accounts` (никога env/NEXT_PUBLIC_). **Поток pending→webhook:**
+  `createOrder` при `online_card` → поръчка `pending_payment` + резервира наличност + `payment_intent`
+  → връща ePay пакет → checkout auto-submit-ва форма към ePay → купувачът плаща → **webhook**
+  (`/api/payments/epay/notify`) проверява CHECKSUM със secret-а на магазина + сверява сумата →
+  идемпотентно `pending_payment→new` (или отмяна + restock) → отговаря `INVOICE=N:STATUS=OK`. Cron
+  (`/api/cron/expire-payments`, `*/15`, гард CRON_SECRET) auto-cancel-ва неплатените >2ч + връща
+  наличността. **Валута EUR** (отворен въпрос до жива проверка). **Сигурност:** webhook = единственият
+  източник на истина (не redirect-ът); подписът с per-shop secret = автентикация; идемпотентност през
+  `payment_intents.providerRef` unique; сверка на сумата срещу подправяне; status guards срещу race с
+  cron-а. Нова схема: `online_card` тип, `pending_payment` статус (пръв), таблици `shop_payment_accounts`
+  + `payment_intents`, `db:push` изпълнен. Dashboard таб ePay (в „Плащане", InfoHint за КИН/secret).
+  `ALLOWED_TRANSITIONS` изнесен в `src/lib/order-status.ts` (беше в orders.ts — „use server" не експортва
+  константи). Гейт зелен (77 файла / 445 unit); e2e **online-payment 1/1** + регресия **orders 1/1**
+  (офлайн поръчков цикъл непокътнат) + buyer/global-account 6/6. **MVP ядро** — refunds/tokenization/
+  капаро ОТЛОЖЕНИ (търговецът връща пари ръчно през ePay засега). **DEV:** demo.epay.bg + demo KIN/secret
+  за `atelie-glina` (seed). **ЧАКА:** (1) push разрешение; (2) реален ePay акаунт → жива проверка на
+  payload/CHECKSUM/валута (както Спиди/Еконт demo); (3) Vercel env `EPAY_API_BASE` (prod) + `CRON_SECRET`
+  (за expire-payments cron). [[stripe-billing-status]] е РАЗЛИЧНО (там купувачът плаща на НАС).
+
 - **2026-07-13 (ПРОФИЛ ПОЛИРАНЕ: любими акаунт-базирани + десктоп layout + checkout дропдаун — commit-нат локално, НЕ push-нат)** —
   Три поправки след жива проверка (акаунт `e.s.kostadinov34@gmail.com`). (1) **Десктоп layout
   на `/account`** (`6e5c1c9`): страничен sidebar + широка колона (max-w-6xl) по идиома на
