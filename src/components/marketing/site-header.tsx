@@ -16,7 +16,7 @@ const nav = [
  * Marketing header: floating pill на desktop (прозрачен → фон+сянка при скрол),
  * hamburger + пълноекранен overlay на mobile. Активният линк се подчертава.
  */
-export function SiteHeader() {
+export function SiteHeader({ loggedIn = false }: { loggedIn?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -75,6 +75,22 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          {loggedIn ? (
+            <Link
+              href="/account"
+              aria-label="Моят профил"
+              className="flex size-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-surface-100 hover:text-ink-900"
+            >
+              <Icon name="user" size={22} />
+            </Link>
+          ) : (
+            <Link
+              href="/auth/login?role=buyer"
+              className="flex h-11 items-center rounded-full px-3.5 text-sm font-medium text-ink-700 transition-colors hover:bg-surface-100 hover:text-ink-900"
+            >
+              Вход
+            </Link>
+          )}
           <span className="ml-1">
             <LinkButton href="/auth/register" size="sm">
               Създай магазин
@@ -120,6 +136,14 @@ export function SiteHeader() {
                 <Icon name="chevron-down" size={20} className="-rotate-90 text-ink-500" />
               </Link>
             ))}
+            <Link
+              href={loggedIn ? "/account" : "/auth/login?role=buyer"}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center justify-between rounded-2xl px-4 py-4 font-display text-2xl font-extrabold tracking-tight text-ink-900 transition-colors hover:bg-surface-100"
+            >
+              {loggedIn ? "Моят профил" : "Вход"}
+              <Icon name={loggedIn ? "user" : "chevron-down"} size={20} className="-rotate-90 text-ink-500" />
+            </Link>
             <LinkButton
               href="/auth/register"
               size="lg"
