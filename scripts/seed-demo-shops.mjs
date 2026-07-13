@@ -498,6 +498,15 @@ for (const niche of NICHES) {
     values (${shopId}, 'courier', 'Куриер до адрес', 500, 6000)`;
   await sql`insert into payment_methods (shop_id, type, name, details)
     values (${shopId}, 'cod', 'Наложен платеж', 'Плащаш на куриера при получаване.')`;
+  /* Демо ePay онлайн плащане САМО за първия магазин (за e2e/ръчна проверка).
+     Demo KIN/secret — не са реален акаунт; жива транзакция чака реален ePay. */
+  if (niche.slug === "atelie-glina") {
+    await sql`insert into payment_methods (shop_id, type, name)
+      values (${shopId}, 'online_card', 'Карта (ePay)')`;
+    await sql`insert into shop_payment_accounts (shop_id, provider, credentials)
+      values (${shopId}, 'epay', ${sql.json({ kin: "1234567890", secret: "demosecret" })})
+      on conflict (shop_id, provider) do nothing`;
+  }
 
   /* Категории */
   const catIds = {};
