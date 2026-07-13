@@ -15,6 +15,7 @@ import {
 } from "@/lib/cart-storage";
 import { matchZone } from "@/lib/match-zone";
 import { formatPrice } from "@/lib/money";
+import { Icon } from "@/components/ui";
 import { CourierOfficePicker } from "@/components/storefront/courier-office-picker";
 import { SfAddressAutocomplete } from "@/components/storefront/sf-address-autocomplete";
 import { deliveryHoursLines } from "@/lib/working-hours";
@@ -356,34 +357,46 @@ export function CheckoutForm({
         {savedAddresses.length > 0 && (
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-(--sf-text)">Запазен адрес</span>
-            <select
-              className={inputClass}
-              defaultValue=""
-              onChange={(e) => {
-                const a = savedAddresses.find((x) => x.id === e.target.value);
-                if (!a) return;
-                setForm((f) => ({
-                  ...f,
-                  customerName: a.receiverName,
-                  customerPhone: a.receiverPhone,
-                  city: a.city,
-                  address: a.address,
-                }));
-                if (a.courierProvider && a.courierOfficeId) {
-                  setCourierOffice({
-                    officeId: a.courierOfficeId,
-                    officeName: a.courierOfficeName ?? "",
-                  });
-                }
-              }}
-            >
-              <option value="">— Нов адрес —</option>
-              {savedAddresses.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label || a.receiverName} · {a.courierOfficeName || a.address || a.city}
-                </option>
-              ))}
-            </select>
+            {/* appearance-none + собствен chevron → еднакъв вид на всички браузъри
+                (нативната стрелка се блъскаше в дългия текст). */}
+            <div className="relative">
+              <select
+                className={`${inputClass} cursor-pointer appearance-none truncate pr-10`}
+                defaultValue=""
+                onChange={(e) => {
+                  const a = savedAddresses.find((x) => x.id === e.target.value);
+                  if (!a) return;
+                  setForm((f) => ({
+                    ...f,
+                    customerName: a.receiverName,
+                    customerPhone: a.receiverPhone,
+                    city: a.city,
+                    address: a.address,
+                  }));
+                  if (a.courierProvider && a.courierOfficeId) {
+                    setCourierOffice({
+                      officeId: a.courierOfficeId,
+                      officeName: a.courierOfficeName ?? "",
+                    });
+                  }
+                }}
+              >
+                <option value="">— Нов адрес —</option>
+                {savedAddresses.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {[a.label || a.receiverName, a.courierOfficeName || a.city]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </option>
+                ))}
+              </select>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-(--sf-muted)"
+              >
+                <Icon name="chevron-down" size={18} />
+              </span>
+            </div>
           </label>
         )}
         <Field label="Име и фамилия" required error={fieldErrors.customerName}>
