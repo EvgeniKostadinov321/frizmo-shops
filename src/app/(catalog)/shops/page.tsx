@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { Button, Icon, Input, Select, TransitionLink } from "@/components/ui";
 import { getShopCities, searchShops, type ShopSort } from "@/db/queries/catalog";
+import { getBuyerFavoriteShopIds } from "@/db/queries/buyer-global";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { BUSINESS_CATEGORIES } from "@/schemas/shop";
 
 export const metadata: Metadata = {
@@ -46,6 +48,13 @@ export default async function ShopsCatalogPage({ searchParams }: PageProps) {
     getShopCities(),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  /* Сърце „любим магазин" — само за логнати купувачи (една заявка за страницата). */
+  const {
+    data: { user },
+  } = await (await createSupabaseServer()).auth.getUser();
+  const favoriteShopIds = user
+    ? new Set(await getBuyerFavoriteShopIds(user.id))
+    : new Set<string>();
 
   function pageUrl(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
@@ -167,7 +176,13 @@ export default async function ShopsCatalogPage({ searchParams }: PageProps) {
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((shop) => (
-            <ShopCard key={shop.id} shop={shop} coverImage={shop.coverImage} />
+            <ShopCard
+              key={shop.id}
+              shop={shop}
+              coverImage={shop.coverImage}
+              loggedIn={Boolean(user)}
+              favorited={favoriteShopIds.has(shop.id)}
+            />
           ))}
         </div>
       )}

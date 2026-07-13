@@ -43,3 +43,22 @@ test("любим магазин от storefront хедъра → показва 
   /* Демо магазинът трябва да се появи в таба. */
   await expect(page.getByText("Ателие Глина")).toBeVisible();
 });
+
+test("любим продукт (логнат) от продуктовата страница → показва се в профила", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await registerBuyer(page, `frizmo.e2e+favprod${Date.now()}@gmail.com`);
+  /* Продуктова страница на демо магазина → сърцето на страницата (акаунт-базирано).
+     Първото „Добави в любими" е в buy box-а (свързаните продукти идват по-надолу). */
+  await page.goto("/s/atelie-glina/p/chasha-utro");
+  const addBtn = page.getByRole("button", { name: "Добави в любими", exact: true }).first();
+  await addBtn.click();
+  /* Изчакай server action-а: бутонът флипва на „Премахни" и се re-enable-ва. */
+  const removeBtn = page.getByRole("button", { name: "Премахни от любими", exact: true }).first();
+  await expect(removeBtn).toBeVisible();
+  await expect(removeBtn).toBeEnabled();
+  await page.goto("/account/favorites");
+  /* Табът „Продукти" е активен по подразбиране — продуктът трябва да е там. */
+  await expect(page.getByText("Чаша „Утро“")).toBeVisible();
+});

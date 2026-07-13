@@ -43,6 +43,10 @@ interface VariantPickerProps {
   /** Допълнителни блокове (марка, доставка, trust) под CTA — пълнят дясната
    *  колона до нивото на снимката, за да няма празнина на десктоп. */
   sidebar?: ReactNode;
+  /** Логнат купувач → сърцето пази в акаунта (иначе localStorage). */
+  loggedIn?: boolean;
+  /** Начално състояние на сърцето за логнат купувач (от базата). */
+  favorited?: boolean;
 }
 
 /** Общо за qty бройки: deal групите по deal цена, остатъкът по единичната —
@@ -77,6 +81,8 @@ export function VariantPicker({
   deal,
   category,
   sidebar,
+  loggedIn = false,
+  favorited = false,
 }: VariantPickerProps) {
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [activeImage, setActiveImage] = useState(0);
@@ -357,7 +363,13 @@ export function VariantPicker({
             >
               Добави в количката
             </button>
-            <FavoriteButton shopId={shopId} productId={productId} variant="page" />
+            <FavoriteButton
+              shopId={shopId}
+              productId={productId}
+              variant="page"
+              loggedIn={loggedIn}
+              initialFavorited={favorited}
+            />
           </div>
         )}
 

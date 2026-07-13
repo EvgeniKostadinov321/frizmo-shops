@@ -202,6 +202,25 @@ export async function toggleFavoriteShop(
   return ok({ favorited: true });
 }
 
+/** Добавя/маха ПРОДУКТ от любимите на купувача (own синхрон — акаунт-базирано). */
+export async function toggleFavoriteProduct(
+  productId: string,
+): Promise<ActionResult<{ favorited: boolean }>> {
+  const { profile } = await requireBuyer();
+  if (!z.uuid().safeParse(productId).success) return fail("Невалидна заявка.");
+  const existing = await db.query.buyerFavorites.findFirst({
+    where: and(eq(buyerFavorites.buyerId, profile.id), eq(buyerFavorites.productId, productId)),
+  });
+  if (existing) {
+    await db
+      .delete(buyerFavorites)
+      .where(and(eq(buyerFavorites.buyerId, profile.id), eq(buyerFavorites.productId, productId)));
+    return ok({ favorited: false });
+  }
+  await db.insert(buyerFavorites).values({ buyerId: profile.id, productId }).onConflictDoNothing();
+  return ok({ favorited: true });
+}
+
 /**
  * Изтрива купувачки акаунт: анонимизира поръчките (buyerId→null — търговецът ги пази),
  * трие адреси/любими/любими магазини + Supabase auth юзъра. Гард: акаунт с магазин

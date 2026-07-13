@@ -2,12 +2,17 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Shop } from "@/db";
 import { Icon } from "@/components/ui";
+import { ShopFavoriteHeart } from "@/components/marketing/shop-favorite-heart";
 import { publicImageUrl } from "@/lib/storage";
 
 type ShopCardProps = {
   shop: Shop;
   /** Cover снимка (първи продукт); при липса — топъл градиент по нишата. */
   coverImage?: string | null;
+  /** Логнат купувач → показва сърце „любим магазин" (акаунт-базирано). */
+  loggedIn?: boolean;
+  /** Начално състояние на сърцето за логнат купувач (от базата). */
+  favorited?: boolean;
 };
 
 /** Топъл градиент-фон по бизнес категорията, когато няма cover снимка. */
@@ -18,7 +23,7 @@ function categoryGradient(category: string): string {
   return "from-brand-100 to-brand-500/20"; // ръчна изработка / по подразбиране
 }
 
-export function ShopCard({ shop, coverImage }: ShopCardProps) {
+export function ShopCard({ shop, coverImage, loggedIn = false, favorited = false }: ShopCardProps) {
   return (
     <Link
       href={`/s/${shop.slug}`}
@@ -51,6 +56,12 @@ export function ShopCard({ shop, coverImage }: ShopCardProps) {
         <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-surface-0/90 px-2.5 py-0.5 text-xs font-semibold text-ink-900 shadow-sm backdrop-blur">
           {shop.businessCategory}
         </span>
+        {/* Сърце „любим магазин" горе вляво (само за логнати купувачи) */}
+        {loggedIn && (
+          <span className="absolute left-3 top-3">
+            <ShopFavoriteHeart shopId={shop.id} initialFavorited={favorited} loggedIn={loggedIn} />
+          </span>
+        )}
         {/* Лого + име долу вляво върху scrim-а */}
         <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 p-4">
           {shop.logoPath ? (

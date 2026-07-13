@@ -17,13 +17,73 @@ interface FavoritesViewProps {
   slug: string;
   base: string;
   logoPath?: string | null;
+  /** Логнат купувач → любимите идват от акаунта (виж accountProducts). */
+  loggedIn?: boolean;
+  /** Server-rendered любими на логнатия купувач за ТОЗИ магазин (null = гост). */
+  accountProducts?: Product[] | null;
 }
 
 /**
- * S10: любимите живеят в localStorage; данните/цените идват от сървъра при
- * показване. Премахване от сърцето на картата обновява списъка на живо.
+ * Любими продукти. Логнат купувач → показва акаунт любимите (server-rendered);
+ * премахването от сърцето маха картата на живо. Гост → localStorage (S10): данните
+ * идват от сървъра при показване, премахването обновява списъка на живо.
  */
-export function FavoritesView({ shopId, slug, base, logoPath }: FavoritesViewProps) {
+export function FavoritesView({
+  shopId,
+  slug,
+  base,
+  logoPath,
+  loggedIn = false,
+  accountProducts = null,
+}: FavoritesViewProps) {
+  if (loggedIn) {
+    return (
+      <AccountFavorites base={base} logoPath={logoPath} initial={accountProducts ?? []} />
+    );
+  }
+  return <GuestFavorites shopId={shopId} slug={slug} base={base} logoPath={logoPath} />;
+}
+
+/** Логнат: акаунт любимите; при un-favorite картата изчезва веднага (локален стейт). */
+function AccountFavorites({
+  base,
+  logoPath,
+  initial,
+}: {
+  base: string;
+  logoPath?: string | null;
+  initial: Product[];
+}) {
+  const [products, setProducts] = useState(initial);
+  if (products.length === 0) return <EmptyFavorites base={base} logoPath={logoPath} />;
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          base={base}
+          loggedIn
+          favorited
+          onUnfavorite={() => setProducts((ps) => ps.filter((p) => p.id !== product.id))}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Гост: любимите живеят в localStorage; данните идват от сървъра при показване. */
+function GuestFavorites({
+  shopId,
+  slug,
+  base,
+  logoPath,
+}: {
+  shopId: string;
+  slug: string;
+  base: string;
+  logoPath?: string | null;
+}) {
   const ids = useSyncExternalStore(
     (cb) => onFavoritesChange(shopId, cb),
     () => getFavoritesSnapshot(shopId),
@@ -61,24 +121,7 @@ export function FavoritesView({ shopId, slug, base, logoPath }: FavoritesViewPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey, slug]);
 
-  if (ids.length === 0) {
-    return (
-      <MascotState
-        icon="products"
-        logoPath={logoPath}
-        title="Още нямаш любими"
-        text="Цъкни сърцето на продукт, за да го запазиш за после."
-        action={
-          <Link
-            href={`${base}/products`}
-            className="inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
-          >
-            Разгледай продуктите
-          </Link>
-        }
-      />
-    );
-  }
+  if (ids.length === 0) return <EmptyFavorites base={base} logoPath={logoPath} />;
 
   if (failure) {
     return <p className="py-12 text-center text-(--sf-muted)">{failure}</p>;
@@ -104,5 +147,24 @@ export function FavoritesView({ shopId, slug, base, logoPath }: FavoritesViewPro
         <ProductCard key={product.id} product={product} base={base} />
       ))}
     </div>
+  );
+}
+
+function EmptyFavorites({ base, logoPath }: { base: string; logoPath?: string | null }) {
+  return (
+    <MascotState
+      icon="products"
+      logoPath={logoPath}
+      title="Още нямаш любими"
+      text="Цъкни сърцето на продукт, за да го запазиш за после."
+      action={
+        <Link
+          href={`${base}/products`}
+          className="inline-flex h-11 items-center rounded-(--sf-radius) bg-(--sf-primary) px-5 font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90"
+        >
+          Разгледай продуктите
+        </Link>
+      }
+    />
   );
 }

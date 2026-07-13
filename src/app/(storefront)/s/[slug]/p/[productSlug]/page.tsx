@@ -9,6 +9,7 @@ import { ReviewForm } from "@/components/storefront/review-form";
 import { Icon } from "@/components/ui";
 import { Stars } from "@/components/storefront/stars";
 import { StockAlertForm } from "@/components/storefront/stock-alert-form";
+import { getBuyerFavoriteIds } from "@/db/queries/buyer";
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getApprovedReviews, getReviewAggregates } from "@/db/queries/reviews";
 import { getAnsweredQuestions } from "@/db/queries/questions";
@@ -23,6 +24,7 @@ import {
   getRelatedProducts,
   getSoldCount,
 } from "@/db/queries/storefront";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { publicImageUrl } from "@/lib/storage";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { buildProductJsonLd } from "@/lib/product-json-ld";
@@ -78,6 +80,11 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
   const activeShipping = shipping.filter((m) => m.active);
   const rating = aggregates.get(product.id) ?? null;
   const category = categories.find((c) => c.id === product.categoryId);
+  /* Любими на логнатия купувач (сърцето на продукта + свързаните) → пази в акаунта. */
+  const {
+    data: { user },
+  } = await (await createSupabaseServer()).auth.getUser();
+  const favoriteIds = user ? new Set(await getBuyerFavoriteIds(user.id)) : new Set<string>();
   const sizeGuide = product.sizeGuideId
     ? await getSizeGuide(shop.id, product.sizeGuideId)
     : null;
@@ -141,6 +148,8 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
       <VariantPicker
         shopId={shop.id}
         productId={product.id}
+        loggedIn={Boolean(user)}
+        favorited={favoriteIds.has(product.id)}
         productName={product.name}
         basePriceCents={product.priceCents}
         promoPriceCents={product.promoPriceCents}
@@ -346,7 +355,13 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {related.map((p) => (
-              <ProductCard key={p.id} product={p} base={base} />
+              <ProductCard
+                key={p.id}
+                product={p}
+                base={base}
+                loggedIn={Boolean(user)}
+                favorited={favoriteIds.has(p.id)}
+              />
             ))}
           </div>
         </div>

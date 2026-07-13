@@ -7,6 +7,7 @@ import { toCents } from "@/lib/money";
 import { MascotState } from "@/components/storefront/mascot";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontProductToolbar } from "@/components/storefront/product-toolbar";
+import { getBuyerFavoriteIds } from "@/db/queries/buyer";
 import { getReviewAggregates } from "@/db/queries/reviews";
 import {
   getActiveProducts,
@@ -14,6 +15,7 @@ import {
   getPublicShop,
   type ProductSort,
 } from "@/db/queries/storefront";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -81,6 +83,11 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
   });
   /* S1: една заявка за звездите на всички карти на страницата (без N+1). */
   const ratings = await getReviewAggregates(items.map((p) => p.id));
+  /* Любими на логнатия купувач (една заявка за цялата страница) → сърцето пази в акаунта. */
+  const {
+    data: { user },
+  } = await (await createSupabaseServer()).auth.getUser();
+  const favoriteIds = user ? new Set(await getBuyerFavoriteIds(user.id)) : new Set<string>();
 
   const activeCategory = categories.find((c) => c.id === sp.category);
   const hasFilters = Boolean(sp.search || sp.category || sp.sort || sp.min || sp.max || sp.inStock);
@@ -200,6 +207,8 @@ export default async function StorefrontProductsPage({ params, searchParams }: P
               product={product}
               base={base}
               rating={ratings.get(product.id) ?? null}
+              loggedIn={Boolean(user)}
+              favorited={favoriteIds.has(product.id)}
             />
           ))}
         </div>

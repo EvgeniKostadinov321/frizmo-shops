@@ -18,6 +18,9 @@ export function ProductCard({
   base,
   ratio = "portrait",
   rating,
+  loggedIn = false,
+  favorited = false,
+  onUnfavorite,
 }: {
   product: Product;
   base: string;
@@ -25,6 +28,12 @@ export function ProductCard({
   ratio?: "portrait" | "square";
   /** S1: агрегат от approved ревюта (подава се от листинга; null/пропуснат = без звезди). */
   rating?: { avg: number; count: number } | null;
+  /** Логнат купувач → сърцето пази в акаунта (иначе localStorage). */
+  loggedIn?: boolean;
+  /** Начално състояние на сърцето за логнат купувач (от базата). */
+  favorited?: boolean;
+  /** Логнат: извиква се при премахване от любими (за live обновяване на списъци). */
+  onUnfavorite?: () => void;
 }) {
   const cover = product.images[0];
   const hoverImage = product.images[1];
@@ -89,7 +98,14 @@ export function ProductCard({
             </span>
           )}
         </span>
-        <FavoriteButton shopId={product.shopId} productId={product.id} variant="card" />
+        <FavoriteButton
+          shopId={product.shopId}
+          productId={product.id}
+          variant="card"
+          loggedIn={loggedIn}
+          initialFavorited={favorited}
+          onUnfavorite={onUnfavorite}
+        />
         {outOfStock && (
           <span className="absolute inset-x-0 bottom-0 bg-(--sf-text)/85 py-1.5 text-center text-xs font-medium text-(--sf-bg)">
             Изчерпано
