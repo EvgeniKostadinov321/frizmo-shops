@@ -180,6 +180,10 @@ export function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const [cart, setCart] = useState<PricedCart | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  /* P5-02: пълноекранен overlay между createOrder и ePay redirect-а — купувачът вижда
+     ясно, че го пренасочваме към външния платежен доставчик (иначе внезапният скок
+     към непознат домейн изглежда като фишинг). Остава вдигнат до самата навигация. */
+  const [redirecting, setRedirecting] = useState(false);
   /* Промо код: въведен текст, приложен код (потвърден от сървъра) + състояние. */
   const [couponInput, setCouponInput] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
@@ -210,6 +214,10 @@ export function CheckoutForm({
   const isPickup = shipping?.type === "pickup";
   /* Куриер до офис → показваме офис търсачка вместо адрес. */
   const isOffice = shipping?.deliveryTarget === "office" && shipping?.courierProvider != null;
+  /* P5-03: избраният платежен метод + дали е онлайн (карта СЕГА, не „при доставка").
+     Управлява баджа, лейбъла на бутона и redirect overlay-а (P5-02). */
+  const selectedPayment = paymentMethods.find((m) => m.id === form.paymentMethodId);
+  const isOnlineSelected = selectedPayment?.type === "online_card";
   /* Д3.1: зони на избрания метод. Цената се мачва АВТОМАТИЧНО по града (без picker) —
      клиентски matchZone за instant preview; сървърът е финалният източник. */
   const methodZones = useMemo(
@@ -366,6 +374,9 @@ export function CheckoutForm({
       /* Онлайн плащане: сървърът върна ePay пакет → auto-submit към ePay (redirect).
          Иначе (офлайн) → потвърждение на поръчката. */
       if (result.data.epay) {
+        /* P5-02: покажи overlay-а ПРЕДИ да задействаме redirect-а (браузърът може да
+           изчака мрежата към ePay няколко секунди). */
+        setRedirecting(true);
         submitEpayForm(result.data.epay);
         return;
       }
@@ -382,7 +393,22 @@ export function CheckoutForm({
   }
 
   return (
-    <form ref={formRef} onSubmit={submit} noValidate className="grid gap-8 md:grid-cols-[1fr_320px]">
+    <>
+      {/* P5-02: redirect overlay — вдига се при онлайн плащане точно преди скока към ePay. */}
+      {redirecting && (
+        <div
+          role="status"
+          aria-live="assertive"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-(--sf-bg)/95 p-6 text-center backdrop-blur-sm"
+        >
+          <span className="size-10 animate-spin rounded-full border-2 border-(--sf-border) border-t-(--sf-primary)" />
+          <p className="text-base font-medium text-(--sf-text)">
+            Пренасочваме те към сигурното плащане на ePay…
+          </p>
+          <p className="text-sm text-(--sf-muted)">Не затваряй прозореца.</p>
+        </div>
+      )}
+      <form ref={formRef} onSubmit={submit} noValidate className="grid gap-8 md:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-4">
         {/* S3: логнат купувач с адресна книга → бърз избор на запазен адрес.
             „Нов адрес" изчиства нищо (просто спира autofill). */}
@@ -559,7 +585,20 @@ export function CheckoutForm({
                     onChange={() => set("paymentMethodId", m.id)}
                   />
                   {m.name}
+                  {/* P5-03: онлайн методът винаги носи ясен бадж „плащаш сега", за да
+                      не разчита купувачът търговецът да е попълнил описание. */}
+                  {m.type === "online_card" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-(--sf-primary) px-2 py-0.5 text-[11px] font-semibold text-(--sf-on-primary)">
+                      <Icon name="wallet" size={12} />
+                      Плащаш сега с карта
+                    </span>
+                  )}
                 </span>
+                {m.type === "online_card" && form.paymentMethodId === m.id && (
+                  <span className="pl-6 text-xs text-(--sf-muted)">
+                    След „Към плащане“ те пренасочваме към сигурната страница на ePay.
+                  </span>
+                )}
                 {m.details && form.paymentMethodId === m.id && (
                   <span className="pl-6 text-xs text-(--sf-muted)">{m.details}</span>
                 )}
@@ -718,7 +757,13 @@ export function CheckoutForm({
           disabled={submitting || !cart || cart.hasErrors}
           className="sf-cta h-12 rounded-(--sf-radius) bg-(--sf-primary) font-medium text-(--sf-on-primary) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? "Изпращане..." : "Потвърди поръчката"}
+          {submitting
+            ? isOnlineSelected
+              ? "Пренасочваме те…"
+              : "Изпращане..."
+            : isOnlineSelected
+              ? "Към плащане"
+              : "Потвърди поръчката"}
         </button>
         <p className="text-xs text-(--sf-muted)">
           С поръчката приемаш{" "}
@@ -727,6 +772,7 @@ export function CheckoutForm({
           Данните ти се обработват от магазина за изпълнение на поръчката (вкл. предаване на куриера).
         </p>
       </aside>
-    </form>
+      </form>
+    </>
   );
 }

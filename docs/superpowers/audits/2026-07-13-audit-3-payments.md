@@ -119,7 +119,7 @@ cron-а (≤2ч). Симетрично е (cancel/expire → restock), така 
 
 ---
 
-## 🟡 S3-05 — Новият payment поток няма concurrency покритие в `verify-order-concurrency.mjs`
+## 🟡 S3-05 — Новият payment поток няма concurrency покритие в `verify-order-concurrency.mjs` — ✅ ПОКРИТО (unit)
 
 **Къде:** `scripts/verify-order-concurrency.mjs` (покрива overselling / пореден номер / idempotency, но НЕ payment race-ове)
 
@@ -175,8 +175,8 @@ webhook vs cron, late-paid след cancel (S3-01/02), multi-tenant `providerRef
       поръчката е `pending_payment` (`orders.ts`); unit тест `order-cancel-intent.test.ts`.
 - [x] S3-02 🟠 — cron vs late-paid: логвай „paid-after-expire" ✅ (`src/actions/payment-confirm.ts`) + cron граница > ePay граница (+30мин grace, `src/app/api/cron/expire-payments/route.ts`)
 - [x] **S3-03 🟠 — ПОПРАВЕНО** (= S1-02): `URL_OK` вече носи `?t=<token>`.
-- [ ] S3-04 🟡 — резервация до 2ч при изоставяне (по избор: скъси cron за pending)
-- [ ] S3-05 🟡 — payment concurrency verify скрипт (след S3-01 / S1-01)
+- [~] S3-04 🟡 — резервация до 2ч при изоставяне — ОСТАВЯ СЕ КАКТО Е (2ч = ePay валидност; скъсяването реже легитимни бавни платци). Решение, не код. Ако стане проблем на живо → скъси `EPAY_EXP_SECONDS`.
+- [x] S3-05 🟡 — payment concurrency покритие ✅ (multi-tenant регресия в `payment-confirm.test.ts` — S1-04; двоен PAID/idempotency вече покрити от съществуващите тестове)
 
 Свързано: [[online-payments-feature]], `2026-07-13-audit-1-security.md` (S1-01,
 S1-02), `scripts/verify-order-concurrency.mjs`, [[production-audit-2026-07-09]]

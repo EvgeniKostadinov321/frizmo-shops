@@ -63,7 +63,9 @@ export function InfoHint({ label, ariaLabel = "Повече информация
       <span
         id={id}
         role="tooltip"
-        className={`absolute top-full z-50 mt-1.5 w-max max-w-64 rounded-control bg-ink-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-surface-50 shadow-float transition-opacity duration-150 ${
+        /* P5-04: балонът е до 256px, но никога по-широк от viewport-а (минус 2rem
+           gutter) → на 375px не излиза от екрана дори при икона близо до ръба. */
+        className={`absolute top-full z-50 mt-1.5 w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-control bg-ink-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-surface-50 shadow-float transition-opacity duration-150 ${
           visible ? "opacity-100" : "pointer-events-none opacity-0"
         } ${align === "end" ? "right-0" : "left-0"}`}
       >

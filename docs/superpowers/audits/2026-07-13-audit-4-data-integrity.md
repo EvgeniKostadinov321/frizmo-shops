@@ -98,7 +98,7 @@ health-check) → `db:push` за S1-01 е напълно безопасен СЕ
 
 ---
 
-## 🟡 P4-04 — `db:push` без migration файлове: няма одит следа / rollback на schema промените
+## 🟡 P4-04 — `db:push` без migration файлове: няма одит следа / rollback на schema промените — ✅ МИТИГИРАНО (+ намери реален дрифт)
 
 **Къде:** проектно решение (CLAUDE-backend.md — „drizzle-kit push, БЕЗ versioned migration файлове")
 
@@ -116,6 +116,25 @@ dev и прод schema може да мине незабелязано.
 брои таблиците — разшири го (или ново `verify-schema-parity`) да сравнява броя
 таблици/колони dev↔прод след всеки push, за да хване дрифт. При Task 4/5 push-ни
 S1-01 поправката на ОБЕТЕ бази.
+
+**✅ ИМПЛЕМЕНТИРАНО (2026-07-13):** `scripts/verify-schema-parity.mjs` — сравнява
+КОЛОНИ (тип+nullable+default) + ENUM етикети + ИНДЕКСИ (UNIQUE + състав) между две
+бази (`DB_A`/`DB_B` env). Пример:
+`DB_A="<dev>" DB_B="<prod>" node scripts/verify-schema-parity.mjs`.
+
+**⚠️ РЕАЛНИЯТ ПУСК ОТКРИ ДРИФТ (dev Париж ↔ прод Frankfurt, 4 находки) — ОПЕРАЦИОННО:**
+1. 🔴 `payment_intents_ref_idx` на **ПРОД е още старият** `(provider, provider_ref)` —
+   S1-01 поправката (`+shop_id`) НЕ е на прод. → Това е P4-03/S1-01: `db:push` на
+   прод ДОКАТО е чист (носи и новия индекс). *Без него прод е с cross-tenant
+   колизийния риск.*
+2. 🟡 3 `pg_trgm` search индекса (`products_name_trgm`, `shops_name_trgm`,
+   `shops_description_trgm`) са на **прод, но НЕ на dev** — `setup-search.mjs` е
+   пуснат на прод, не на dev. Само локална последица (търсенето пада на бавен ILIKE
+   на dev). Пусни `node --env-file=.env.local scripts/setup-search.mjs` на dev при
+   нужда. Не прод риск.
+
+Индексите НЕ са в `information_schema.columns` → затова първата (само колони/enum)
+версия ги пропусна; добавено е отделно сравнение на `pg_indexes`.
 
 ---
 
@@ -157,7 +176,7 @@ S1-01 поправката на ОБЕТЕ бази.
 - [x] P4-01 🟠 — обви `deleteBuyerAccount` DB операциите в транзакция ✅ (`src/actions/buyer.ts`; auth deleteUser/signOut остават извън — външна услуга)
 - [ ] P4-02 🟠 — реши: изтрит магазин трие ли поръчковата история (cascade) — документирай или промени
 - [ ] P4-03 🟡 — приложи S1-01 schema поправка на прод ДОКАТО е чист (преди Task 5)
-- [ ] P4-04 🟡 — schema parity проверка dev↔прод (разшири health-check)
+- [x] P4-04 🟡 — schema parity проверка dev↔прод ✅ (`scripts/verify-schema-parity.mjs` — колони + enum-и + ИНДЕКСИ). ⚠️ Реалният пуск ОТКРИ дрифт (виж бележката долу).
 
 Свързано: [[prod-environment]], [[env-vars-reference]], [[buyer-account-feature]],
 `2026-07-13-audit-1-security.md` (S1-01 schema промяна → P4-03),
