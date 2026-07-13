@@ -8,6 +8,8 @@ const { requireBuyer, favFindFirst, insertValues, getFavoriteIds } = vi.hoisted(
 }));
 
 vi.mock("@/lib/auth", () => ({ requireBuyer }));
+vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdmin: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ createSupabaseServer: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: vi.fn().mockResolvedValue(true) }));
 vi.mock("@/actions/cart", () => ({ clientIp: vi.fn().mockResolvedValue("1.1.1.1") }));
 vi.mock("@/db/queries/buyer", () => ({ getBuyerFavoriteIds: getFavoriteIds }));
