@@ -59,14 +59,16 @@
 - **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
 - **`getShopPlan()` е stub** (src/lib/plan.ts) → всички магазини са "pro" до прод активиране на билинга.
 - **Website builder Вълни 1–3Б ✅** (dev+prod, тествани). Остава Вълна 4 (undo/версии, домейн, i18n).
-- **Одит цикли ✅**: 4 одита 2026-07-07 (security/a11y/perf/UX) + production readiness одит 2026-07-09 (12/19 оправени, 2 критични concurrency бъга фикснати) + Next.js плюсове одит 2026-07-12 (SEO enrichment + cache safe wins). `docs/superpowers/audits/`.
+- **Одит цикли ✅**: 4 одита 2026-07-07 (security/a11y/perf/UX) + production readiness одит 2026-07-09 (12/19 оправени, 2 критични concurrency бъга фикснати) + Next.js плюсове одит 2026-07-12 (SEO enrichment + cache safe wins) + **5 предстартови одита 2026-07-13 на новия код (ePay/куриери/профил) — 0 критични в стария код; ВСИЧКИ находки обработени (3+4+7) в 3 локални commit-а; S1-01 индексът приложен и НА ПРОД**. `docs/superpowers/audits/`.
 - **Всички pure-code пакети (А–Д) ✅ ТЕСТВАНИ + PUSH-НАТИ** (2026-07-12). Категория 1 от `remaining-roadmap.md` е приключена. Остава „голямото самостоятелно" (мулти-user екипи, купувачески акаунт) + категория 2 (иска външна намеса).
 - **UX инициатива ✅**: Фаза 1 (табове на 5 претрупани страници, `ui/Tabs` примитив) + Фаза 2 (режим на сложност Хоби/Малък бизнес/Пълна) — тествани на живо + push-нати 2026-07-12.
 
 **Открити нишки (не спешни):**
 - Кеш архитектура — частично адресирана 2026-07-12 (cookie-guard + terms кеш, Пакет B); пълното решение = Next `cacheComponents` (отделна сесия). Анализ: `docs/superpowers/audits/2026-07-07-cache-architecture-deep-dive.md`.
 - Sentry — чака DSN (същият акаунт, нов проект). Backup/PITR — за преценка.
+- **⚠️ P2-01 (сигурност):** ротирай прод DB парола + `SUPABASE_SECRET_KEY` (минаха през чата при setup на прод) → обнови `.env.prod.local` + Vercel. Изисква Supabase достъп.
 - **Vercel prod env vars при push:** увери се, че `CRON_SECRET` е там (за cron) + `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `NEXT_PUBLIC_SITE_URL`; всяко добавяне → **Redeploy**.
+- **Schema дрифт dev↔прод:** проверявай с `scripts/verify-schema-parity.mjs` (`DB_A`/`DB_B` env; колони+enum+индекси) след всеки push. **trgm GIN индексите не са в `schema.ts`** → на прод ползвай таргетиран SQL, не `drizzle-kit push`.
 
 **Какво следва:** външната работа (виж дневника 2026-07-12) — домейн setup (чака SuperHosting до 24ч),
 Stripe live активиране (кодът готов), Еконт/Спиди (спец/план готови, чакат ключове), inv.bg фактури
@@ -87,6 +89,32 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-13 (ПРЕДСТАРТОВИ ОДИТИ — 5 одита на новия код + всички находки обработени)** —
+  5 одита на НЕОДИТИРАНИЯ нов код (онлайн плащане ePay, куриери Еконт+Спиди, глобален
+  профил, режим на сложност, InfoHint, storefront сърца), всеки резултат в отделен файл
+  `docs/superpowers/audits/2026-07-13-audit-{1..5}-*.md` (security/production/payments/data/UX).
+  **Нула критични в стария код** — основите солидни (webhook подпис timing-safe, buyer изолация
+  през сесията, център-аритметика integer, RLS/индекси/snapshot оцеляване, ключове никога към
+  клиента). **Обработени ВСИЧКИ находки в 3 commit-а (локално, `pnpm check` зелено, 449 теста):**
+  (1) `3ee43fe` **3 code блокера** — S1-01 (`payment_intents_ref_idx` → `(shopId,provider,providerRef)`;
+  orderNumber е per-shop → без shopId вторият магазин удря 23505), S1-02 (`URL_OK` носи `?t=<token>`
+  → без него потвърждението дава 404), S3-01 (cancel на `pending_payment` маркира intent-а `expired`
+  в същата транзакция → иначе закъсняла PAID нотификация „възкресява" отменена поръчка); (2) `b58fdbf`
+  **4 препоръчани** — P2-02 (`CRON_SECRET` warning), S3-02 (paid-after-expire лог + cron граница =
+  ePay EXP+30мин), P4-01 (`deleteBuyerAccount` в транзакция), P5-01 (submit disabled по време на ePay
+  redirect); (3) `67f4c85` **7 дребни** — S1-03 (webhook rate-limit 600/мин), S1-04/S3-05 (multi-tenant
+  webhook регресия тест), P4-04 (нов `scripts/verify-schema-parity.mjs` — колони+enum+ИНДЕКСИ dev↔прод),
+  P5-02 (redirect overlay „Пренасочваме те към ePay…"), P5-03 (бадж „Плащаш сега с карта" + submit
+  „Към плащане"), P5-04 (InfoHint clamp 375px). **🔑 verify-schema-parity веднага хвана РЕАЛЕН прод
+  дрифт:** прод `payment_intents_ref_idx` беше още старият `(provider,provider_ref)` → **S1-01/P4-03
+  приложен на прод с ТАРГЕТИРАН SQL** (drop+recreate, прод чист; НЕ `drizzle-kit push` — той щеше да
+  изтрие 3-те `pg_trgm` search индекса, които са само в `setup-search.mjs`); `setup-search.mjs` пуснат
+  и на dev → **parity dev↔прод сега ЧИСТ** (commit `2e437ff`). **ТРАЙНО ПРАВИЛО:** trgm GIN индексите
+  живеят извън `schema.ts` → на прод ползвай таргетиран SQL или пусни `setup-search` след push.
+  **ОСТАВА:** P2-01 (ротирай прод парола+`SUPABASE_SECRET_KEY` — минаха през чата), push на кода +
+  прод деплой (чака Vercel достъп), по решение: P4-02 (shop cascade?), P2-03 (Sentry DSN), P2-04/05.
+  Детайли: [[pre-launch-audits-2026-07-13]], [[prod-environment]].
 
 - **2026-07-13 (PROD СРЕДА ОТДЕЛЯНЕ — В ХОД: прод база готова, чака Vercel достъп)** —
   Отделяме реална production среда от dev (беше една база). Спец
