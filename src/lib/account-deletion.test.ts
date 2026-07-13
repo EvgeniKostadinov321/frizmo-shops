@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confirmNameMatches } from "./account-deletion";
+import { confirmDeleteWord, confirmNameMatches } from "./account-deletion";
 
 describe("confirmNameMatches", () => {
   it("точно съвпадение → true", () =>
@@ -14,4 +14,11 @@ describe("confirmNameMatches", () => {
     expect(confirmNameMatches("   ", "Моят магазин")).toBe(false));
   it("частично съвпадение → false", () =>
     expect(confirmNameMatches("Моят", "Моят магазин")).toBe(false));
+});
+
+describe("confirmDeleteWord", () => {
+  it("приема ИЗТРИЙ (главни)", () => expect(confirmDeleteWord("ИЗТРИЙ")).toBe(true));
+  it("приема с интервали и малки букви", () => expect(confirmDeleteWord("  изтрий ")).toBe(true));
+  it("отхвърля празно", () => expect(confirmDeleteWord("")).toBe(false));
+  it("отхвърля друга дума", () => expect(confirmDeleteWord("изтриване")).toBe(false));
 });

@@ -7,3 +7,11 @@ export function confirmNameMatches(input: string, shopName: string): boolean {
   const trimmed = input.trim();
   return trimmed.length > 0 && trimmed === shopName.trim();
 }
+
+/**
+ * Купувачко изтриване: потвърждението трябва да е думата „ИЗТРИЙ" (регистър и
+ * интервали без значение). Купувачът няма магазин → не ползваме confirmNameMatches.
+ */
+export function confirmDeleteWord(input: string): boolean {
+  return input.trim().toUpperCase() === "ИЗТРИЙ";
+}
