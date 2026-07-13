@@ -15,6 +15,7 @@ import {
 } from "@/lib/cart-storage";
 import { matchZone } from "@/lib/match-zone";
 import { formatPrice } from "@/lib/money";
+import type { PaymentPackage } from "@/lib/payments";
 import { Icon } from "@/components/ui";
 import { CourierOfficePicker } from "@/components/storefront/courier-office-picker";
 import { SfAddressAutocomplete } from "@/components/storefront/sf-address-autocomplete";
@@ -103,6 +104,22 @@ function SfCheckbox({
 
 const inputClass =
   "h-11 w-full rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3 text-(--sf-text) placeholder:text-(--sf-muted)";
+
+/** Auto-submit скрита форма към ePay (redirect за онлайн плащане). */
+function submitEpayForm(epay: PaymentPackage) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = epay.actionUrl;
+  for (const [name, value] of Object.entries(epay.fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
 
 /* Контактните полета се помнят per-магазин: прекъснат checkout / следваща
    поръчка = попълнена форма. Бележката и методите нарочно не се пазят. */
@@ -339,6 +356,12 @@ export function CheckoutForm({
         return;
       }
       clearCart(shopId);
+      /* Онлайн плащане: сървърът върна ePay пакет → auto-submit към ePay (redirect).
+         Иначе (офлайн) → потвърждение на поръчката. */
+      if (result.data.epay) {
+        submitEpayForm(result.data.epay);
+        return;
+      }
       router.push(`${base}/order/${result.data.orderId}?t=${result.data.token}`);
     } catch {
       /* Мрежов срив/timeout: попълненото се пази (localStorage), количката е
