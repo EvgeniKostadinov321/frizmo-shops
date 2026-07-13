@@ -16,11 +16,18 @@ interface AuthFormProps {
   next?: string;
 }
 
-/** Тихи доказателства до маскота — същият език като landing trust лентата. */
-const PROOFS = [
+/** Тихи доказателства до маскота — продавачки (същият език като landing trust лентата). */
+const SELLER_PROOFS = [
   "Без комисиона от продажбите",
   "Готов магазин за минути",
   "30 дни безплатно, плащане след 30 дни",
+];
+
+/** Купувачки доказателства — фокус върху пазаруването, не върху бизнеса. */
+const BUYER_PROOFS = [
+  "Всичките ти поръчки на едно място",
+  "Запазени адреси за бърза поръчка",
+  "Любими продукти, синхронизирани навсякъде",
 ];
 
 export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps) {
@@ -30,10 +37,20 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
      панелната (desktop) и мобилната пчела. */
   const [peeking, setPeeking] = useState(false);
   const isRegister = mode === "register";
-  const beeSrc = peeking ? "/bee-peek.png" : "/bee-wave.png";
   /* Роля от toggle-а. Default „seller" — запазва досегашния (продавачки) екран. */
   const activeRole = role ?? "seller";
   const isBuyer = activeRole === "buyer";
+  /* Маскотът зависи от ролята: купувач → пчела с пазарска кошница; продавач →
+     маха/наднича (както преди). При фокус на паролата „закрива очи" (bee-peek). */
+  const beeSrc = peeking ? "/bee-peek.png" : isBuyer ? "/bee-basket.png" : "/bee-wave.png";
+  const proofs = isBuyer ? BUYER_PROOFS : SELLER_PROOFS;
+  /* Заглавие + подзаглавие на десния панел — различни по роля. */
+  const panelTitle = isBuyer
+    ? "Пазарувай спокойно, всичко е подредено."
+    : "Твоят магазин, готов преди кафето.";
+  const panelSubtitle = isBuyer
+    ? "Следи поръчките си, пази адреси за бърза поръчка и събирай любими продукти — от всеки магазин в Frizmo."
+    : "Собствен онлайн магазин, направен за българския търговец — без хаос, без комисиони, без технически главоболия.";
   const roleHref = (r: "buyer" | "seller") =>
     `/auth/${isRegister ? "register" : "login"}?role=${r}${next ? `&next=${encodeURIComponent(next)}` : ""}`;
   /* Различен глас по роля (kicker + подзаглавие). */
@@ -257,15 +274,12 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
           />
           <div className="flex flex-col gap-4">
             <h2 className="text-balance font-display text-3xl font-extrabold tracking-tight text-brand-surface-ink xl:text-4xl">
-              Твоят магазин, готов преди кафето.
+              {panelTitle}
             </h2>
-            <p className="text-pretty text-brand-surface-muted">
-              Собствен онлайн магазин, направен за българския търговец — без хаос,
-              без комисиони, без технически главоболия.
-            </p>
+            <p className="text-pretty text-brand-surface-muted">{panelSubtitle}</p>
           </div>
           <ul className="flex flex-col gap-3 text-left">
-            {PROOFS.map((proof) => (
+            {proofs.map((proof) => (
               <li
                 key={proof}
                 className="flex items-center gap-3 text-brand-surface-ink"
