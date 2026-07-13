@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/* Купувачески профил: регистрация с роля „купувач" → профил → адрес CRUD.
+/* Купувачески профил (глобален): регистрация с роля „купувач" → глобален /account
+   → адрес CRUD. Старите /s/{slug}/account пътища вече пренасочват към /account.
    Ползва демо магазина atelie-glina (seed-demo-shops.mjs). */
 
 async function markCookieSeen(page: Page) {
@@ -16,25 +17,27 @@ async function registerBuyer(page: Page, email: string) {
   await page.getByLabel("Имейл").fill(email);
   await page.getByLabel("Парола").fill("parola123!");
   await page.getByRole("button", { name: "Регистрирай се" }).click();
-  /* Купувач без магазин и без next → каталог /shops (не dashboard). */
-  await expect(page).toHaveURL(/\/shops/);
+  /* Купувач без магазин и без next → глобален профил /account. */
+  await expect(page).toHaveURL(/\/account/);
 }
 
-test("регистрация като купувач → профил е достъпен", async ({ page }) => {
+test("регистрация като купувач → глобален профил е достъпен", async ({ page }) => {
   test.setTimeout(120_000);
   await registerBuyer(page, `frizmo.e2e+buyer${Date.now()}@gmail.com`);
 
-  /* Профилът живее в контекста на магазин. */
-  await page.goto("/s/atelie-glina/account");
   await expect(page.getByRole("heading", { name: /Здравей/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Поръчки", exact: true })).toBeVisible();
+
+  /* Старият storefront профил пренасочва към глобалния. */
+  await page.goto("/s/atelie-glina/account");
+  await expect(page).toHaveURL(/\/account$/);
 });
 
 test("адрес CRUD в профила", async ({ page }) => {
   test.setTimeout(120_000);
   await registerBuyer(page, `frizmo.e2e+addr${Date.now()}@gmail.com`);
 
-  await page.goto("/s/atelie-glina/account/addresses");
+  await page.goto("/account/addresses");
   await expect(page.getByText("Още нямаш запазени адреси.")).toBeVisible();
 
   /* Добавяне през drawer. */
