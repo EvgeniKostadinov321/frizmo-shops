@@ -10,6 +10,7 @@ export { ConfirmDialog } from "./confirm-dialog";
 export { Drawer } from "./drawer";
 export { EmptyState } from "./empty-state";
 export { FlagBg, Icon, type IconName } from "./icon";
+export { InfoHint } from "./info-hint";
 export { Input } from "./input";
 export { Logo } from "./logo";
 export { LinkButton } from "./link-button";

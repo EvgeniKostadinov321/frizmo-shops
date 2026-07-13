@@ -1,6 +1,6 @@
 "use client"; // useId е hook — компонентът трябва да е client
 
-import { useId, type InputHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes, type ReactNode } from "react";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -9,6 +9,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   suffix?: string;
   /** Скрива label-а визуално (остава за screen readers) — за плътни таблици. */
   hideLabel?: boolean;
+  /** Съдържание след етикета на същия ред (напр. InfoHint икона). */
+  labelSuffix?: ReactNode;
 }
 
 export function Input({
@@ -17,6 +19,7 @@ export function Input({
   hint,
   suffix,
   hideLabel = false,
+  labelSuffix,
   className = "",
   id,
   ...props
@@ -27,14 +30,18 @@ export function Input({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className={hideLabel ? "sr-only" : "text-sm font-medium text-ink-900"}>
+      <span
+        className={
+          hideLabel ? "sr-only" : "flex items-center gap-1.5 text-sm font-medium text-ink-900"
+        }
+      >
         <label htmlFor={inputId}>{label}</label>
         {props.required && (
           <span aria-hidden className="text-danger-600">
-            {" "}
             *
           </span>
         )}
+        {labelSuffix}
       </span>
       <div className="relative">
         <input

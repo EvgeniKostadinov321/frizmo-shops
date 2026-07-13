@@ -9,7 +9,7 @@ import {
   testCourierConnection,
 } from "@/actions/couriers";
 import type { ShopCourierAccount } from "@/db";
-import { Badge, Button, Card, ConfirmDialog, Drawer, Input } from "@/components/ui";
+import { Badge, Button, Card, ConfirmDialog, Drawer, InfoHint, Input } from "@/components/ui";
 
 type Provider = "econt" | "speedy";
 
@@ -143,6 +143,16 @@ function CourierDrawer({
 }) {
   const [saving, setSaving] = useState(false);
   const name = provider === "econt" ? "Еконт" : "Спиди";
+  /* Пояснения за API креденшълите — това НЕ е обикновен вход, а достъп до API-то
+     на куриера (различен от паролата за уебсайта им). */
+  const usernameHint =
+    provider === "econt"
+      ? "Потребителското име за интеграция от e-Econt (Настройки → Интеграция / API). Различно е от логина за сайта на Еконт."
+      : "Потребителят за Speedy API — заявява се от api.registration@speedy.bg (не е паролата за онлайн клиента на Спиди).";
+  const passwordHint =
+    provider === "econt"
+      ? "Паролата (или токенът) към същия e-Econt API достъп. С нея генерираме товарителници от твое име."
+      : "Паролата/токенът към Speedy API акаунта. С нея генерираме товарителници от твое име.";
 
   async function save(formData: FormData) {
     setSaving(true);
@@ -169,6 +179,7 @@ function CourierDrawer({
           autoComplete="off"
           required
           placeholder={account ? "•••• (запазен — въведи наново за промяна)" : ""}
+          labelSuffix={<InfoHint label={usernameHint} ariaLabel="Какво е това потребителско име?" />}
         />
         <Input
           label="Парола / токен"
@@ -177,6 +188,7 @@ function CourierDrawer({
           autoComplete="new-password"
           required
           placeholder={account ? "•••• (запазен)" : ""}
+          labelSuffix={<InfoHint label={passwordHint} ariaLabel="Каква парола/токен?" />}
         />
         <div className="h-px bg-surface-200" />
         <p className="text-sm font-medium text-ink-700">Данни на подателя (за товарителницата)</p>
