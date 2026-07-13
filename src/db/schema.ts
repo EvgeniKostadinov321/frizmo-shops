@@ -836,9 +836,29 @@ export const buyerFavorites = pgTable(
   ],
 ).enableRLS();
 
+/* S3-глобален: любими МАГАЗИНИ per-акаунт (по аналогия с buyerFavorites за продукти). */
+export const buyerFavoriteShops = pgTable(
+  "buyer_favorite_shops",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("buyer_favorite_shops_uid").on(t.buyerId, t.shopId),
+    index("buyer_favorite_shops_buyer_idx").on(t.buyerId),
+  ],
+).enableRLS();
+
 export type Profile = typeof profiles.$inferSelect;
 export type BuyerAddress = typeof buyerAddresses.$inferSelect;
 export type BuyerFavorite = typeof buyerFavorites.$inferSelect;
+export type BuyerFavoriteShop = typeof buyerFavoriteShops.$inferSelect;
 export type Shop = typeof shops.$inferSelect;
 export type SiteSettingsRow = typeof siteSettings.$inferSelect;
 export type ShippingMethod = typeof shippingMethods.$inferSelect;
