@@ -9,12 +9,14 @@ import {
   db,
   orderItems,
   orders,
+  paymentIntents,
   paymentMethods,
   products,
   productVariants,
   referrals,
   shippingMethods,
   shippingZones,
+  shopPaymentAccounts,
   shops,
 } from "@/db";
 import { clientIp } from "@/actions/cart";
@@ -31,6 +33,8 @@ import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@
 import { parseBgPhone } from "@/lib/phone";
 import { parseOrderNumber } from "@/lib/order-number";
 import { isShopActive } from "@/lib/plan";
+import { type PaymentCreds, type PaymentPackage } from "@/lib/payments";
+import { buildEpayForOrder } from "@/lib/payments/build-order-package";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
 import { sendNewOrderPush, sendPushToUser } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -138,7 +142,7 @@ async function insertOrderWithNumber(
 export async function createOrder(
   shopSlug: string,
   rawInput: unknown,
-): Promise<ActionResult<{ orderId: string; token: string }>> {
+): Promise<ActionResult<{ orderId: string; token: string; epay?: PaymentPackage }>> {
   const parsed = orderSchema.safeParse(rawInput);
   if (!parsed.success) return zodFail(parsed.error);
   const input = parsed.data;
@@ -231,6 +235,21 @@ export async function createOrder(
   /* Логнат купувач → закачаме поръчката към акаунта му (гост → null, както преди). */
   const supabase = await createSupabaseServer();
   const buyerId = await resolveBuyerId(supabase);
+
+  /* Онлайн плащане: магазинът трябва да има свързан активен ePay акаунт. */
+  let epayCreds: PaymentCreds | null = null;
+  if (payment.type === "online_card") {
+    const acct = await db.query.shopPaymentAccounts.findFirst({
+      where: and(
+        eq(shopPaymentAccounts.shopId, shop.id),
+        eq(shopPaymentAccounts.provider, "epay"),
+      ),
+    });
+    if (!acct || !acct.active) {
+      return fail("Плащането с карта не е налично за този магазин в момента.");
+    }
+    epayCreds = acct.credentials as PaymentCreds;
+  }
 
   let created: {
     orderId: string;
@@ -349,6 +368,8 @@ export async function createOrder(
           totalCents: cart.totalCents,
           idempotencyKey: input.idempotencyKey ?? null,
           buyerId,
+          /* Онлайн: поръчката чака плащане (webhook я потвърждава); офлайн → „new". */
+          status: payment.type === "online_card" ? "pending_payment" : "new",
           /* Куриерски снапшот — за товарителницата после (null за не-куриерски методи). */
           courierProvider: shipping.courierProvider ?? null,
           courierOfficeId: input.courierOfficeId || null,
@@ -356,6 +377,16 @@ export async function createOrder(
         },
         cart.lines,
       );
+      /* Онлайн: създай плащане-намерение (одит + идемпотентност на webhook-а). */
+      if (payment.type === "online_card") {
+        await tx.insert(paymentIntents).values({
+          orderId: inserted.orderId,
+          shopId: shop.id,
+          provider: "epay",
+          providerRef: String(inserted.orderNumber),
+          amountCents: cart.totalCents,
+        });
+      }
       return { ...inserted, cart, giftWrap, giftCard, giftWrapFeeCents };
     });
   } catch (error) {
@@ -379,6 +410,36 @@ export async function createOrder(
     }
     console.error("createOrder се провали:", error);
     return fail("Поръчката не можа да бъде създадена. Опитай отново.");
+  }
+
+  /* Онлайн (pending): генерирай ePay пакета и го върни; известията изчакват
+     потвърждението от webhook-а (иначе търговецът получава „нова поръчка" за нещо
+     неплатено). Пакетът е чиста функция върху creds на магазина — не пипа базата.
+     Гръмне ли (липсващ/невалиден secret) → поръчката остава pending_payment и cron-ът
+     ще я auto-cancel-не + върне наличността; купувачът получава грешка, не е таксуван. */
+  if (epayCreds) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://frizmo-shops.vercel.app";
+    const apiBase = process.env.EPAY_API_BASE ?? "https://www.epay.bg";
+    let epay: PaymentPackage;
+    try {
+      epay = buildEpayForOrder({
+        slug: shop.slug,
+        orderId: created.orderId,
+        orderNumber: created.orderNumber,
+        totalCents: created.cart.totalCents,
+        shopName: shop.name,
+        creds: epayCreds,
+        siteUrl,
+        apiBase,
+      });
+    } catch (e) {
+      console.error(
+        JSON.stringify({ scope: "epay-build", orderId: created.orderId, error: String(e) }),
+      );
+      return fail("Плащането не можа да се стартира. Опитай пак.");
+    }
+    revalidatePath("/dashboard/orders");
+    return ok({ orderId: created.orderId, token: created.publicToken, epay });
   }
 
   /* Известията не блокират отговора към купувача. */
