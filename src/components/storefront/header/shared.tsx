@@ -350,11 +350,9 @@ export function MenuButton({ onOpen, expanded }: { onOpen: () => void; expanded:
   );
 }
 
-/** S3: профил икона в хедъра. Логнат → акаунт табло; гост → вход (с връщане към акаунта). */
-export function AccountButton({ base, loggedIn }: { base: string; loggedIn: boolean }) {
-  const href = loggedIn
-    ? `${base}/account`
-    : `/auth/login?role=buyer&next=${encodeURIComponent(`${base}/account`)}`;
+/** S3-глобален: профил икона в хедъра → глобалният /account (не per-магазин). */
+export function AccountButton({ loggedIn }: { base?: string; loggedIn: boolean }) {
+  const href = loggedIn ? "/account" : "/auth/login?role=buyer&next=/account";
   return (
     <Link
       href={href}
