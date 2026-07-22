@@ -90,6 +90,33 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (`842b440` dev+main/PROD) — made-to-order cap фикс + монетизационен спец + build hardening + прод env.**
+  **НАПРАВЕНО и ТЕСТВАНО (на прод):** (1) **Made-to-order cap фикс** — таванът броеше редове
+  (order_items), сега брои **БРОЙКИ**: `sumActiveMadeToOrderQty` (`src/db/queries/orders.ts:80-96`,
+  `coalesce(sum(quantity),0)` под FOR UPDATE лок) + гард `active + qty > cap`. Регресия в
+  `verify-order-concurrency.mjs` (1 поръчка 4бр при таван 3 → отказ). `88744cf`. (2) **Made-to-order**
+  цялата вертикала вече на **main (prod)** — беше само на dev. (3) **Auth chosenRole** на прод
+  (`7c94f28`). (4) **Хедър едно сърце** + видим „Изход" за купувачи на прод (`72de3ca`,`a593e2e`,`062a6fa`).
+  (5) **Build фикс** — `next.config.ts` устойчив на празна `NEXT_PUBLIC_SUPABASE_URL` (`?.trim()`+try/catch,
+  `next.config.ts:6-15`); прод билдът гърмеше с `ERR_INVALID_URL` от празна env var. `842b440`.
+  478 теста зелени, gate чист. Git: `main`==`dev`==`842b440`, синхронизирани.
+  **РЕШЕНИЕ — Монетизация (СПЕЦ готов, план НЕ, имплементация ОТЛОЖЕНА):**
+  `docs/superpowers/specs/2026-07-23-transaction-fee-monetization-design.md` (`f699ac4`,`ad36074`).
+  Смяна от flat абонамент → **безплатен вход + такса на транзакция**, месечна фактура (Модел А —
+  парите НЕ минават през нас). Заключено: **5%** + мин **0.30€** + таван **50€**; база
+  **subtotal−discount** (само стоката); **без планове** (`plan.ts` се изтрива → `selling-gate.ts`
+  +`fees.ts`); таксуема при `completed` + авто-completed на 30 дни; кредит при връщане (immutable
+  `fee_events` ledger); **авто-теглене** от карта (Stripe `charge_automatically`); **card-gate** —
+  карта се иска чак СЛЕД първата завършена продажба; grace 14 дни. ADR още НЕ написан.
+  **ENV SPLIT УРОК (важно):** при env split прод копията паднаха на дължина 0 → билд гърми.
+  Създадени готови за импорт файлове: **`.env-import/.env.dev`** (изцяло готов) +
+  **`.env-import/.env.prod`** (3 Frankfurt тайни за попълване) — папката е в `.gitignore`.
+  **ОСТАВА:** (а) утре — импорт на env файловете (dev+prod, през Git Bash файл-stdin, не PowerShell pipe);
+  (б) `db:push` на made-to-order/auth колоните към прод Frankfurt база (таргетиран SQL, НЕ drizzle push —
+  пази pg_trgm индексите; провери с `verify-schema-parity.mjs`); (в) DNS пропагация → Refresh →
+  redeploy → жив тест от 0; (г) билинг имплементация (план→ADR→код, отделна сесия); (д) отложени:
+  P2-01 ротация, почистване стар акаунт/дубликат, реални ключове куриери/ePay, Stripe live.
+
 - **2026-07-22 (AUTH/РОЛЯ ПРЕРАБОТКА — контекстно-базирана роля, dual-role акаунт)** —
   Потребителят откри реален конфликт: dual-role акаунт (един user = owner на магазин + купувач)
   → изборът „Пазарувам" при вход се игнорираше, вкарваше в dashboard. Диагностика с **2 workflow-а
