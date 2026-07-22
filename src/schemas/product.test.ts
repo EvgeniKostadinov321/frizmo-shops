@@ -48,25 +48,59 @@ describe("productSchema — ръчна изработка (made-to-order)", () =
     expect(r.success && r.data.madeToOrder).toBe(false);
   });
   it("включено без lead дни → грешка", () =>
-    expect(parse({ madeToOrder: true, leadDaysMin: "", leadDaysMax: "" }).success).toBe(false));
-  it("включено с валиден диапазон → ОК", () =>
-    expect(parse({ madeToOrder: true, leadDaysMin: "10", leadDaysMax: "14" }).success).toBe(true));
+    expect(parse({ madeToOrder: true, stock: "0", leadDaysMin: "", leadDaysMax: "" }).success).toBe(
+      false,
+    ));
+  it("включено с валиден диапазон + stock → ОК", () =>
+    expect(
+      parse({ madeToOrder: true, stock: "0", leadDaysMin: "10", leadDaysMax: "14" }).success,
+    ).toBe(true));
+  it("включено БЕЗ stock (null) → грешка (guard срещу тих no-op)", () =>
+    expect(parse({ madeToOrder: true, leadDaysMin: "10", leadDaysMax: "14" }).success).toBe(false));
+  it("включено със stock>0 (готови + по изработка) → ОК", () =>
+    expect(
+      parse({ madeToOrder: true, stock: "5", leadDaysMin: "10", leadDaysMax: "14" }).success,
+    ).toBe(true));
   it("min > max → грешка", () =>
-    expect(parse({ madeToOrder: true, leadDaysMin: "14", leadDaysMax: "10" }).success).toBe(false));
+    expect(
+      parse({ madeToOrder: true, stock: "0", leadDaysMin: "14", leadDaysMax: "10" }).success,
+    ).toBe(false));
   it("min = max → ОК", () =>
-    expect(parse({ madeToOrder: true, leadDaysMin: "7", leadDaysMax: "7" }).success).toBe(true));
+    expect(
+      parse({ madeToOrder: true, stock: "0", leadDaysMin: "7", leadDaysMax: "7" }).success,
+    ).toBe(true));
   it("таван 0 → грешка", () =>
     expect(
-      parse({ madeToOrder: true, leadDaysMin: "5", leadDaysMax: "7", madeToOrderCap: "0" }).success,
+      parse({
+        madeToOrder: true,
+        stock: "0",
+        leadDaysMin: "5",
+        leadDaysMax: "7",
+        madeToOrderCap: "0",
+      }).success,
     ).toBe(false));
   it("таван празен → ОК (неограничено)", () =>
     expect(
-      parse({ madeToOrder: true, leadDaysMin: "5", leadDaysMax: "7", madeToOrderCap: "" }).success,
+      parse({
+        madeToOrder: true,
+        stock: "0",
+        leadDaysMin: "5",
+        leadDaysMax: "7",
+        madeToOrderCap: "",
+      }).success,
     ).toBe(true));
   it("таван 5 → ОК", () =>
     expect(
-      parse({ madeToOrder: true, leadDaysMin: "5", leadDaysMax: "7", madeToOrderCap: "5" }).success,
+      parse({
+        madeToOrder: true,
+        stock: "0",
+        leadDaysMin: "5",
+        leadDaysMax: "7",
+        madeToOrderCap: "5",
+      }).success,
     ).toBe(true));
   it("над 365 дни → грешка", () =>
-    expect(parse({ madeToOrder: true, leadDaysMin: "1", leadDaysMax: "400" }).success).toBe(false));
+    expect(
+      parse({ madeToOrder: true, stock: "0", leadDaysMin: "1", leadDaysMax: "400" }).success,
+    ).toBe(false));
 });

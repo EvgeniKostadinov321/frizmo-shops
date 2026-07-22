@@ -13,6 +13,8 @@ export interface FeedProduct {
   priceCents: number;
   promoPriceCents: number | null;
   stock: number | null;
+  /** Ръчна изработка: при изчерпан stock приема поръчки по изработка → in_stock. */
+  madeToOrder: boolean;
   images: string[];
   weightGrams: number | null;
   categoryId: string | null;
@@ -53,7 +55,9 @@ export function buildProductFeed(
       skippedNoImage++;
       continue;
     }
-    const inStock = p.stock === null || p.stock > 0;
+    /* Ръчна изработка приема поръчки дори при stock=0 → in_stock (не спираме рекламата
+       за точно продуктите, които търговецът иска да продава по заявка). */
+    const inStock = p.stock === null || p.stock > 0 || p.madeToOrder;
     const lines: string[] = [
       `<g:id>${escapeXml(p.id)}</g:id>`,
       `<g:title>${escapeXml(p.name)}</g:title>`,

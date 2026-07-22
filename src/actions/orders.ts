@@ -709,6 +709,9 @@ export async function restoreStock(tx: Tx, orderId: string) {
   const items = await tx.query.orderItems.findMany({ where: eq(orderItems.orderId, orderId) });
   for (const item of items) {
     if (!item.productId) continue;
+    /* Ред „по изработка" никога не е декрементирал наличност (беше 0/недостатъчна →
+       нова изработка) → не връщаме нищо, иначе продуктът получава фантомен склад. */
+    if (item.madeToOrder) continue;
     if (item.variantKey) {
       const variants = await tx.query.productVariants.findMany({
         where: eq(productVariants.productId, item.productId),

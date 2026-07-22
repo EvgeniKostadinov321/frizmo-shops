@@ -128,8 +128,18 @@ export const productSchema = z.object({
   /* Таван на опашката по изработка; празно = неограничено. */
   madeToOrderCap: optionalCap.default(""),
 }).superRefine((data, ctx) => {
-  /* Когато ръчната изработка е включена — срокът е задължителен и min ≤ max. */
+  /* Когато ръчната изработка е включена — срокът е задължителен, min ≤ max, и
+     наличността ТРЯБВА да се следи (числов stock). При stock=null (не се следи)
+     made-to-order логиката е тиха — продуктът е винаги „наличен", cap-ът и срокът
+     никога не се прилагат. Guard-ът пречи на този тих no-op. */
   if (data.madeToOrder) {
+    if (data.stock === "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["stock"],
+        message: "За ръчна изработка задай наличност (напр. 0, ако нямаш готови бройки)",
+      });
+    }
     const { leadDaysMin: min, leadDaysMax: max } = data;
     if (min === "" || max === "") {
       ctx.addIssue({ code: "custom", path: ["leadDaysMin"], message: "Задай срок за изработка" });

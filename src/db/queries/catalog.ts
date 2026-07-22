@@ -145,8 +145,11 @@ export async function searchCatalogProducts(filters: CatalogProductFilters = {})
     conditions.push(sql`${PRODUCT_EFFECTIVE_PRICE} >= ${filters.minPrice}`);
   if (filters.maxPrice !== undefined)
     conditions.push(sql`${PRODUCT_EFFECTIVE_PRICE} <= ${filters.maxPrice}`);
+  /* „В наличност" включва и ръчна изработка (приема поръчки дори при stock=0). */
   if (filters.inStock)
-    conditions.push(sql`(${products.stock} is null or ${products.stock} > 0)`);
+    conditions.push(
+      sql`(${products.stock} is null or ${products.stock} > 0 or ${products.madeToOrder})`,
+    );
   const where = and(...conditions);
 
   const [rows, [total]] = await Promise.all([

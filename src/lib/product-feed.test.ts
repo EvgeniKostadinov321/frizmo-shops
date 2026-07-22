@@ -14,6 +14,7 @@ function product(overrides: Partial<FeedProduct> = {}): FeedProduct {
     priceCents: 1250,
     promoPriceCents: null,
     stock: null,
+    madeToOrder: false,
     images: ["shops/s1/products/a.jpg"],
     weightGrams: null,
     categoryId: null,
@@ -64,6 +65,12 @@ describe("buildProductFeed", () => {
     expect(buildProductFeed(shop, [product({ stock: null })], cats, BASE)).toContain(
       "<g:availability>in_stock</g:availability>",
     );
+  });
+
+  it("ръчна изработка при stock=0 → in_stock (приема поръчки)", () => {
+    expect(
+      buildProductFeed(shop, [product({ stock: 0, madeToOrder: true })], cats, BASE),
+    ).toContain("<g:availability>in_stock</g:availability>");
   });
 
   it("shipping_weight само при тегло", () => {

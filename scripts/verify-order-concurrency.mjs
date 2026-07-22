@@ -161,6 +161,25 @@ async function main() {
         accepted === 1,
         `приети: ${accepted}`,
       );
+
+      /* restoreStock не бива да връща наличност за made-to-order ред (тя никога не е
+         декрементирана). Симулираме логиката: guard-ът пропуска made_to_order редове. */
+      await sql.begin(async (tx) => {
+        const rows = await tx`
+          select product_id, quantity, made_to_order, variant_key
+          from order_items where order_id in ${sql(mtoOrderIds)}`;
+        for (const it of rows) {
+          if (it.made_to_order) continue; // <-- guard-ът, който добавихме
+          await tx`update products set stock = case when stock is null then null
+            else stock + ${it.quantity} end where id = ${it.product_id}`;
+        }
+      });
+      const [{ stock: mtoStock }] = await sql`select stock from products where id = ${mtoProductId}`;
+      check(
+        "restoreStock: made-to-order ред НЕ връща фантомна наличност (stock остава 0)",
+        Number(mtoStock) === 0,
+        `stock=${mtoStock}`,
+      );
     } finally {
       for (const id of mtoOrderIds) await sql`delete from orders where id = ${id}`;
       await sql`delete from products where id = ${mtoProductId}`;

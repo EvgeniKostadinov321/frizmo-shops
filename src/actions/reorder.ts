@@ -59,6 +59,7 @@ export async function reorderToCart(
       productExists: !!product,
       productActive: product?.status === "active",
       stock: product?.stock ?? null,
+      madeToOrder: product?.madeToOrder ?? false,
     });
     if (line) lines.push(line);
     else skipped.push(item.productName);

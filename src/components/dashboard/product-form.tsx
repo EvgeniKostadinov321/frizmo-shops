@@ -492,17 +492,18 @@ export function ProductForm({
             </p>
           </div>
 
-          <Input
-            label="Максимум поръчки в опашка (по избор)"
-            type="number"
-            min={1}
-            inputMode="numeric"
-            value={madeToOrderCap}
-            onChange={(e) => setMadeToOrderCap(e.target.value)}
-            error={fieldErrors.madeToOrderCap}
-            hint="Празно = без ограничение. Спира приема, ако едновременните поръчки по изработка достигнат това число — за да не се презапишеш."
-            className="sm:max-w-xs"
-          />
+          <div className="sm:max-w-xs">
+            <Input
+              label="Максимум поръчки в опашка (по избор)"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={madeToOrderCap}
+              onChange={(e) => setMadeToOrderCap(e.target.value)}
+              error={fieldErrors.madeToOrderCap}
+              hint="Празно = без ограничение. Спира приема, ако едновременните поръчки по изработка достигнат това число — за да не се презапишеш."
+            />
+          </div>
         </div>
       )}
     </Card>

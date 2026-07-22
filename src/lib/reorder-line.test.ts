@@ -30,4 +30,11 @@ describe("resolveReorderLine", () => {
       quantity: 1,
     });
   });
+  it("ръчна изработка при stock=0 → НЕ се скипва (пълно количество)", () => {
+    expect(resolveReorderLine({ ...base, stock: 0, madeToOrder: true })).toEqual({
+      productId: "p1",
+      variantKey: null,
+      quantity: base.quantity,
+    });
+  });
 });

@@ -117,7 +117,11 @@ export async function getActiveProducts(
   }
   if (filters.minPrice !== undefined) conditions.push(sql`${EFFECTIVE_PRICE} >= ${filters.minPrice}`);
   if (filters.maxPrice !== undefined) conditions.push(sql`${EFFECTIVE_PRICE} <= ${filters.maxPrice}`);
-  if (filters.inStock) conditions.push(sql`(${products.stock} is null or ${products.stock} > 0)`);
+  /* „В наличност" включва и ръчна изработка (приема поръчки дори при stock=0). */
+  if (filters.inStock)
+    conditions.push(
+      sql`(${products.stock} is null or ${products.stock} > 0 or ${products.madeToOrder})`,
+    );
   const where = and(...conditions);
 
   /* Сортиране по обявената цена (промо не участва — колонна заявка, без CASE). */
@@ -315,6 +319,7 @@ export async function getFeedProducts(shopId: string) {
       priceCents: true,
       promoPriceCents: true,
       stock: true,
+      madeToOrder: true,
       images: true,
       weightGrams: true,
       categoryId: true,
