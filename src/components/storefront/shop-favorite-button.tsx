@@ -38,7 +38,9 @@ export function ShopFavoriteButton({
       }}
       className="flex size-11 shrink-0 items-center justify-center rounded-(--sf-radius) text-current transition-opacity hover:opacity-70"
     >
-      <Icon name="heart" size={22} className={fav ? "fill-current" : ""} />
+      {/* „Любим магазин" ползва икона на магазин (не сърце) — за да не се бърка с
+          „любими продукти" (сърцето с брояч до него в хедъра). */}
+      <Icon name="store" size={22} className={fav ? "fill-current" : ""} />
     </button>
   );
 }

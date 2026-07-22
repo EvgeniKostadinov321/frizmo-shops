@@ -464,6 +464,31 @@ export function ProductForm({
 
       {madeToOrder && (
         <div className="flex flex-col gap-4 border-t border-surface-200 pt-4">
+          {/* Наличността е в таб „Цена", а грешката се показва там → тук показваме
+              ясно каква е нужна, за да не търси потребителят причината в друг таб. */}
+          <div className="flex items-start gap-2 rounded-control bg-surface-50 px-3 py-2.5 text-sm">
+            <Icon name="sparkles" size={16} className="mt-0.5 shrink-0 text-ink-400" />
+            <span className="text-ink-600">
+              {stock === "" ? (
+                <>
+                  <span className="font-medium text-ink-900">Задай наличност в таб „Цена“.</span>{" "}
+                  Сложи бройката готови продукти (или <span className="font-medium">0</span>, ако
+                  нямаш готови — тогава всяка поръчка се изработва).
+                </>
+              ) : Number(stock) === 0 ? (
+                <>
+                  Наличност <span className="font-medium text-ink-900">0</span> — всяка поръчка ще
+                  се изработва по заявка.
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-ink-900">{stock} готови</span> — първо се
+                  продават те, после поръчките минават на изработка.
+                </>
+              )}
+            </span>
+          </div>
+
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-ink-900">Срок за изработка (дни)</span>
             <div className="flex items-end gap-3 sm:max-w-xs">
