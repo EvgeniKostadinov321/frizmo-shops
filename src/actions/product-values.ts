@@ -27,6 +27,12 @@ export function productValues(input: ProductInput, shopId: string) {
     seoTitle: input.seoTitle ? sanitizeText(input.seoTitle, 60) : null,
     seoDescription: input.seoDescription ? sanitizeText(input.seoDescription, 160) : null,
     sizeGuideId: input.sizeGuideId || null,
+    /* Ръчна изработка: срокът/таванът важат само когато е включена (иначе null). */
+    madeToOrder: input.madeToOrder,
+    leadDaysMin: input.madeToOrder && input.leadDaysMin !== "" ? input.leadDaysMin : null,
+    leadDaysMax: input.madeToOrder && input.leadDaysMax !== "" ? input.leadDaysMax : null,
+    madeToOrderCap:
+      input.madeToOrder && input.madeToOrderCap !== "" ? input.madeToOrderCap : null,
     updatedAt: new Date(),
   };
 }

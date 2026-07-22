@@ -14,6 +14,7 @@ import {
   Card,
   Checkbox,
   Icon,
+  InfoHint,
   Input,
   LinkButton,
   PriceInput,
@@ -57,6 +58,10 @@ export interface ProductFormInitial {
   seoTitle: string;
   seoDescription: string;
   sizeGuideId: string;
+  madeToOrder: boolean;
+  leadDaysMin: string;
+  leadDaysMax: string;
+  madeToOrderCap: string;
 }
 
 interface ProductFormProps {
@@ -97,6 +102,10 @@ const emptyInitial: ProductFormInitial = {
   seoTitle: "",
   seoDescription: "",
   sizeGuideId: "",
+  madeToOrder: false,
+  leadDaysMin: "",
+  leadDaysMax: "",
+  madeToOrderCap: "",
 };
 
 export function ProductForm({
@@ -125,6 +134,10 @@ export function ProductForm({
   const [length, setLength] = useState(initial.length);
   const [width, setWidth] = useState(initial.width);
   const [height, setHeight] = useState(initial.height);
+  const [madeToOrder, setMadeToOrder] = useState(initial.madeToOrder);
+  const [leadDaysMin, setLeadDaysMin] = useState(initial.leadDaysMin);
+  const [leadDaysMax, setLeadDaysMax] = useState(initial.leadDaysMax);
+  const [madeToOrderCap, setMadeToOrderCap] = useState(initial.madeToOrderCap);
   const [netQuantityValue, setNetQuantityValue] = useState(initial.netQuantityValue);
   const [netQuantityUnit, setNetQuantityUnit] = useState(initial.netQuantityUnit);
   const [sku, setSku] = useState(initial.sku);
@@ -150,7 +163,7 @@ export function ProductForm({
     name, description, categoryId, price, promoPrice, stock, active, images,
     attributes, axes, variants, deal, weight, length, width, height,
     netQuantityValue, netQuantityUnit, sku, gtin, brand, cost, seoTitle,
-    seoDescription, sizeGuideId,
+    seoDescription, sizeGuideId, madeToOrder, leadDaysMin, leadDaysMax, madeToOrderCap,
   };
   const initialSnapshot = {
     name: initial.name, description: initial.description, categoryId: initial.categoryId,
@@ -161,7 +174,9 @@ export function ProductForm({
     netQuantityValue: initial.netQuantityValue, netQuantityUnit: initial.netQuantityUnit,
     sku: initial.sku, gtin: initial.gtin, brand: initial.brand, cost: initial.cost,
     seoTitle: initial.seoTitle, seoDescription: initial.seoDescription,
-    sizeGuideId: initial.sizeGuideId,
+    sizeGuideId: initial.sizeGuideId, madeToOrder: initial.madeToOrder,
+    leadDaysMin: initial.leadDaysMin, leadDaysMax: initial.leadDaysMax,
+    madeToOrderCap: initial.madeToOrderCap,
   };
   const dirty = !productId || isDirty(current, initialSnapshot);
 
@@ -221,6 +236,10 @@ export function ProductForm({
         seoTitle,
         seoDescription,
         sizeGuideId,
+        madeToOrder,
+        leadDaysMin,
+        leadDaysMax,
+        madeToOrderCap,
       });
 
       if (!result.ok) {
@@ -418,6 +437,74 @@ export function ProductForm({
           Нетно съдържание — това вижда клиентът (напр. 500 мл, 250 г, 1 кг).
         </p>
       </div>
+    </Card>
+  );
+
+  const cardMadeToOrder = (
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <span className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-ink-900">Ръчна изработка</h2>
+          <InfoHint
+            ariaLabel="Какво е ръчна изработка"
+            label="Приемай поръчки дори когато готовите бройки свършат. Купувачът вижда, че продуктът се изработва специално за него, и колко време отнема."
+          />
+        </span>
+        <p className="text-sm text-ink-500">
+          За продукти, които правиш на ръка. Когато наличността свърши, магазинът
+          продължава да приема поръчки „по изработка“ — вместо да показва „изчерпано“.
+        </p>
+      </div>
+
+      <Checkbox
+        label="Приемай поръчки по изработка при изчерпване"
+        checked={madeToOrder}
+        onChange={(e) => setMadeToOrder(e.target.checked)}
+      />
+
+      {madeToOrder && (
+        <div className="flex flex-col gap-4 border-t border-surface-200 pt-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-ink-900">Срок за изработка (дни)</span>
+            <div className="flex items-end gap-3 sm:max-w-xs">
+              <Input
+                label="От"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={leadDaysMin}
+                onChange={(e) => setLeadDaysMin(e.target.value)}
+                error={fieldErrors.leadDaysMin}
+              />
+              <span className="pb-3 text-ink-400">–</span>
+              <Input
+                label="До"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={leadDaysMax}
+                onChange={(e) => setLeadDaysMax(e.target.value)}
+                error={fieldErrors.leadDaysMax}
+              />
+            </div>
+            <p className="text-sm text-ink-500">
+              Купувачът вижда „очаквайте {leadDaysMin || "10"}–{leadDaysMax || "14"} дни“.
+            </p>
+          </div>
+
+          <Input
+            label="Максимум поръчки в опашка (по избор)"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={madeToOrderCap}
+            onChange={(e) => setMadeToOrderCap(e.target.value)}
+            error={fieldErrors.madeToOrderCap}
+            hint="Празно = без ограничение. Спира приема, ако едновременните поръчки по изработка достигнат това число — за да не се презапишеш."
+            className="sm:max-w-xs"
+          />
+        </div>
+      )}
     </Card>
   );
 
@@ -635,6 +722,7 @@ export function ProductForm({
           <TabPanel tabKey="logistics">
             <div className="flex flex-col gap-4">
               {cardWeight}
+              {cardMadeToOrder}
               {showAdvanced && cardSizeGuide}
             </div>
           </TabPanel>

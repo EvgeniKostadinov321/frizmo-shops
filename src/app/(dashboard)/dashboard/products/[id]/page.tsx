@@ -73,6 +73,10 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           seoTitle: product.seoTitle ?? "",
           seoDescription: product.seoDescription ?? "",
           sizeGuideId: product.sizeGuideId ?? "",
+          madeToOrder: product.madeToOrder,
+          leadDaysMin: product.leadDaysMin !== null ? String(product.leadDaysMin) : "",
+          leadDaysMax: product.leadDaysMax !== null ? String(product.leadDaysMax) : "",
+          madeToOrderCap: product.madeToOrderCap !== null ? String(product.madeToOrderCap) : "",
         }}
       />
     </div>
