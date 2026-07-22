@@ -17,7 +17,6 @@ import {
   useIsCurrent,
 } from "./shared";
 import { NavOverflow } from "./nav-overflow";
-import { ShopFavoriteButton } from "../shop-favorite-button";
 
 /**
  * Вариант 1 — Inline: лого вляво, навигация вдясно. Прозрачен върху hero
@@ -30,7 +29,6 @@ export function HeaderVariant1({
   rootCategories = [],
   heroOverlay = false,
   viewerLoggedIn = false,
-  shopFavorited = false,
 }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
   const nav = buildNav(base, rootCategories, settings.navLinks);
@@ -62,7 +60,6 @@ export function HeaderVariant1({
           ))}
           <NavOverflow items={overflow} />
           <HeaderSearch base={base} />
-          <ShopFavoriteButton shopId={shop.id} initialFavorited={shopFavorited} loggedIn={viewerLoggedIn} />
           <AccountButton loggedIn={viewerLoggedIn} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />

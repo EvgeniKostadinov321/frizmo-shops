@@ -17,7 +17,6 @@ import {
   useIsCurrent,
 } from "./shared";
 import { NavOverflow } from "./nav-overflow";
-import { ShopFavoriteButton } from "../shop-favorite-button";
 
 /**
  * Вариант 2 — Split Bar: единичен ред, логото центрирано, навигацията
@@ -31,7 +30,6 @@ export function HeaderVariant2({
   settings,
   rootCategories = [],
   viewerLoggedIn = false,
-  shopFavorited = false,
 }: HeaderVariantProps) {
   const base = `/s/${shop.slug}`;
   const nav = buildNav(base, rootCategories, settings.navLinks);
@@ -85,7 +83,6 @@ export function HeaderVariant2({
             <NavOverflow items={overflow} />
           </nav>
           <HeaderSearch base={base} />
-          <ShopFavoriteButton shopId={shop.id} initialFavorited={shopFavorited} loggedIn={viewerLoggedIn} />
           <AccountButton loggedIn={viewerLoggedIn} />
           <FavoritesButton shopId={shop.id} base={base} />
           <CartButton shopId={shop.id} base={base} />
