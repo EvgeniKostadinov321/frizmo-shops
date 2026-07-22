@@ -9,6 +9,7 @@ import { getOrderWithItems } from "@/db/queries/orders";
 import { requireShop } from "@/lib/auth";
 import { getCourier } from "@/lib/couriers";
 import { formatPrice } from "@/lib/money";
+import { leadDaysText } from "@/lib/product-badges";
 
 export const metadata = { title: "Поръчка — Frizmo Shops" };
 
@@ -148,6 +149,15 @@ export default async function OrderDetailPage({ params }: PageProps) {
                   item.productName
                 )}
                 {item.variantLabel && <span className="text-ink-500"> ({item.variantLabel})</span>}
+                {item.madeToOrder && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700 align-middle">
+                    <Icon name="sparkles" size={12} />
+                    По изработка
+                    {item.leadDaysMin !== null &&
+                      item.leadDaysMax !== null &&
+                      ` · ${leadDaysText(item.leadDaysMin, item.leadDaysMax)}`}
+                  </span>
+                )}
               </p>
               <p className="text-xs text-ink-500">
                 {item.quantity} × {formatPrice(item.unitPriceCents)}
