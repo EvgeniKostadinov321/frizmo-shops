@@ -112,6 +112,59 @@ async function main() {
       secondBlocked = e.code === "23505";
     }
     check("Фикс #3: втора поръчка със същия idempotency key се блокира (unique)", secondBlocked);
+
+    // ---- Made-to-order таван: race-safe опашка ----
+    /* Продукт stock=0, madeToOrder, cap=1. Две паралелни поръчки „по изработка"
+       имитират decrementStock: FOR UPDATE върху продукта → count активни по
+       изработка → ако < cap приема (insert order+item madeToOrder), иначе блокира.
+       Лока сериализира → точно 1 минава, 2-рата вижда count=1 >= cap. */
+    const [mtoProduct] = await sql`
+      insert into products (shop_id, name, slug, price_cents, stock, status,
+        made_to_order, lead_days_min, lead_days_max, made_to_order_cap)
+      values (${shopId}, '__ct_mto__', ${"__ct_mto_" + Date.now()}, 2000, 0, 'active',
+        true, 10, 14, 1)
+      returning id`;
+    const mtoProductId = mtoProduct.id;
+    const mtoOrderIds = [];
+
+    const placeMtoOrder = () =>
+      sql.begin(async (tx) => {
+        // FOR UPDATE върху продукта (както createOrder заключва продуктите)
+        await tx`select id from products where id = ${mtoProductId} for update`;
+        // countActiveMadeToOrder под лока
+        const [{ n }] = await tx`
+          select count(*)::int as n
+          from order_items oi join orders o on oi.order_id = o.id
+          where oi.product_id = ${mtoProductId} and oi.made_to_order = true
+            and o.status in ('new','confirmed','shipped','pending_payment')`;
+        if (Number(n) >= 1) return { accepted: false };
+        const [o] = await tx`
+          insert into orders (shop_id, order_number, customer_name, customer_phone,
+            shipping_name, shipping_price_cents, payment_name, payment_type,
+            subtotal_cents, total_cents, status)
+          values (${shopId}, ${800000 + Math.floor(Math.random() * 90000)}, '__ct_mto_o__',
+            '+359888000000', 'Куриер', 0, 'Наложен платеж', 'cod', 2000, 2000, 'new')
+          returning id`;
+        await tx`
+          insert into order_items (order_id, product_id, product_name, unit_price_cents,
+            quantity, line_total_cents, made_to_order, lead_days_min, lead_days_max)
+          values (${o.id}, ${mtoProductId}, '__ct_mto__', 2000, 1, 2000, true, 10, 14)`;
+        return { accepted: true, orderId: o.id };
+      });
+
+    try {
+      const mtoResults = await Promise.all([placeMtoOrder(), placeMtoOrder()]);
+      mtoResults.forEach((r) => r.orderId && mtoOrderIds.push(r.orderId));
+      const accepted = mtoResults.filter((r) => r.accepted).length;
+      check(
+        "Made-to-order таван: точно 1 от 2 паралелни поръчки по изработка минава (cap=1)",
+        accepted === 1,
+        `приети: ${accepted}`,
+      );
+    } finally {
+      for (const id of mtoOrderIds) await sql`delete from orders where id = ${id}`;
+      await sql`delete from products where id = ${mtoProductId}`;
+    }
   } finally {
     /* Чистим само каквото сме създали. */
     for (const id of testOrderIds) await sql`delete from orders where id = ${id}`;
