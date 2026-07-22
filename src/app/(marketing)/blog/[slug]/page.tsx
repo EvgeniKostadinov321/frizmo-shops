@@ -115,7 +115,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             Създай магазина си за минути — 30 дни безплатно с пълен Pro достъп, плащане чак след 30 дни.
           </p>
           <Link
-            href="/auth/register"
+            href="/auth/register?role=seller"
             className="mt-6 inline-flex h-11 items-center rounded-control bg-brand-surface-ink px-6 font-bold text-brand-surface transition-transform hover:-translate-y-0.5"
           >
             Създай магазина си

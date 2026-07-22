@@ -85,14 +85,14 @@ export function SiteHeader({ loggedIn = false }: { loggedIn?: boolean }) {
             </Link>
           ) : (
             <Link
-              href="/auth/login?role=buyer"
+              href="/auth/login?role=buyer&next=/account"
               className="flex h-11 items-center rounded-full px-3.5 text-sm font-medium text-ink-700 transition-colors hover:bg-surface-100 hover:text-ink-900"
             >
               Вход
             </Link>
           )}
           <span className="ml-1">
-            <LinkButton href="/auth/register" size="sm">
+            <LinkButton href="/auth/register?role=seller" size="sm">
               Създай магазин
             </LinkButton>
           </span>
@@ -137,7 +137,7 @@ export function SiteHeader({ loggedIn = false }: { loggedIn?: boolean }) {
               </Link>
             ))}
             <Link
-              href={loggedIn ? "/account" : "/auth/login?role=buyer"}
+              href={loggedIn ? "/account" : "/auth/login?role=buyer&next=/account"}
               onClick={() => setMenuOpen(false)}
               className="flex items-center justify-between rounded-2xl px-4 py-4 font-display text-2xl font-extrabold tracking-tight text-ink-900 transition-colors hover:bg-surface-100"
             >
@@ -145,7 +145,7 @@ export function SiteHeader({ loggedIn = false }: { loggedIn?: boolean }) {
               <Icon name={loggedIn ? "user" : "chevron-down"} size={20} className="-rotate-90 text-ink-500" />
             </Link>
             <LinkButton
-              href="/auth/register"
+              href="/auth/register?role=seller"
               size="lg"
               className="mt-4 h-14 w-full text-base"
               onClick={() => setMenuOpen(false)}

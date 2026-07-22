@@ -57,8 +57,10 @@ export async function signUp(
     })
     .onConflictDoNothing();
 
-  /* Нов акаунт няма магазин → купувач отива в профила, продавач в dashboard. */
-  redirect(resolvePostAuthPath(false, role));
+  /* Нов акаунт няма магазин. Ролята на регистрацията определя посоката (chosenRole);
+     next пренася произхода (напр. нов купувач от checkout → обратно там). */
+  const next = (formData.get("next") as string | null) ?? undefined;
+  redirect(resolvePostAuthPath(false, role, next, role ?? undefined));
 }
 
 export async function signIn(
@@ -68,16 +70,21 @@ export async function signIn(
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    role: formData.get("role") ?? undefined,
   });
   if (!parsed.success) return { fieldErrors: toFieldErrors(parsed.error) };
 
   const supabase = await createSupabaseServer();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
 
   if (error) return { error: "Грешен имейл или парола." };
 
-  /* Redirect по роля: има магазин / preferredRole=seller → dashboard; купувач → account
-     или валиден next (напр. върнат в checkout, откъдето е дошъл). */
+  /* Redirect: РОЛЯТА НА ДЕЙСТВИЕТО (parsed.data.role, от toggle-а/контекста) определя
+     посоката и надделява над hasShop. Само при липса на явна роля падаме на
+     състоянието на акаунта (магазин / preferredRole). next = откъдето е дошъл. */
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData.user?.id;
   const next = (formData.get("next") as string | null) ?? undefined;
@@ -95,7 +102,7 @@ export async function signIn(
     });
     preferredRole = (prof?.preferredRole as "buyer" | "seller" | null) ?? null;
   }
-  redirect(resolvePostAuthPath(hasShop, preferredRole, next));
+  redirect(resolvePostAuthPath(hasShop, preferredRole, next, parsed.data.role));
 }
 
 /**

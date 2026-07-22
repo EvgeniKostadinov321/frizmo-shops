@@ -1,4 +1,5 @@
-import { Logo } from "@/components/ui";
+import Link from "next/link";
+import { Icon, Logo } from "@/components/ui";
 import { countPendingReviews } from "@/db/queries/reviews";
 import { countPendingQuestions } from "@/db/queries/questions";
 import { ensureProfile, getOwnShop } from "@/lib/auth";
@@ -47,6 +48,15 @@ export default async function DashboardLayout({
               <ComplexityModeSwitcher mode={shop.complexityMode} />
             </div>
           )}
+          {/* Реципрочна връзка към купувачкия профил (продавачът пазарува от други
+              магазини) — контекстна навигация, /account винаги е купувачки контекст. */}
+          <Link
+            href="/account"
+            className="hidden items-center gap-1.5 rounded-control px-2.5 py-1.5 text-sm font-medium text-ink-500 transition-colors hover:bg-surface-100 hover:text-ink-900 md:flex"
+          >
+            <Icon name="user" size={16} className="shrink-0" />
+            Пазарувам
+          </Link>
           <ThemeToggle />
           <div className="hidden md:block">
             <SignOutButton />

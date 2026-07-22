@@ -173,7 +173,7 @@ export default async function LandingPage() {
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <Link
-                  href="/auth/register"
+                  href="/auth/register?role=seller"
                   className="group inline-flex h-13 items-center gap-2 rounded-full bg-ink-900 px-7 text-base font-bold text-surface-0 shadow-card transition-transform hover:-translate-y-0.5"
                 >
                   Създай магазина си безплатно
@@ -369,7 +369,7 @@ export default async function LandingPage() {
                       ))}
                     </ul>
                     <Link
-                      href="/auth/register"
+                      href="/auth/register?role=seller"
                       className={`mt-auto inline-flex h-12 items-center justify-center rounded-full text-sm font-bold transition-transform hover:-translate-y-0.5 ${
                         dark
                           ? "bg-brand-surface-ink text-brand-surface"
@@ -464,7 +464,7 @@ export default async function LandingPage() {
             Регистрирай се за 2 минути. Ако не ти хареса — просто спираш. {TRIAL_NOTE}
           </p>
           <Link
-            href="/auth/register"
+            href="/auth/register?role=seller"
             className="group inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 text-base font-bold text-ink-900 shadow-float transition-transform hover:-translate-y-0.5"
           >
             Създай магазина си сега

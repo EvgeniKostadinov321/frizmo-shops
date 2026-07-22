@@ -15,4 +15,25 @@ describe("resolvePostAuthPath", () => {
   it("непознат next се пренебрегва (open-redirect гард)", () => {
     expect(resolvePostAuthPath(false, "buyer", "https://evil.com")).toBe("/account");
   });
+
+  describe("chosenRole (контекстът побеждава hasShop)", () => {
+    it("избор 'buyer' → /account ДОРИ да има магазин (dual-role)", () => {
+      expect(resolvePostAuthPath(true, null, undefined, "buyer")).toBe("/account");
+      expect(resolvePostAuthPath(true, "seller", undefined, "buyer")).toBe("/account");
+    });
+    it("избор 'buyer' с next → next, дори собственик", () => {
+      expect(resolvePostAuthPath(true, null, "/s/shop/checkout", "buyer")).toBe("/s/shop/checkout");
+    });
+    it("избор 'seller' → /dashboard дори без магазин (нов продавач)", () => {
+      expect(resolvePostAuthPath(false, null, undefined, "seller")).toBe("/dashboard");
+      expect(resolvePostAuthPath(false, null, "/account", "seller")).toBe("/dashboard");
+    });
+    it("без явна роля → пада на hasShop/preferredRole (обратна съвместимост)", () => {
+      expect(resolvePostAuthPath(true, null, undefined, undefined)).toBe("/dashboard");
+      expect(resolvePostAuthPath(false, "buyer", undefined, undefined)).toBe("/account");
+    });
+    it("избор 'buyer' + open-redirect next → /account (гардът важи)", () => {
+      expect(resolvePostAuthPath(true, null, "https://evil.com", "buyer")).toBe("/account");
+    });
+  });
 });

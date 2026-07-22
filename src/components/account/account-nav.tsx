@@ -17,7 +17,7 @@ const ITEMS: { seg: string; label: string; icon: IconName }[] = [
  * Мобилно: хоризонтална табова лента отгоре. Десктоп: вертикален sidebar
  * (по идиома на dashboard-а) — съдържанието получава цялата останала ширина.
  */
-export function AccountNav() {
+export function AccountNav({ hasShop = false }: { hasShop?: boolean }) {
   const path = usePathname();
   return (
     <>
@@ -76,6 +76,17 @@ export function AccountNav() {
             </Link>
           );
         })}
+        {/* Граничен случай: купувач, който е и продавач → връзка към таблото на
+            магазина (контекстна навигация, не stateful switcher). */}
+        {hasShop && (
+          <Link
+            href="/dashboard"
+            className="mt-1 flex items-center gap-2.5 rounded-control border-t border-surface-200 px-3 pt-3 pb-2 text-sm font-medium text-ink-500 transition-colors hover:bg-surface-50 hover:text-ink-900"
+          >
+            <Icon name="store" size={18} className="shrink-0" />
+            Табло на магазина
+          </Link>
+        )}
         {/* Изход — отделен най-долу, по идиома на dashboard-а */}
         <form action={signOut.bind(null, "/")} className="mt-1 border-t border-surface-200 pt-1">
           <button

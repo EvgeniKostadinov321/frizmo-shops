@@ -10,6 +10,9 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.email("Невалиден имейл"),
   password: z.string().min(1, "Въведи парола"),
+  /* Ролята на текущото действие (от контекста/toggle-а). Optional → стар линк без
+     role пада в fallback клоновете. При вход тя надделява над hasShop. */
+  role: z.enum(["buyer", "seller"]).optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
