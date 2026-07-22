@@ -198,6 +198,13 @@ export const products = pgTable(
     sizeGuideId: uuid("size_guide_id").references((): AnyPgColumn => sizeGuides.id, {
       onDelete: "set null",
     }),
+    /** Ръчна изработка: при изчерпани готови бройки (stock=0) приема поръчки по изработка. */
+    madeToOrder: boolean("made_to_order").notNull().default(false),
+    /** Срок за изработка (дни) — диапазон; задължителен когато madeToOrder е включено. */
+    leadDaysMin: integer("lead_days_min"),
+    leadDaysMax: integer("lead_days_max"),
+    /** Таван на едновременните поръчки по изработка; null = неограничено. */
+    madeToOrderCap: integer("made_to_order_cap"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -608,6 +615,10 @@ export const orderItems = pgTable(
     lineTotalCents: integer("line_total_cents").notNull(),
     /** Напр. "2 бр за 30,00 €" — как е получена сумата. */
     appliedDeal: text("applied_deal").notNull().default(""),
+    /** Made-to-order snapshot: редът е поръчан по изработка + срокът към момента. */
+    madeToOrder: boolean("made_to_order").notNull().default(false),
+    leadDaysMin: integer("lead_days_min"),
+    leadDaysMax: integer("lead_days_max"),
   },
   (t) => [
     index("order_items_order_idx").on(t.orderId),
