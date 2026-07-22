@@ -55,7 +55,7 @@
 > + останалата външна работа** (домейн `frizmoshops.bg` поръчан, чака setup; Stripe live; inv.bg;
 > Sentry). Пълните детайли — в „Дневник" по-долу.
 
-- **Клонове:** **`dev` = Vercel PRODUCTION** (потвърдено 2026-07-08 от Deployments таба: `dev` носи Production badge). Работим и качваме САМО на `dev`. **`main` НЕ се ползва** (стара грешна презумпция „main=prod"). Push към `dev` (=prod): агентът ПИТА преди качване, качва само при изрично разрешение.
+- **Клонове (ОБНОВЕНО 2026-07-22):** **`main` = Vercel PRODUCTION**, **`dev` = Preview/staging**. (Старата схема „dev=prod" е сменена при миграцията на нов Vercel акаунт.) Работим на `dev` → тест на Preview → merge/ff в `main` → Production. Push към `main` (=prod): агентът ПИТА преди качване. Vercel проект: **`frizmo-shops-final`** в акаунт **`frizmotech-2481`** (не стария `supportfrizmo-2377`).
 - **Планове 1–5 ✅** · **План 6 Фаза А (админ) ✅** · **Фаза Б (Stripe billing) ✅** (test mode тестван, push-нат на dev; чака live Stripe ресурси + Vercel env vars за прод активиране). Резюме: `docs/superpowers/plans/executed-plans-summary.md`.
 - **`getShopPlan()` е stub** (src/lib/plan.ts) → всички магазини са "pro" до прод активиране на билинга.
 - **Website builder Вълни 1–3Б ✅** (dev+prod, тествани). Остава Вълна 4 (undo/версии, домейн, i18n).
@@ -89,6 +89,32 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 ---
 
 ## Дневник (най-новото най-отгоре)
+
+- **2026-07-22 (PROD ДЕПЛОЙ НА НОВ VERCEL АКАУНТ + main=prod + env split + домейн — В ХОД)** —
+  **Vercel достъпът се възстанови** (стар акаунт `supportfrizmo-2377` беше заключен с 2FA; влизане
+  през Google OAuth `supportfrizmo@gmail.com` + после обезопасен с TOTP Authenticator). Решение:
+  **мигрирахме frizmo-shops на НОВИЯ акаунт** `frizmotech-2481` (`frizmo.tech@gmail.com`, обезопасен),
+  за да няма риск от повторно заключване. **Node локално върнат на 24** (беше паднал на 20 → `pnpm`
+  гърмеше на `node:sqlite`; `nvm use 24.18.0`). Gate зелен: **449 теста, lint, build**.
+  **Свършено:**
+  1. **Нов Vercel проект `frizmo-shops-final`** в `frizmotech-2481` (Pro upgrade — cron-овете искат
+     Pro), import от GitHub `EvgeniKostadinov321/frizmo-shops`, 14 env vars през Import .env.
+     Prod URL `frizmo-shops-final.vercel.app` — ✅ работи (homepage + демо магазин от прод база).
+  2. **main=prod / dev=preview**: `main` беше 303 commit-а зад `dev` (изоставен) → fast-forward до
+     `dev` (0 конфликта) + push. Production вече деплойва от `main`; `dev` = Preview. **29-те
+     неpush-нати commit-а (куриери/профил/ePay/одити) вече на GitHub.**
+  3. **Env скоупове разделени** (Vercel CLI): 4 var-а (`DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL/
+     ANON_KEY`, `NEXT_PUBLIC_SITE_URL`) → Production=прод (Frankfurt), Preview=dev (Париж). Останалите
+     10 споделени. ⚠️ Гоча: при rm+add Production копията паднаха → върнати ръчно; всичките 14 в
+     Production потвърдени. Preview деплоите вече пишат в dev база, не прод.
+  4. **Домейн `frizmoshops.bg`** добавен във Vercel (Production, redirect apex→www). DNS записи
+     въведени в SuperHosting: `@` A→`216.150.1.1`, `www` CNAME→`e2bdad7c0168b5a6.vercel-dns-016.com`.
+     ⏳ **Чака DNS пропагация** (SuperHosting 15-60мин) → после Refresh във Vercel → SSL авто.
+  **ОСТАВА:** DNS резолв → Vercel Refresh → `NEXT_PUBLIC_SITE_URL=https://frizmoshops.bg` redeploy;
+  изтрий дубликата `frizmo-shops` (blush) проект; свали/зачисти стария `supportfrizmo-2377` (там още
+  живеят frizmo-web/app.frizmo.bg, frizmo-landing/frizmo.bg, englishwithbozhi — ПРОВЕРИ дали са живи
+  бизнеси преди Hobby downgrade). **P2-01 ротация ОТЛОЖЕНА** (0 юзъри, преди реален старт). Детайли:
+  [[prod-environment]].
 
 - **2026-07-13 (ПРЕДСТАРТОВИ ОДИТИ — 5 одита на новия код + всички находки обработени)** —
   5 одита на НЕОДИТИРАНИЯ нов код (онлайн плащане ePay, куриери Еконт+Спиди, глобален
