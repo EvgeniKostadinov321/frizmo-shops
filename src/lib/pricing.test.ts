@@ -11,6 +11,9 @@ function product(overrides: Partial<PricingProduct> = {}): PricingProduct {
     stock: null,
     variants: [],
     deal: null,
+    madeToOrder: false,
+    leadDaysMin: null,
+    leadDaysMax: null,
     ...overrides,
   };
 }
@@ -305,5 +308,63 @@ describe("priceCart — подаръчна опаковка (N9)", () => {
     const cart = priceCart(line, productsMap(product()), undefined, undefined, -500);
     expect(cart.giftWrapFeeCents).toBe(0);
     expect(cart.totalCents).toBe(2000);
+  });
+});
+
+describe("priceCart — ръчна изработка (made-to-order)", () => {
+  const mtoLine = [{ productId: "p1", variantKey: null, qty: 2 }];
+
+  it("готова наличност покрива количеството → НЕ е по изработка", () => {
+    const cart = priceCart(
+      mtoLine,
+      productsMap(product({ stock: 5, madeToOrder: true, leadDaysMin: 10, leadDaysMax: 14 })),
+    );
+    expect(cart.hasErrors).toBe(false);
+    expect(cart.lines[0]!.madeToOrder).toBe(false);
+  });
+
+  it("stock=0 + madeToOrder → приема по изработка, носи срока, без грешка", () => {
+    const cart = priceCart(
+      mtoLine,
+      productsMap(product({ stock: 0, madeToOrder: true, leadDaysMin: 10, leadDaysMax: 14 })),
+    );
+    expect(cart.hasErrors).toBe(false);
+    expect(cart.lines[0]!.madeToOrder).toBe(true);
+    expect(cart.lines[0]!.leadDaysMin).toBe(10);
+    expect(cart.lines[0]!.leadDaysMax).toBe(14);
+  });
+
+  it("недостиг (stock=2, qty=5) + madeToOrder → цялото по изработка", () => {
+    const cart = priceCart(
+      [{ productId: "p1", variantKey: null, qty: 5 }],
+      productsMap(product({ stock: 2, madeToOrder: true, leadDaysMin: 7, leadDaysMax: 10 })),
+    );
+    expect(cart.hasErrors).toBe(false);
+    expect(cart.lines[0]!.madeToOrder).toBe(true);
+    expect(cart.lines[0]!.qty).toBe(5);
+  });
+
+  it("stock=0 + НЕ madeToOrder → out_of_stock (както преди)", () => {
+    const cart = priceCart(mtoLine, productsMap(product({ stock: 0, madeToOrder: false })));
+    expect(cart.hasErrors).toBe(true);
+    expect(cart.lines[0]!.error).toBe("out_of_stock");
+    expect(cart.lines[0]!.madeToOrder).toBe(false);
+  });
+
+  it("недостиг + НЕ madeToOrder → insufficient_stock", () => {
+    const cart = priceCart(
+      [{ productId: "p1", variantKey: null, qty: 5 }],
+      productsMap(product({ stock: 2, madeToOrder: false })),
+    );
+    expect(cart.lines[0]!.error).toBe("insufficient_stock");
+  });
+
+  it("stock=null (не следи) + madeToOrder → минава, НЕ по изработка", () => {
+    const cart = priceCart(
+      mtoLine,
+      productsMap(product({ stock: null, madeToOrder: true, leadDaysMin: 10, leadDaysMax: 14 })),
+    );
+    expect(cart.hasErrors).toBe(false);
+    expect(cart.lines[0]!.madeToOrder).toBe(false);
   });
 });

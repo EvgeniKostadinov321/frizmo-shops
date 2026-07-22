@@ -71,6 +71,9 @@ export async function getPricingProducts(
               stock: v.stock,
             })),
           deal: deal ? { quantity: deal.quantity, totalPriceCents: deal.totalPriceCents } : null,
+          madeToOrder: p.madeToOrder,
+          leadDaysMin: p.leadDaysMin,
+          leadDaysMax: p.leadDaysMax,
         },
       ];
     }),

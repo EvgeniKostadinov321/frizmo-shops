@@ -22,6 +22,10 @@ export interface PricingProduct {
   stock: number | null;
   variants: PricingVariant[];
   deal: { quantity: number; totalPriceCents: number } | null;
+  /** Ръчна изработка: при недостиг на готови бройки редът се приема „по изработка". */
+  madeToOrder: boolean;
+  leadDaysMin: number | null;
+  leadDaysMax: number | null;
 }
 
 export interface CartLine {
@@ -51,6 +55,11 @@ export interface PricedLine {
   /** Ефективната наличност на реда (вариантна или продуктова; null = не се следи).
    *  UI-ят ползва това за горна граница на количествения степер. */
   stockLeft: number | null;
+  /** Редът се изпълнява по изработка (готовите бройки не стигат, но продуктът е
+   *  madeToOrder). Носи срока за snapshot + показване. */
+  madeToOrder: boolean;
+  leadDaysMin: number | null;
+  leadDaysMax: number | null;
   error?: LineError;
 }
 
@@ -122,6 +131,9 @@ export function priceCart(
       lineTotalCents: 0,
       appliedDeal: "",
       stockLeft: null,
+      madeToOrder: false,
+      leadDaysMin: null,
+      leadDaysMax: null,
     };
 
     if (!Number.isInteger(line.qty) || line.qty < 1 || line.qty > 999) {
@@ -141,12 +153,22 @@ export function priceCart(
       base.variantLabel = variant.label;
     }
 
-    /* Наличност: вариантната, ако вариантът я следи; иначе продуктовата. */
+    /* Наличност: вариантната, ако вариантът я следи; иначе продуктовата.
+       stock === null → не се следи, минава винаги (без made-to-order). */
     const stock = variant ? variant.stock : product.stock;
     base.stockLeft = stock;
-    if (stock !== null) {
-      if (stock <= 0) return { ...base, error: "out_of_stock" };
-      if (line.qty > stock) return { ...base, error: "insufficient_stock" };
+    if (stock !== null && line.qty > stock) {
+      /* Готовите бройки не стигат. Ако продуктът е „ръчна изработка" — приемаме
+         реда ПО ИЗРАБОТКА (цялото количество; не смесваме готово+изработка в един
+         ред) и носим срока за snapshot/показване. Иначе — грешка както преди.
+         Финалната cap проверка е на checkout (иска DB заявка под лока). */
+      if (product.madeToOrder) {
+        base.madeToOrder = true;
+        base.leadDaysMin = product.leadDaysMin;
+        base.leadDaysMax = product.leadDaysMax;
+      } else {
+        return { ...base, error: stock <= 0 ? "out_of_stock" : "insufficient_stock" };
+      }
     }
 
     /* Единична цена: вариантна ?? промо ?? базова. */
