@@ -91,6 +91,10 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
 
   const effectivePrice = product.promoPriceCents ?? product.priceCents;
   const inStock = product.stock === null || product.stock > 0;
+  /* Ръчна изработка: готовите бройки свършиха, но продуктът приема поръчки по изработка
+     → достъпен е (не „изчерпан"). */
+  const madeToOrderActive = product.madeToOrder && !inStock;
+  const purchasable = inStock || madeToOrderActive;
 
   /* priceValidUntil ~1 година напред (Google предупреждава за offers без нея).
      Смята се тук (server), не в чистата функция (без new Date в тестван модул). */
@@ -109,7 +113,7 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
               description: product.description,
               image: product.images[0] ? publicImageUrl(product.images[0]) : undefined,
               priceEur: (effectivePrice / 100).toFixed(2),
-              availability: inStock ? "InStock" : "OutOfStock",
+              availability: purchasable ? "InStock" : "OutOfStock",
               brandName: product.brand || shop.name,
               sku: product.sku || undefined,
               gtin: product.gtin || undefined,
@@ -154,6 +158,9 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
         basePriceCents={product.priceCents}
         promoPriceCents={product.promoPriceCents}
         baseStock={product.stock}
+        madeToOrder={product.madeToOrder}
+        leadDaysMin={product.leadDaysMin}
+        leadDaysMax={product.leadDaysMax}
         images={product.images}
         options={product.options}
         variants={product.variants}
@@ -195,8 +202,9 @@ export default async function ProductPage({ params, searchParams }: PageProps) {
               </div>
             )}
 
-            {/* S14: изчерпан продукт (следи наличност) → „извести ме" */}
-            {product.stock === 0 && (
+            {/* S14: изчерпан продукт (следи наличност) → „извести ме". НЕ при ръчна
+                изработка — там продуктът е достъпен по изработка, не изчерпан. */}
+            {product.stock === 0 && !product.madeToOrder && (
               <StockAlertForm shopSlug={shop.slug} productId={product.id} />
             )}
 

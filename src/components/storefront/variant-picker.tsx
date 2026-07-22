@@ -19,6 +19,7 @@ import {
   onCartChange,
 } from "@/lib/cart-storage";
 import { formatPrice } from "@/lib/money";
+import { leadDaysText } from "@/lib/product-badges";
 import { publicImageUrl } from "@/lib/storage";
 import { variantKey } from "@/lib/variants";
 import { Icon } from "@/components/ui";
@@ -33,6 +34,10 @@ interface VariantPickerProps {
   basePriceCents: number;
   promoPriceCents: number | null;
   baseStock: number | null;
+  /** Ръчна изработка: при изчерпана наличност приема поръчки по изработка (не блокира). */
+  madeToOrder?: boolean;
+  leadDaysMin?: number | null;
+  leadDaysMax?: number | null;
   images: string[];
   options: ProductOption[];
   variants: ProductVariant[];
@@ -75,6 +80,9 @@ export function VariantPicker({
   basePriceCents,
   promoPriceCents,
   baseStock,
+  madeToOrder = false,
+  leadDaysMin = null,
+  leadDaysMax = null,
   images,
   options,
   variants,
@@ -98,7 +106,11 @@ export function VariantPicker({
 
   const priceCents = selectedVariant?.priceCents ?? basePriceCents;
   const stock = selectedVariant ? selectedVariant.stock : baseStock;
-  const outOfStock = stock !== null && stock <= 0;
+  /* Ръчна изработка: изчерпана наличност → не е „изчерпано", а „по изработка"
+     (приема неограничени поръчки; финалният таван се проверява на сървъра). */
+  const soldOut = stock !== null && stock <= 0;
+  const madeToOrderActive = madeToOrder && soldOut;
+  const outOfStock = soldOut && !madeToOrder;
   /* Промо само при реална отстъпка (promo < цена) и когато вариантът няма
      собствена цена — иначе баджът показва „−0%"/отрицателно. */
   const showPromo =
@@ -117,7 +129,8 @@ export function VariantPicker({
   const inCart =
     cartLines.find((l) => l.productId === productId && l.variantKey === currentVariantKey)
       ?.qty ?? 0;
-  const remaining = stock === null ? null : Math.max(0, stock - inCart);
+  /* По изработка → неограничено количество (null), иначе жива наличност. */
+  const remaining = stock === null || madeToOrderActive ? null : Math.max(0, stock - inCart);
   const allInCart = !outOfStock && remaining !== null && remaining <= 0;
   const effectiveQty = remaining === null ? qty : Math.min(qty, Math.max(1, remaining));
   const canBuy = !outOfStock && !allInCart;
@@ -297,6 +310,20 @@ export function VariantPicker({
           <p className="text-sm text-(--sf-muted)">
             Избери {options.map((o) => o.name.toLowerCase()).join(" и ")}.
           </p>
+        )}
+
+        {madeToOrderActive && (
+          <div className="rounded-(--sf-radius) border border-(--sf-primary)/30 bg-(--sf-primary)/8 px-4 py-3">
+            <p className="flex items-center gap-2 font-medium text-(--sf-text)">
+              <Icon name="sparkles" size={16} />
+              Изработва се специално за теб
+            </p>
+            {leadDaysText(leadDaysMin, leadDaysMax) && (
+              <p className="mt-0.5 text-sm text-(--sf-muted)">
+                Очаквай доставка след {leadDaysText(leadDaysMin, leadDaysMax)}.
+              </p>
+            )}
+          </div>
         )}
 
         {outOfStock ? (

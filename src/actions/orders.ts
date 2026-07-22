@@ -42,7 +42,7 @@ import { sendNewOrderPush, sendPushToUser } from "@/lib/push";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { variantKey as makeVariantKey } from "@/lib/variants";
-import { manualOrderSchema, orderSchema, type OrderInput } from "@/schemas/order";
+import { manualOrderSchema, orderSchema } from "@/schemas/order";
 
 const LINE_ERROR_MESSAGE = "Някои продукти вече не са налични — виж количката.";
 

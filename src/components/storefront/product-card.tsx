@@ -37,7 +37,10 @@ export function ProductCard({
 }) {
   const cover = product.images[0];
   const hoverImage = product.images[1];
-  const outOfStock = product.stock !== null && product.stock <= 0;
+  /* Ръчна изработка: изчерпаните готови бройки не значат „изчерпан" — приема по
+     изработка. Показваме гордия бадж, а не overlay-а „Изчерпано". */
+  const soldOut = product.stock !== null && product.stock <= 0;
+  const outOfStock = soldOut && !product.madeToOrder;
   /* Промо е валидно само ако реално е под редовната цена — иначе баджът показва
      „−0%" / отрицателно (търговец е сложил промо ≥ цена по грешка). */
   const promo =
@@ -95,6 +98,11 @@ export function ProductCard({
           {isNew && (
             <span className="rounded-full bg-(--sf-primary) px-2.5 py-1 text-xs font-bold text-(--sf-on-primary)">
               Нов
+            </span>
+          )}
+          {product.madeToOrder && (
+            <span className="rounded-full bg-(--sf-surface-raised) px-2.5 py-1 text-xs font-bold text-(--sf-text) ring-1 ring-(--sf-primary)/30">
+              Ръчна изработка
             </span>
           )}
         </span>

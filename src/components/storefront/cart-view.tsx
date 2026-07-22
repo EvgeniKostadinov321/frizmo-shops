@@ -8,6 +8,7 @@ import { CartSuggestions } from "@/components/storefront/cart-suggestions";
 import { MascotState } from "@/components/storefront/mascot";
 import { priceCartAction } from "@/actions/cart";
 import { formatPrice } from "@/lib/money";
+import { leadDaysText } from "@/lib/product-badges";
 import {
   getCartSnapshot,
   getServerCartSnapshot,
@@ -207,6 +208,13 @@ export function CartView({ shopId, slug, base, logoPath, freeShippingOverCents, 
                 </p>
                 {priced?.appliedDeal && (
                   <p className="text-xs font-medium text-(--sf-accent)">{priced.appliedDeal}</p>
+                )}
+                {priced?.madeToOrder && (
+                  <p className="text-xs text-(--sf-text)">
+                    Изработва се специално за теб
+                    {leadDaysText(priced.leadDaysMin, priced.leadDaysMax) &&
+                      ` · ${leadDaysText(priced.leadDaysMin, priced.leadDaysMax)}`}
+                  </p>
                 )}
                 {priced?.error && (
                   <p className="text-xs font-medium text-(--sf-accent)">

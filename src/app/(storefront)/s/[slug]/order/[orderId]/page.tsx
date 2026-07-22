@@ -9,6 +9,7 @@ import { ReturnRequest } from "@/components/storefront/return-request";
 import { db, orderItems, orders } from "@/db";
 import { getPublicShop } from "@/db/queries/storefront";
 import { formatPrice } from "@/lib/money";
+import { leadDaysText } from "@/lib/product-badges";
 
 interface PageProps {
   params: Promise<{ slug: string; orderId: string }>;
@@ -72,6 +73,13 @@ export default async function OrderConfirmationPage({ params, searchParams }: Pa
               {item.variantLabel && ` (${item.variantLabel})`} ×{item.quantity}
               {item.appliedDeal && (
                 <span className="text-(--sf-accent)"> · {item.appliedDeal}</span>
+              )}
+              {item.madeToOrder && (
+                <span className="mt-0.5 block text-xs text-(--sf-text)">
+                  Изработва се специално за теб
+                  {leadDaysText(item.leadDaysMin, item.leadDaysMax) &&
+                    ` · очаквай след ${leadDaysText(item.leadDaysMin, item.leadDaysMax)}`}
+                </span>
               )}
             </span>
             <span className="shrink-0 text-(--sf-text)">{formatPrice(item.lineTotalCents)}</span>
