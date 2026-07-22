@@ -39,7 +39,7 @@ export function SettingsForm({ fullName, phone }: { fullName: string; phone: str
         <a href="/dashboard/onboarding" className="text-sm font-medium text-brand-600 hover:underline">
           Искам да продавам — отвори магазин
         </a>
-        <form action={signOut}>
+        <form action={signOut.bind(null, "/")}>
           <button type="submit" className="text-sm text-ink-500 hover:text-ink-900">
             Изход
           </button>

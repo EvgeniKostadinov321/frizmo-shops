@@ -98,10 +98,16 @@ export async function signIn(
   redirect(resolvePostAuthPath(hasShop, preferredRole, next));
 }
 
-export async function signOut(): Promise<void> {
+/**
+ * Изход. `redirectTo` е дестинацията след излизане — по подразбиране търговският
+ * вход (/auth/login). Купувачите подават "/" (каталога), за да продължат да
+ * пазаруват. Само относителни пътища (защита срещу open-redirect).
+ */
+export async function signOut(redirectTo = "/auth/login"): Promise<void> {
   const supabase = await createSupabaseServer();
   await supabase.auth.signOut();
-  redirect("/auth/login");
+  const dest = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/auth/login";
+  redirect(dest);
 }
 
 /**

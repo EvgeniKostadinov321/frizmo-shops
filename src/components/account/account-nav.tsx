@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "@/actions/auth";
 import { Icon, type IconName } from "@/components/ui";
 
 const ITEMS: { seg: string; label: string; icon: IconName }[] = [
@@ -43,6 +44,15 @@ export function AccountNav() {
             </Link>
           );
         })}
+        {/* Изход — най-вдясно в мобилната лента, отделен визуално */}
+        <form action={signOut.bind(null, "/")} className="ml-auto shrink-0">
+          <button
+            type="submit"
+            className="whitespace-nowrap px-4 py-2.5 text-sm font-medium text-ink-500 hover:text-ink-900"
+          >
+            Изход
+          </button>
+        </form>
       </nav>
 
       {/* Десктоп — вертикален sidebar */}
@@ -66,6 +76,16 @@ export function AccountNav() {
             </Link>
           );
         })}
+        {/* Изход — отделен най-долу, по идиома на dashboard-а */}
+        <form action={signOut.bind(null, "/")} className="mt-1 border-t border-surface-200 pt-1">
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm font-medium text-ink-500 transition-colors hover:bg-surface-50 hover:text-ink-900"
+          >
+            <Icon name="x" size={18} className="shrink-0" />
+            Изход
+          </button>
+        </form>
       </nav>
     </>
   );

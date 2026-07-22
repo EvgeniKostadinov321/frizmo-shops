@@ -108,7 +108,7 @@ export function MobileMenuButton({
 
           {/* Изход — най-долу, отделен с hairline */}
           <div className="border-t border-surface-200 p-4">
-            <form action={signOut}>
+            <form action={signOut.bind(null, "/auth/login")}>
               <button
                 type="submit"
                 className="flex h-12 w-full items-center gap-3 rounded-control px-4 text-base font-medium text-ink-700 transition-colors hover:bg-surface-100"
