@@ -11,6 +11,8 @@
 > [[courier-integration-feature]], `docs/WORKLOG.md`.
 
 ## ✅ Завършено (push-нато)
+**Ръчна изработка / по поръчка** (2026-07-22, на dev, чака push+жив тест — при stock=0 madeToOrder
+продукт приема поръчки по изработка, срок+таван, race-safe cap; спец/план `2026-07-22-made-to-order*`) ·
 Тегло/размери/количество · Product feed · Abandoned cart · „Провери поръчка" · Изтриване на акаунт
 (GDPR) · Конверсионно трио (търсене в хедъра / доставка на продукта / trust badges) · Доверие+AOV
 (verified ревюта / cross-sell / „Нов" badge). + по-рано: ревюта, newsletter, аналитика, филтри,
