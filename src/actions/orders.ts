@@ -24,6 +24,7 @@ import { matchZone } from "@/lib/match-zone";
 import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
+import { countActiveMadeToOrder } from "@/db/queries/orders";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
@@ -54,8 +55,24 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
  * → хвърляме OUT_OF_STOCK и цялата транзакция се rollback-ва. Това затваря
  * TOCTOU дупката: проверката и декрементът са едно атомарно statement под лока.
  */
-async function decrementStock(tx: Tx, lines: OrderInput["lines"]) {
+async function decrementStock(tx: Tx, lines: PricedCart["lines"]) {
   for (const line of lines) {
+    /* Ред „по изработка" (priceCart маркира, когато готовите бройки не стигат за
+       madeToOrder продукт): НЕ декрементираме склад (той е изчерпан; това е нова
+       изработка), но при таван проверяваме опашката ПОД лока (race-safe). */
+    if (line.madeToOrder) {
+      const product = await tx.query.products.findFirst({
+        where: eq(products.id, line.productId),
+        columns: { madeToOrderCap: true },
+      });
+      const cap = product?.madeToOrderCap ?? null;
+      if (cap !== null) {
+        const active = await countActiveMadeToOrder(tx, line.productId);
+        if (active >= cap) throw new Error("MADE_TO_ORDER_FULL");
+      }
+      continue;
+    }
+
     if (line.variantKey) {
       const variants = await tx.query.productVariants.findMany({
         where: eq(productVariants.productId, line.productId),
@@ -134,6 +151,9 @@ async function insertOrderWithNumber(
       quantity: line.qty,
       lineTotalCents: line.lineTotalCents,
       appliedDeal: line.appliedDeal,
+      madeToOrder: line.madeToOrder,
+      leadDaysMin: line.leadDaysMin,
+      leadDaysMax: line.leadDaysMax,
     })),
   );
 
@@ -343,7 +363,7 @@ export async function createOrder(
         }
       }
 
-      await decrementStock(tx, input.lines);
+      await decrementStock(tx, cart.lines);
 
       const inserted = await insertOrderWithNumber(
         tx,
@@ -393,6 +413,9 @@ export async function createOrder(
   } catch (error) {
     const msg = (error as Error).message;
     if (msg === "CART_ERRORS" || msg === "OUT_OF_STOCK") return fail(LINE_ERROR_MESSAGE);
+    if (msg === "MADE_TO_ORDER_FULL") {
+      return fail("Опашката за изработка на този продукт е пълна в момента. Върни се по-късно.");
+    }
     if (msg === "COUPON_INVALID") {
       return fail("Промо кодът вече не е валиден. Премахни го и опитай пак.");
     }
@@ -544,7 +567,7 @@ export async function createManualOrder(
       const cart = priceCart(input.lines, pricingProducts, shippingOption, undefined, giftWrapFeeCents);
       if (cart.hasErrors || cart.lines.length === 0) throw new Error("CART_ERRORS");
 
-      await decrementStock(tx, input.lines);
+      await decrementStock(tx, cart.lines);
 
       const inserted = await insertOrderWithNumber(
         tx,
@@ -576,6 +599,9 @@ export async function createManualOrder(
     const msg = (error as Error).message;
     if (msg === "CART_ERRORS" || msg === "OUT_OF_STOCK") {
       return fail("Някои продукти не са налични в исканото количество.");
+    }
+    if (msg === "MADE_TO_ORDER_FULL") {
+      return fail("Опашката за изработка на този продукт е пълна в момента.");
     }
     console.error("createManualOrder се провали:", error);
     return fail("Поръчката не можа да бъде създадена. Опитай отново.");

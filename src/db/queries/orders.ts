@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, ilike, notInArray, or, sql as rawSql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, notInArray, or, sql as rawSql, type SQL } from "drizzle-orm";
 import { db, orderItems, orders } from "@/db";
 
 export const ORDERS_PAGE_SIZE = 20;
@@ -64,6 +64,34 @@ export async function countNewOrders(shopId: string): Promise<number> {
     .select({ value: count() })
     .from(orders)
     .where(and(eq(orders.shopId, shopId), eq(orders.status, "new")));
+  return row?.value ?? 0;
+}
+
+/** Активни статуси на поръчка за целите на made-to-order тавана (незавършени). */
+const ACTIVE_MTO_STATUSES = ["new", "confirmed", "shipped", "pending_payment"] as const;
+
+/**
+ * Брой активни „по изработка" редове за продукт — за тавана на опашката. Брои
+ * order_items с `madeToOrder=true` в поръчки, които още не са завършени/отменени.
+ * Приема tx клиент, за да се изпълни ПОД `SELECT ... FOR UPDATE` лока в checkout-а
+ * (race-safe: два едновременни опита за последното capacity място → вторият вижда
+ * актуалния брой).
+ */
+export async function countActiveMadeToOrder(
+  client: Pick<typeof db, "select">,
+  productId: string,
+): Promise<number> {
+  const [row] = await client
+    .select({ value: count() })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(
+      and(
+        eq(orderItems.productId, productId),
+        eq(orderItems.madeToOrder, true),
+        inArray(orders.status, ACTIVE_MTO_STATUSES),
+      ),
+    );
   return row?.value ?? 0;
 }
 
