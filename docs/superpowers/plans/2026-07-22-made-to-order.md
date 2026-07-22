@@ -194,6 +194,11 @@ const optionalCap = z.union([z.coerce.number().int().min(1, "Минимум 1"),
 - Produces: `countActiveMadeToOrder(tx, productId): Promise<number>` — брой редове по изработка в
   незавършени поръчки (`order_items.madeToOrder=true` join `orders.status IN (new,confirmed,shipped)`).
 
+> **Корекция (2026-07-22, след теста):** таванът брои БРОЙКИ, не поръчки. Заявката е
+> преименувана на `sumActiveMadeToOrderQty` (връща `sum(quantity)`), а гардът в
+> `decrementStock` е `active + line.qty > cap → отказ`. Иначе 1 поръчка с N бройки
+> (1 ред) минаваше при cap<N. Регресия в `scripts/verify-order-concurrency.mjs`.
+
 - [ ] **Step 1:** Нова заявка `countActiveMadeToOrder(tx, productId)` в `db/queries/orders.ts`:
 
 ```sql

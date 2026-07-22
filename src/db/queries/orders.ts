@@ -71,18 +71,18 @@ export async function countNewOrders(shopId: string): Promise<number> {
 const ACTIVE_MTO_STATUSES = ["new", "confirmed", "shipped", "pending_payment"] as const;
 
 /**
- * Брой активни „по изработка" редове за продукт — за тавана на опашката. Брои
- * order_items с `madeToOrder=true` в поръчки, които още не са завършени/отменени.
- * Приема tx клиент, за да се изпълни ПОД `SELECT ... FOR UPDATE` лока в checkout-а
- * (race-safe: два едновременни опита за последното capacity място → вторият вижда
- * актуалния брой).
+ * Сума на активните „по изработка" БРОЙКИ за продукт — за тавана на опашката.
+ * Таванът брои бройки (не поръчки): sum(quantity) на order_items с `madeToOrder=true`
+ * в незавършени поръчки. Приема tx клиент, за да се изпълни ПОД `SELECT ... FOR UPDATE`
+ * лока в checkout-а (race-safe: два едновременни опита за последното място → вторият
+ * вижда актуалната сума).
  */
-export async function countActiveMadeToOrder(
+export async function sumActiveMadeToOrderQty(
   client: Pick<typeof db, "select">,
   productId: string,
 ): Promise<number> {
   const [row] = await client
-    .select({ value: count() })
+    .select({ value: rawSql<number>`coalesce(sum(${orderItems.quantity}), 0)` })
     .from(orderItems)
     .innerJoin(orders, eq(orderItems.orderId, orders.id))
     .where(
@@ -92,7 +92,7 @@ export async function countActiveMadeToOrder(
         inArray(orders.status, ACTIVE_MTO_STATUSES),
       ),
     );
-  return row?.value ?? 0;
+  return Number(row?.value ?? 0);
 }
 
 /** Приходи за текущия календарен месец (без отказани и върнати). */

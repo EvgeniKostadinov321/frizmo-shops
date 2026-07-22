@@ -113,31 +113,33 @@ async function main() {
     }
     check("Фикс #3: втора поръчка със същия idempotency key се блокира (unique)", secondBlocked);
 
-    // ---- Made-to-order таван: race-safe опашка ----
-    /* Продукт stock=0, madeToOrder, cap=1. Две паралелни поръчки „по изработка"
-       имитират decrementStock: FOR UPDATE върху продукта → count активни по
-       изработка → ако < cap приема (insert order+item madeToOrder), иначе блокира.
-       Лока сериализира → точно 1 минава, 2-рата вижда count=1 >= cap. */
+    // ---- Made-to-order таван: race-safe опашка (БРОИ БРОЙКИ, не поръчки) ----
+    /* Продукт stock=0, madeToOrder, cap=3. Таванът брои БРОЙКИ: sum(quantity) на
+       активните made_to_order редове + qty на текущата поръчка > cap → отказ.
+       Имитира decrementStock: FOR UPDATE върху продукта → sum(quantity) активни →
+       ако sum + qty > cap блокира. Две паралелни поръчки по qty=2 (общо 4 > 3):
+       лока сериализира → точно 1 минава (0+2<=3), 2-рата вижда sum=2, 2+2=4 > 3. */
     const [mtoProduct] = await sql`
       insert into products (shop_id, name, slug, price_cents, stock, status,
         made_to_order, lead_days_min, lead_days_max, made_to_order_cap)
       values (${shopId}, '__ct_mto__', ${"__ct_mto_" + Date.now()}, 2000, 0, 'active',
-        true, 10, 14, 1)
+        true, 10, 14, 3)
       returning id`;
     const mtoProductId = mtoProduct.id;
     const mtoOrderIds = [];
+    const MTO_CAP = 3;
 
-    const placeMtoOrder = () =>
+    const placeMtoOrder = (qty) =>
       sql.begin(async (tx) => {
         // FOR UPDATE върху продукта (както createOrder заключва продуктите)
         await tx`select id from products where id = ${mtoProductId} for update`;
-        // countActiveMadeToOrder под лока
+        // sumActiveMadeToOrderQty под лока — СУМА на quantity, не брой редове
         const [{ n }] = await tx`
-          select count(*)::int as n
+          select coalesce(sum(oi.quantity), 0)::int as n
           from order_items oi join orders o on oi.order_id = o.id
           where oi.product_id = ${mtoProductId} and oi.made_to_order = true
             and o.status in ('new','confirmed','shipped','pending_payment')`;
-        if (Number(n) >= 1) return { accepted: false };
+        if (Number(n) + qty > MTO_CAP) return { accepted: false };
         const [o] = await tx`
           insert into orders (shop_id, order_number, customer_name, customer_phone,
             shipping_name, shipping_price_cents, payment_name, payment_type,
@@ -148,16 +150,26 @@ async function main() {
         await tx`
           insert into order_items (order_id, product_id, product_name, unit_price_cents,
             quantity, line_total_cents, made_to_order, lead_days_min, lead_days_max)
-          values (${o.id}, ${mtoProductId}, '__ct_mto__', 2000, 1, 2000, true, 10, 14)`;
+          values (${o.id}, ${mtoProductId}, '__ct_mto__', 2000, ${qty}, ${2000 * qty}, true, 10, 14)`;
         return { accepted: true, orderId: o.id };
       });
 
     try {
-      const mtoResults = await Promise.all([placeMtoOrder(), placeMtoOrder()]);
+      /* Регресия за докладвания бъг: 1 поръчка с qty=4 при таван 3 → ОТКАЗ
+         (преди броеше 1 ред < 3 → минаваше). */
+      const singleOverCap = await placeMtoOrder(4);
+      if (singleOverCap.orderId) mtoOrderIds.push(singleOverCap.orderId);
+      check(
+        "Made-to-order таван: 1 поръчка с 4 бройки при таван 3 се ОТКАЗВА (брои бройки)",
+        singleOverCap.accepted === false,
+        `accepted=${singleOverCap.accepted}`,
+      );
+
+      const mtoResults = await Promise.all([placeMtoOrder(2), placeMtoOrder(2)]);
       mtoResults.forEach((r) => r.orderId && mtoOrderIds.push(r.orderId));
       const accepted = mtoResults.filter((r) => r.accepted).length;
       check(
-        "Made-to-order таван: точно 1 от 2 паралелни поръчки по изработка минава (cap=1)",
+        "Made-to-order таван: точно 1 от 2 паралелни поръчки по 2 бр. минава (таван 3, общо 4)",
         accepted === 1,
         `приети: ${accepted}`,
       );

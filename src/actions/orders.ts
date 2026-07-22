@@ -24,7 +24,7 @@ import { matchZone } from "@/lib/match-zone";
 import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
-import { countActiveMadeToOrder } from "@/db/queries/orders";
+import { sumActiveMadeToOrderQty } from "@/db/queries/orders";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
@@ -67,8 +67,10 @@ async function decrementStock(tx: Tx, lines: PricedCart["lines"]) {
       });
       const cap = product?.madeToOrderCap ?? null;
       if (cap !== null) {
-        const active = await countActiveMadeToOrder(tx, line.productId);
-        if (active >= cap) throw new Error("MADE_TO_ORDER_FULL");
+        /* Таванът брои БРОЙКИ, не поръчки: вече в опашка + текущата поръчка > таван
+           → отказ (напр. таван 3, 2 в опашка, поръчваш 2 → 4 > 3 → пълна). */
+        const active = await sumActiveMadeToOrderQty(tx, line.productId);
+        if (active + line.qty > cap) throw new Error("MADE_TO_ORDER_FULL");
       }
       continue;
     }
