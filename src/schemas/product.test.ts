@@ -39,3 +39,34 @@ describe("productSchema — количество", () => {
     expect(r.success && r.data.netQuantity).toBeNull();
   });
 });
+
+describe("productSchema — ръчна изработка (made-to-order)", () => {
+  it("изключено → lead дни празни са ОК", () =>
+    expect(parse({ madeToOrder: false }).success).toBe(true));
+  it("липсващо → default false, ОК", () => {
+    const r = parse({});
+    expect(r.success && r.data.madeToOrder).toBe(false);
+  });
+  it("включено без lead дни → грешка", () =>
+    expect(parse({ madeToOrder: true, leadDaysMin: "", leadDaysMax: "" }).success).toBe(false));
+  it("включено с валиден диапазон → ОК", () =>
+    expect(parse({ madeToOrder: true, leadDaysMin: "10", leadDaysMax: "14" }).success).toBe(true));
+  it("min > max → грешка", () =>
+    expect(parse({ madeToOrder: true, leadDaysMin: "14", leadDaysMax: "10" }).success).toBe(false));
+  it("min = max → ОК", () =>
+    expect(parse({ madeToOrder: true, leadDaysMin: "7", leadDaysMax: "7" }).success).toBe(true));
+  it("таван 0 → грешка", () =>
+    expect(
+      parse({ madeToOrder: true, leadDaysMin: "5", leadDaysMax: "7", madeToOrderCap: "0" }).success,
+    ).toBe(false));
+  it("таван празен → ОК (неограничено)", () =>
+    expect(
+      parse({ madeToOrder: true, leadDaysMin: "5", leadDaysMax: "7", madeToOrderCap: "" }).success,
+    ).toBe(true));
+  it("таван 5 → ОК", () =>
+    expect(
+      parse({ madeToOrder: true, leadDaysMin: "5", leadDaysMax: "7", madeToOrderCap: "5" }).success,
+    ).toBe(true));
+  it("над 365 дни → грешка", () =>
+    expect(parse({ madeToOrder: true, leadDaysMin: "1", leadDaysMax: "400" }).success).toBe(false));
+});

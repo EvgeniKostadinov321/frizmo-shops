@@ -11,6 +11,13 @@ const optionalPriceString = z.union([priceString, z.literal("")]);
 
 const optionalStock = z.union([z.coerce.number().int().min(0, "Невалидна наличност"), z.literal("")]);
 
+const optionalLeadDays = z.union([
+  z.coerce.number().int().min(1, "Минимум 1 ден").max(365, "Максимум 365 дни"),
+  z.literal(""),
+]);
+
+const optionalCap = z.union([z.coerce.number().int().min(1, "Минимум 1"), z.literal("")]);
+
 const optionalWeight = z.union([
   z.coerce.number().int().min(1, "Минимум 1 грам").max(200_000, "Максимум 200000 г"),
   z.literal(""),
@@ -114,6 +121,26 @@ export const productSchema = z.object({
   seoDescription: z.string().trim().max(160).default(""),
   /* Закачена размерна таблица (per магазин). */
   sizeGuideId: z.union([z.uuid(), z.literal("")]).default(""),
+  /* Ръчна изработка: при изчерпани готови бройки приема поръчки по изработка. */
+  madeToOrder: z.boolean().default(false),
+  leadDaysMin: optionalLeadDays.default(""),
+  leadDaysMax: optionalLeadDays.default(""),
+  /* Таван на опашката по изработка; празно = неограничено. */
+  madeToOrderCap: optionalCap.default(""),
+}).superRefine((data, ctx) => {
+  /* Когато ръчната изработка е включена — срокът е задължителен и min ≤ max. */
+  if (data.madeToOrder) {
+    const { leadDaysMin: min, leadDaysMax: max } = data;
+    if (min === "" || max === "") {
+      ctx.addIssue({ code: "custom", path: ["leadDaysMin"], message: "Задай срок за изработка" });
+    } else if (Number(min) > Number(max)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["leadDaysMax"],
+        message: "Максимумът трябва да е ≥ минимума",
+      });
+    }
+  }
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
