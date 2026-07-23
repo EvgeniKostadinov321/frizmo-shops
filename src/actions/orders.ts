@@ -25,17 +25,22 @@ import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
 import { sumActiveMadeToOrderQty } from "@/db/queries/orders";
-import { recordFeeCharge, recordFeeCredit } from "@/db/queries/fees";
+import { recordFeeCharge, recordFeeCredit, countFeeCharges } from "@/db/queries/fees";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { resolveBuyerId } from "@/lib/buyer-id";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@/lib/email";
+import {
+  sendOrderEmails,
+  sendOrderStatusEmail,
+  sendReturnRequestEmail,
+  sendCardRequiredEmail,
+} from "@/lib/email";
 import { parseBgPhone } from "@/lib/phone";
 import { parseOrderNumber } from "@/lib/order-number";
 import { ALLOWED_TRANSITIONS } from "@/lib/order-status";
-import { canAcceptOrders } from "@/lib/selling-gate";
+import { canAcceptOrders, requiresCard } from "@/lib/selling-gate";
 import { type PaymentCreds, type PaymentPackage } from "@/lib/payments";
 import { buildEpayForOrder } from "@/lib/payments/build-order-package";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
@@ -835,6 +840,22 @@ export async function updateOrderStatus(input: {
   revalidatePath("/dashboard");
   /* Отказ/връщане връща наличности → инвалидирай storefront кеша. */
   revalidateTag(shopCacheTag(shop.slug), "max");
+
+  /* Card-gate: ПЪРВАТА завършена продажба активира изискването за карта. Уведомяваме
+     търговеца веднъж (точно при 1-вия charge + без карта). Неблокиращо. */
+  if (parsed.data.status === "completed") {
+    void (async () => {
+      try {
+        const charges = await countFeeCharges(shop.id);
+        if (charges === 1 && (await requiresCard(shop.id))) {
+          await sendCardRequiredEmail({ shopName: shop.name, shopEmail: shop.email ?? "" });
+        }
+      } catch (e) {
+        console.error("Card-required имейл проверка се провали:", e);
+      }
+    })();
+  }
+
   return ok(null);
 }
 

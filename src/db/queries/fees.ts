@@ -125,6 +125,15 @@ export async function cardState(
   return { hasCharge: Boolean(charge), customerId: sub?.customerId ?? null };
 }
 
+/** Брой charge събития за магазин (за „първа продажба" имейла — праща се точно веднъж). */
+export async function countFeeCharges(shopId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(feeEvents)
+    .where(and(eq(feeEvents.shopId, shopId), eq(feeEvents.type, "charge")));
+  return Number(row?.n ?? 0);
+}
+
 /** Фактурите на магазин (за dashboard billing секцията), най-новите първо. */
 export async function getFeeInvoices(shopId: string) {
   return db

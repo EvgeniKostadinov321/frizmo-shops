@@ -18,18 +18,21 @@ export function MobileMenuButton({
   mode,
   pendingReviews = 0,
   pendingQuestions = 0,
+  needsCard = false,
 }: {
   mode: ComplexityMode;
   pendingReviews?: number;
   pendingQuestions?: number;
+  needsCard?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const items = NAV_ITEMS.filter((item) => isVisible(item.minMode, mode));
 
-  const badgeFor = (href: string) => {
+  const badgeFor = (href: string): number | "!" | null => {
     if (href === "/dashboard/reviews" && pendingReviews > 0) return pendingReviews;
     if (href === "/dashboard/questions" && pendingQuestions > 0) return pendingQuestions;
+    if (href === "/dashboard/billing" && needsCard) return "!";
     return null;
   };
 

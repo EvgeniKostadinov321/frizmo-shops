@@ -464,3 +464,44 @@ export async function sendContactEmail(input: {
     return false;
   }
 }
+
+/**
+ * Card-gate: първата завършена продажба активира изискването за карта. Уведомяваме
+ * търговеца (веднъж), че магазинът спира нови поръчки, докато не запази карта.
+ * Праща се до shop.email; ако липсва — пропуска се тихо.
+ */
+export async function sendCardRequiredEmail(input: {
+  shopName: string;
+  shopEmail: string;
+}): Promise<void> {
+  if (!input.shopEmail) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — имейлът за нужна карта е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const billingUrl = `${BASE_URL}/dashboard/billing`;
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.shopEmail,
+      subject: `Запази карта, за да продължиш да продаваш — ${input.shopName}`,
+      html: shell(
+        "Имаш първа продажба! 🎉",
+        `<p style="font-size:14px;line-height:1.6;">
+          Честито — <strong>${esc(input.shopName)}</strong> има първа завършена продажба.
+          За да продължиш да приемаш поръчки, запази карта в таблото. Месечната такса
+          (5% при продажба) се тегли автоматично от нея.
+        </p>
+        <p style="font-size:14px;line-height:1.6;color:#6b7280;">
+          Докато няма запазена карта, магазинът временно не приема нови поръчки.
+        </p>
+        <p style="margin:24px 0;">
+          <a href="${billingUrl}" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Запази карта</a>
+        </p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Имейл за нужна карта се провали:", e);
+  }
+}

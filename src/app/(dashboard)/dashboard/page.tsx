@@ -8,6 +8,8 @@ import { countNewOrders, getMonthRevenue, getOrders } from "@/db/queries/orders"
 import { countLowStock, countProducts } from "@/db/queries/products";
 import { getOnboardingStatus } from "@/db/queries/onboarding-status";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
+import { CardRequiredBanner } from "@/components/dashboard/card-required-banner";
+import { requiresCard } from "@/lib/selling-gate";
 import { getOwnShop } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
 
@@ -37,6 +39,9 @@ export default async function DashboardPage() {
   /* Д1: онбординг чеклист — само след първия продукт (иначе е рано); сам се
      скрива когато всичките 6 стъпки са готови. */
   const onboarding = productCount > 0 ? await getOnboardingStatus(shop) : null;
+  /* Card-gate: завършена продажба без запазена карта → магазинът спря да приема
+     поръчки. Промотен банер, за да не се пропусне (иначе тихо губи продажби). */
+  const needsCard = await requiresCard(shop.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,6 +63,8 @@ export default async function DashboardPage() {
         </div>
         <LinkButton href="/dashboard/products/new">Нов продукт</LinkButton>
       </div>
+
+      {needsCard && <CardRequiredBanner />}
 
       {onboarding && <OnboardingChecklist result={onboarding} />}
 

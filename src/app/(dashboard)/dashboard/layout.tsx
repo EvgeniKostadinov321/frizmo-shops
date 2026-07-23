@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icon, Logo } from "@/components/ui";
 import { countPendingReviews } from "@/db/queries/reviews";
 import { countPendingQuestions } from "@/db/queries/questions";
+import { requiresCard } from "@/lib/selling-gate";
 import { ensureProfile, getOwnShop } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { MobileMenuButton } from "@/components/dashboard/mobile-menu-button";
@@ -17,9 +18,13 @@ export default async function DashboardLayout({
 }) {
   const { user, shop } = await getOwnShop();
   await ensureProfile(user.id);
-  const [pendingReviews, pendingQuestions] = shop
-    ? await Promise.all([countPendingReviews(shop.id), countPendingQuestions(shop.id)])
-    : [0, 0];
+  const [pendingReviews, pendingQuestions, needsCard] = shop
+    ? await Promise.all([
+        countPendingReviews(shop.id),
+        countPendingQuestions(shop.id),
+        requiresCard(shop.id),
+      ])
+    : [0, 0, false];
 
   return (
     <div className="min-h-screen">
@@ -31,6 +36,7 @@ export default async function DashboardLayout({
               mode={shop.complexityMode}
               pendingReviews={pendingReviews}
               pendingQuestions={pendingQuestions}
+              needsCard={needsCard}
             />
           </div>
         )}
@@ -71,6 +77,7 @@ export default async function DashboardLayout({
               mode={shop.complexityMode}
               pendingReviews={pendingReviews}
               pendingQuestions={pendingQuestions}
+              needsCard={needsCard}
             />
           </aside>
           <main className="min-w-0 flex-1">

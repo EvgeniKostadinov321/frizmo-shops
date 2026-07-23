@@ -24,7 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/subscribers", label: "Абонати", icon: "megaphone", minMode: 2 },
   { href: "/dashboard/coupons", label: "Промо кодове", icon: "tag", minMode: 1 },
   { href: "/dashboard/fulfillment", label: "Плащане и доставка", icon: "trending-up", minMode: 0 },
-  { href: "/dashboard/billing", label: "Абонамент", icon: "wallet", minMode: 0 },
+  { href: "/dashboard/billing", label: "Такси", icon: "wallet", minMode: 0 },
 ];
 
 export function isActive(pathname: string, item: NavItem) {

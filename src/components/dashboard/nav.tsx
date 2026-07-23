@@ -13,18 +13,21 @@ export function DashboardNav({
   mode,
   pendingReviews = 0,
   pendingQuestions = 0,
+  needsCard = false,
 }: {
   mode: ComplexityMode;
   pendingReviews?: number;
   pendingQuestions?: number;
+  needsCard?: boolean;
 }) {
   const pathname = usePathname();
   const items = NAV_ITEMS.filter((item) => isVisible(item.minMode, mode));
 
-  /* Badge с чакащи — „Ревюта" (одобрение) и „Въпроси" (отговор). */
-  const badgeFor = (href: string) => {
+  /* Badge с чакащи — „Ревюта" (одобрение), „Въпроси" (отговор), „Такси" (нужна карта). */
+  const badgeFor = (href: string): number | "!" | null => {
     if (href === "/dashboard/reviews" && pendingReviews > 0) return pendingReviews;
     if (href === "/dashboard/questions" && pendingQuestions > 0) return pendingQuestions;
+    if (href === "/dashboard/billing" && needsCard) return "!";
     return null;
   };
 
