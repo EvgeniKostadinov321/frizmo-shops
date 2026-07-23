@@ -76,3 +76,26 @@ export async function customerHasDefaultCard(customerId: string): Promise<boolea
   if (customer.deleted) return false;
   return Boolean(customer.invoice_settings?.default_payment_method);
 }
+
+export interface SavedCard {
+  brand: string; // "visa" / "mastercard" / …
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
+/** Данните за default картата на Customer-а (за визуализация в dashboard). null = няма. */
+export async function getDefaultCard(customerId: string): Promise<SavedCard | null> {
+  const customer = await stripe.customers.retrieve(customerId);
+  if (customer.deleted) return null;
+  const pmId = customer.invoice_settings?.default_payment_method;
+  if (!pmId || typeof pmId !== "string") return null;
+  const pm = await stripe.paymentMethods.retrieve(pmId);
+  if (!pm.card) return null;
+  return {
+    brand: pm.card.brand,
+    last4: pm.card.last4,
+    expMonth: pm.card.exp_month,
+    expYear: pm.card.exp_year,
+  };
+}
