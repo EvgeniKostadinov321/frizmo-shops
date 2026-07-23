@@ -90,6 +90,26 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (4/ФИНАЛ) (`c3a6d75` dev+main/ПРОД) — card форма работи end-to-end; БИЛИНГЪТ НА ПРОД.**
+  Card-gate формата вече работи изцяло, потвърдено на живо (dev+прод). **Root cause на висенето беше ДВОЕН:**
+  (а) `elements.submit()` е ЗАДЪЛЖИТЕЛЕН преди `confirmSetup` в react-stripe-js 6.x — иначе confirmSetup виси
+  безкрайно без грешка (`da70c56`, guard-нат с withTimeout 25с); (б) **КЛЮЧОВОТО** — `confirmSetup` САМО записва
+  картата към customer-а, но НЕ я прави default. Без изричен `default_payment_method`, `customerHasDefaultCard`
+  остава false → card-gate никога не пада → формата „виси" от гледна точка на потребителя. **Фикс (`f89e6fd`):**
+  нов server action `setDefaultCard` (`src/actions/card-setup.ts`) — взима customerId САМО за текущия shop (не от
+  SetupIntent-а → защита срещу чужд customer), валидира `intent.customer === sub.customerId`, вика
+  `stripe.customers.update(...default_payment_method...)`; формата го извиква с `confirmRes.setupIntent.id` веднага
+  след confirmSetup. **Card визуализация (`152cea4`):** нов `SavedCard` (`src/components/dashboard/saved-card.tsx`)
+  — brand + •••• last4 + „Изтича MM/YY" + „Смени" (инлайн CardSetupForm); `getDefaultCard` helper в `stripe.ts`;
+  invoice статуси с цветови тон. Debug логовете от диагностиката махнати (`c3a6d75`, запазени timeout guard +
+  try/catch + setDefaultCard). **Обективна проверка на живо:** Stripe Customer `cus_Ur6uz3...`, default карта
+  VISA •••• 4242 exp 2/2029, fee_events 2 charge = 1.30€. **Прод база:** `fee_events`+`fee_invoices`+
+  `orders.completedAt/returnedAt` приложени с **таргетиран SQL** (не drizzle push — pg_trgm 3/3 цели).
+  **БИЛИНГЪТ Е НА ПРОД:** `origin/main == origin/dev == c3a6d75` (линеен, нула дивергенция).
+  **ОСТАВА (не блокира кода, само реалната активация):** (1) live Stripe ключове за реални плащания (сега test
+  mode); (2) Vercel Production Stripe env ако тестваш на прод домейн; (3) по избор — „изтрий стари карти при
+  смяна" (иначе payment methods се трупат в customer-а — при теста станаха 10).
+
 - **2026-07-23 (3) (`da70c56` dev/preview) — БИЛИНГ Task 7-8 + card E2E на живо + 7 находки.**
   Завършена цялата **картова верига (Task 7, `89578e0`):** `createSetupIntent` (`src/actions/card-setup.ts`,
   SetupIntent `usage:off_session` + `payment_method_types:["card"]`); `ensureStripeCustomer`/`customerHasDefaultCard`
