@@ -16,6 +16,10 @@ export async function createSetupIntent(): Promise<ActionResult<{ clientSecret: 
     const intent = await stripe.setupIntents.create({
       customer: customerId,
       usage: "off_session", // за бъдещо авто-теглене на месечната фактура
+      /* Таксата се тегли САМО с карта (месечно авто-теглене) → ограничаваме до карта.
+         Иначе Stripe предлага нерелевантни за BG методи (Pix/Bancontact). Легитимно
+         изключение от dynamic payment methods — тук нарочно искаме само карта. */
+      payment_method_types: ["card"],
     });
     if (!intent.client_secret) return fail("Неуспешно създаване на заявка за карта.");
     return ok({ clientSecret: intent.client_secret });

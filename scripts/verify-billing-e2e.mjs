@@ -35,9 +35,14 @@ async function main() {
     customerId = customer.id;
     check("Customer създаден с metadata.app=frizmo-shops", customer.metadata.app === "frizmo-shops", customerId);
 
-    // ---- 2. SetupIntent (Task 7 card flow) ----
-    const si = await stripe.setupIntents.create({ customer: customerId, usage: "off_session" });
+    // ---- 2. SetupIntent (Task 7 card flow) — ограничен до карта (без Pix/Bancontact) ----
+    const si = await stripe.setupIntents.create({
+      customer: customerId, usage: "off_session", payment_method_types: ["card"],
+    });
     check("SetupIntent създаден (off_session)", Boolean(si.client_secret), si.id);
+    check("SetupIntent е само карта (без Pix/Bancontact)",
+      si.payment_method_types.length === 1 && si.payment_method_types[0] === "card",
+      si.payment_method_types.join(","));
 
     // ---- 3. Прикачи test карта (4242...) + направи я default (симулира confirmSetup) ----
     const pm = await stripe.paymentMethods.attach("pm_card_visa", { customer: customerId });

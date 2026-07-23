@@ -34,6 +34,9 @@ function CardForm() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
+      {/* SetupIntent-ът е ограничен до карта (виж createSetupIntent) → само карта +
+          Apple/Google Pay (те са карта-базирани, удобни, работят в BG). Pix/Bancontact
+          отпадат от само-карта ограничението. */}
       <PaymentElement options={{ layout: "tabs" }} />
       <Button type="submit" loading={busy} disabled={!stripe}>
         Запази картата
