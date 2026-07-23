@@ -35,7 +35,7 @@ import { sendOrderEmails, sendOrderStatusEmail, sendReturnRequestEmail } from "@
 import { parseBgPhone } from "@/lib/phone";
 import { parseOrderNumber } from "@/lib/order-number";
 import { ALLOWED_TRANSITIONS } from "@/lib/order-status";
-import { isShopActive } from "@/lib/plan";
+import { canAcceptOrders } from "@/lib/selling-gate";
 import { type PaymentCreds, type PaymentPackage } from "@/lib/payments";
 import { buildEpayForOrder } from "@/lib/payments/build-order-package";
 import { priceCart, type AppliedCoupon, type PricedCart } from "@/lib/pricing";
@@ -179,9 +179,9 @@ export async function createOrder(
     return fail("Магазинът не приема поръчки в момента.");
   }
 
-  /* Billing gate: неплатен/спрян абонамент → магазинът не приема поръчки
-     („временно затворено"). Отделно от модерацията (shop.status). */
-  if (!(await isShopActive(shop.id, shop.createdAt))) {
+  /* Billing gate: просрочена такса или неизискана карта след първа продажба →
+     магазинът не приема поръчки („временно затворено"). Отделно от модерацията. */
+  if (!(await canAcceptOrders(shop.id))) {
     return fail("Магазинът временно не приема поръчки.");
   }
 

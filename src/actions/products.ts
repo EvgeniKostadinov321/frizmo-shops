@@ -20,13 +20,11 @@ import { parseCsv } from "@/lib/csv";
 import { isValidGtin } from "@/lib/gtin";
 import { toCents } from "@/lib/money";
 import { slugify } from "@/lib/slug";
-import { getShopPlan, PLAN_LIMITS } from "@/lib/plan";
 import { generateUniqueProductSlug } from "@/lib/product-slug";
 import { sanitizeMultiline, sanitizeText } from "@/lib/sanitize";
 import { notifyStockAlerts } from "@/lib/stock-alerts";
 import { SHOP_MEDIA_BUCKET } from "@/lib/storage";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
-import { countProducts } from "@/db/queries/products";
 import { productSchema, type ProductInput } from "@/schemas/product";
 import { productValues } from "./product-values";
 import { parseCsvMeasures } from "./csv-measures";
@@ -158,12 +156,6 @@ export async function saveProduct(
   }
 
   if (productId === null) {
-    const plan = await getShopPlan(shop.id, shop.createdAt);
-    const existing = await countProducts(shop.id);
-    if (existing >= PLAN_LIMITS[plan].maxProducts) {
-      return fail("Достигнат е лимитът продукти за твоя план.");
-    }
-
     const slug = await generateUniqueProductSlug(shop.id, input.name);
     const id = await db.transaction(async (tx) => {
       const [created] = await tx
@@ -419,11 +411,6 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
   /* S14: продукти с преход на наличността 0 → >0 (известия след транзакцията). */
   const restockedIds: string[] = [];
 
-  /* Плановият лимит важи и за импорта (скрит бутон не е защита). */
-  const plan = await getShopPlan(shop.id, shop.createdAt);
-  const maxProducts = PLAN_LIMITS[plan].maxProducts;
-  let productCount = existing.length;
-
   const result: CsvImportResult = { created: 0, updated: 0, skipped: [] };
 
   await db.transaction(async (tx) => {
@@ -529,16 +516,11 @@ export async function importProductsCsv(rawInput: unknown): Promise<ActionResult
         }
         result.updated++;
       } else {
-        if (productCount >= maxProducts) {
-          result.skipped.push(`ред ${lineNo}: достигнат лимит продукти за плана`);
-          continue;
-        }
         const [created] = await tx
           .insert(products)
           .values({ ...values, shopId: shop.id, slug })
           .returning({ id: products.id });
         bySlug.set(slug, created!.id); /* дубликат по-надолу във файла → update */
-        productCount++;
         result.created++;
       }
     }

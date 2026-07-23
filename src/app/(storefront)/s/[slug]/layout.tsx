@@ -11,7 +11,7 @@ import { AnnouncementSection } from "@/components/storefront/sections/announceme
 import { getBuyerFavoriteShopIds } from "@/db/queries/buyer-global";
 import { getShippingMethods } from "@/db/queries/fulfillment";
 import { getPublicCategories, getPublicShop } from "@/db/queries/storefront";
-import { isShopActive } from "@/lib/plan";
+import { canAcceptOrders } from "@/lib/selling-gate";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { THEME_PRESETS, themeStyle } from "@/lib/themes";
 
@@ -43,7 +43,7 @@ export default async function StorefrontLayout({ children, params }: StorefrontL
   const [categories, shippingMethods, sellingAllowed, { data: userData }] = await Promise.all([
     getPublicCategories(shop.id),
     getShippingMethods(shop.id),
-    isShopActive(shop.id, shop.createdAt),
+    canAcceptOrders(shop.id),
     supabase.auth.getUser(),
   ]);
   const viewerLoggedIn = Boolean(userData.user);

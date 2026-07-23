@@ -1,5 +1,5 @@
 import { and, eq, gte, lt, sql } from "drizzle-orm";
-import { db, feeEvents, feeInvoices } from "@/db";
+import { db, feeEvents, feeInvoices, subscriptions } from "@/db";
 import { feeBaseCents, feeCents, FEE_GRACE_DAYS } from "@/lib/fee";
 
 /** Drizzle transaction client (същия shape като db за заявки). */
@@ -100,6 +100,27 @@ export async function hasOverdueFees(shopId: string): Promise<boolean> {
     )
     .limit(1);
   return Boolean(row);
+}
+
+/**
+ * Card-gate: магазинът трябва да запази карта СЛЕД първата завършена продажба.
+ * requiresCard = имало е ≥1 charge И няма запазена карта.
+ * ЗАСЕГА (Task 6): „няма карта" = няма stripeCustomerId в subscriptions.
+ * Task 7 надгражда с реалната Stripe default_payment_method проверка.
+ */
+export async function requiresCard(shopId: string): Promise<boolean> {
+  const [charge] = await db
+    .select({ id: feeEvents.id })
+    .from(feeEvents)
+    .where(and(eq(feeEvents.shopId, shopId), eq(feeEvents.type, "charge")))
+    .limit(1);
+  if (!charge) return false; // няма още таксуема продажба → карта не се иска
+  const [sub] = await db
+    .select({ customerId: subscriptions.stripeCustomerId })
+    .from(subscriptions)
+    .where(eq(subscriptions.shopId, shopId))
+    .limit(1);
+  return !sub?.customerId; // няма Customer/карта → иска карта
 }
 
 /** Фактурите на магазин (за dashboard billing секцията), най-новите първо. */

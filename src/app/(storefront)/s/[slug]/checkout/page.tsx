@@ -7,7 +7,7 @@ import { getBuyerAddresses } from "@/db/queries/buyer";
 import { getPaymentMethods, getShippingMethods } from "@/db/queries/fulfillment";
 import { getZonesForShop } from "@/db/queries/shipping-zones";
 import { getPublicShop } from "@/db/queries/storefront";
-import { isShopActive } from "@/lib/plan";
+import { canAcceptOrders } from "@/lib/selling-gate";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 interface PageProps {
@@ -31,7 +31,7 @@ export default async function CheckoutPage({ params }: PageProps) {
     getShippingMethods(shop.id),
     getPaymentMethods(shop.id),
     getZonesForShop(shop.id),
-    isShopActive(shop.id, shop.createdAt),
+    canAcceptOrders(shop.id),
   ]);
   const activeShipping = shipping.filter((m) => m.active);
   const activePayment = payment.filter((m) => m.active);
