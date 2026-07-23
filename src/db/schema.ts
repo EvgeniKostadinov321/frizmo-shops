@@ -299,6 +299,15 @@ export const orderStatusEnum = pgEnum("order_status", [
   "returned",
 ]);
 
+/* Транзакционна такса — типове ledger събития + статуси на месечните фактури. */
+export const feeEventTypeEnum = pgEnum("fee_event_type", ["charge", "credit"]);
+export const feeInvoiceStatusEnum = pgEnum("fee_invoice_status", [
+  "draft",
+  "issued",
+  "paid",
+  "uncollectible",
+]);
+
 /* Куриерска интеграция (Еконт/Спиди) — офис доставка + товарителница. */
 export const courierProviderEnum = pgEnum("courier_provider", ["econt", "speedy"]);
 export const deliveryTargetEnum = pgEnum("delivery_target", ["address", "office"]);
@@ -563,6 +572,11 @@ export const orders = pgTable(
     /* N12: заявено връщане от купувача (причина + кога, за срока/одита). */
     returnReason: text("return_reason").notNull().default(""),
     returnRequestedAt: timestamp("return_requested_at", { withTimezone: true }),
+    /* Транзакционна такса: моментът, в който продажбата става таксуема (ръчно или
+       авто-completed). НЕ ползваме updatedAt — той се презаписва и е зает от return window. */
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    /* Моментът на ПРИЕМАНЕ на връщане (не заявката) — occurredAt на кредита. */
+    returnedAt: timestamp("returned_at", { withTimezone: true }),
     totalCents: integer("total_cents").notNull(),
     /* Идемпотентност на checkout: клиентът праща стабилен UUID per опит за поръчка.
        Двоен клик / retry при timeout → същият ключ → връщаме съществуващата
@@ -588,6 +602,7 @@ export const orders = pgTable(
     uniqueIndex("orders_shop_number_idx").on(t.shopId, t.orderNumber),
     index("orders_shop_status_idx").on(t.shopId, t.status),
     index("orders_shop_created_idx").on(t.shopId, t.createdAt),
+    index("orders_shop_completed_idx").on(t.shopId, t.completedAt),
     index("orders_buyer_idx").on(t.buyerId, t.createdAt),
     /* Partial unique: два опита със същия ключ в един магазин не могат да станат
        две поръчки. WHERE idempotency_key IS NOT NULL → ръчните поръчки (NULL) не
@@ -623,6 +638,60 @@ export const orderItems = pgTable(
   (t) => [
     index("order_items_order_idx").on(t.orderId),
     index("order_items_product_idx").on(t.productId),
+  ],
+).enableRLS();
+
+/** Immutable, event-dated ledger на таксовите събития. Append-only — балансът е производен. */
+export const feeEvents = pgTable(
+  "fee_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    type: feeEventTypeEnum("type").notNull(),
+    /* Винаги положително; знакът идва от type (charge=+, credit=−). */
+    amountCents: integer("amount_cents").notNull(),
+    /* feeBaseCents(order) към момента (subtotal−discount) — snapshot за възпроизводимост. */
+    baseCents: integer("base_cents").notNull(),
+    /* Бизнес дата на събитието (completedAt за charge / returnedAt за credit). */
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    /* Идемпотентност: макс 1 charge + 1 credit на поръчка. onConflictDoNothing разчита на това. */
+    uniqueIndex("fee_events_order_type_idx").on(t.orderId, t.type),
+    /* Месечна агрегация по магазин. */
+    index("fee_events_shop_occurred_idx").on(t.shopId, t.occurredAt),
+  ],
+).enableRLS();
+
+/** Месечен фактурен запис — идемпотентност на billing job-а + огледало на Stripe статуса. */
+export const feeInvoices = pgTable(
+  "fee_invoices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    /* Начало/край на фактурирания месец (UTC). */
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+    chargesCents: integer("charges_cents").notNull(),
+    creditsCents: integer("credits_cents").notNull(),
+    /* charges − credits. Може да е ≤ 0 (тогава без Stripe фактура). */
+    amountDueCents: integer("amount_due_cents").notNull(),
+    stripeInvoiceId: text("stripe_invoice_id"),
+    status: feeInvoiceStatusEnum("status").notNull().default("draft"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    /* Един фактурен ред на магазин на месец — onConflictDoNothing разчита на това. */
+    uniqueIndex("fee_invoices_shop_period_idx").on(t.shopId, t.periodStart),
   ],
 ).enableRLS();
 
