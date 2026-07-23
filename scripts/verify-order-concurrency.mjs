@@ -196,6 +196,34 @@ async function main() {
       for (const id of mtoOrderIds) await sql`delete from orders where id = ${id}`;
       await sql`delete from products where id = ${mtoProductId}`;
     }
+
+    // ---- Транзакционна такса: charge при completed, идемпотентност под транзакция ----
+    /* updateOrderStatus прави charge в същата транзакция със смяната на статуса.
+       Двойно completing на същата поръчка → точно 1 charge (unique(order_id,type)). */
+    const [feeOrder] = await sql`
+      insert into orders (shop_id, order_number, customer_name, customer_phone,
+        shipping_name, shipping_price_cents, payment_name, payment_type,
+        subtotal_cents, discount_cents, total_cents, status)
+      values (${shopId}, ${770000 + Math.floor(Math.random() * 9000)}, '__fee_o__', '+359888000000',
+        'Куриер', 0, 'Наложен платеж', 'cod', 2000, 0, 2000, 'shipped') returning id`;
+    const doComplete = () =>
+      sql.begin(async (tx) => {
+        await tx`update orders set status='completed', completed_at=now(), updated_at=now()
+                 where id=${feeOrder.id} and status != 'completed'`;
+        await tx`insert into fee_events (shop_id, order_id, type, amount_cents, base_cents, occurred_at)
+                 values (${shopId}, ${feeOrder.id}, 'charge', 100, 2000, now())
+                 on conflict (order_id, type) do nothing`;
+      });
+    await Promise.all([doComplete(), doComplete()]);
+    const [{ n: chargeCount }] = await sql`
+      select count(*)::int as n from fee_events where order_id=${feeOrder.id} and type='charge'`;
+    check(
+      "Такса: двойно completing → точно 1 charge (идемпотентност)",
+      Number(chargeCount) === 1,
+      `charges=${chargeCount}`,
+    );
+    await sql`delete from fee_events where order_id=${feeOrder.id}`;
+    await sql`delete from orders where id=${feeOrder.id}`;
   } finally {
     /* Чистим само каквото сме създали. */
     for (const id of testOrderIds) await sql`delete from orders where id = ${id}`;

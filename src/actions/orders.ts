@@ -25,6 +25,7 @@ import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
 import { normalizeCouponCode } from "@/db/queries/coupons";
 import { sumActiveMadeToOrderQty } from "@/db/queries/orders";
+import { recordFeeCharge, recordFeeCredit } from "@/db/queries/fees";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
@@ -756,15 +757,41 @@ export async function updateOrderStatus(input: {
     return fail("Този преход на статус не е позволен.");
   }
 
+  const now = new Date();
   await db.transaction(async (tx) => {
-    await tx
-      .update(orders)
-      .set({ status: parsed.data.status, updatedAt: new Date() })
-      .where(eq(orders.id, order.id));
+    /* Таксова колона + updatedAt заедно; completedAt/returnedAt се пълнят точно веднъж. */
+    const patch: {
+      status: typeof parsed.data.status;
+      updatedAt: Date;
+      completedAt?: Date;
+      returnedAt?: Date;
+    } = { status: parsed.data.status, updatedAt: now };
+    if (parsed.data.status === "completed" && !order.completedAt) patch.completedAt = now;
+    if (parsed.data.status === "returned" && !order.returnedAt) patch.returnedAt = now;
+
+    await tx.update(orders).set(patch).where(eq(orders.id, order.id));
 
     /* Отказ / прието връщане → връщаме наличностите (симетрично на декремента). */
     if (parsed.data.status === "cancelled" || parsed.data.status === "returned") {
       await restoreStock(tx, order.id);
+    }
+
+    /* Транзакционна такса: charge при завършване, credit при връщане (идемпотентно). */
+    if (parsed.data.status === "completed") {
+      await recordFeeCharge(tx, {
+        id: order.id,
+        shopId: order.shopId,
+        subtotalCents: order.subtotalCents,
+        discountCents: order.discountCents,
+        completedAt: order.completedAt ?? now,
+      });
+    }
+    if (parsed.data.status === "returned") {
+      await recordFeeCredit(tx, {
+        id: order.id,
+        shopId: order.shopId,
+        returnedAt: order.returnedAt ?? now,
+      });
     }
 
     /* Ръчен отказ на ЧАКАЩА плащане поръчка → маркирай и intent-а expired, за да не
@@ -773,7 +800,7 @@ export async function updateOrderStatus(input: {
     if (parsed.data.status === "cancelled" && order.status === "pending_payment") {
       await tx
         .update(paymentIntents)
-        .set({ status: "expired", updatedAt: new Date() })
+        .set({ status: "expired", updatedAt: now })
         .where(eq(paymentIntents.orderId, order.id));
     }
   });
