@@ -90,6 +90,31 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (3) (`da70c56` dev/preview) — БИЛИНГ Task 7-8 + card E2E на живо + 7 находки.**
+  Завършена цялата **картова верига (Task 7, `89578e0`):** `createSetupIntent` (`src/actions/card-setup.ts`,
+  SetupIntent `usage:off_session` + `payment_method_types:["card"]`); `ensureStripeCustomer`/`customerHasDefaultCard`
+  (`src/lib/stripe.ts`); реалният `requiresCard(shopId)` е в `src/lib/selling-gate.ts` (НЕ fees.ts — заради
+  server-only); UI през `billing-panel.tsx` + `card-setup-form.tsx` + `stripe-client.ts` (`getStripe()` чете
+  `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`). **Task 8 (`6dc85c4`):** месечен cron `bill-fees/route.ts` (CRON_SECRET,
+  `getBillableBalanceForPeriod→recordInvoiceForPeriod→markInvoiceIssued`, Stripe `charge_automatically`) + webhook
+  (`invoice.paid→paid`/`payment_failed→issued`, dedup stripeEvents). Идемпотентност: unique(shopId,periodStart).
+  **7 НАХОДКИ/ФИКСА:** (1) invoice→invoiceItem ред за Stripe 2026-06-24 — draft `invoices.create` ПЪРВО, после
+  `invoiceItems.create` с явен `invoice:id`, иначе фактура за **0€** (`faa5f9b`); (2) индикация за нужна карта —
+  банер `card-required-banner.tsx` + nav „!" badge на таб Такси + `sendCardRequiredEmail` при 1-ва завършена
+  продажба (countFeeCharges===1) (`57832fc`); (3) **card-gate дупка** — `canAcceptOrders` гард добавен и на
+  `createManualOrder` (`orders.ts:535`), не само онлайн checkout (иначе търговецът заобикаля през касата) +
+  регресионен тест (`8a495e1`); (4) ранно предупреждение на `/dashboard/orders/new` вместо форма (`24a2646`);
+  (5) SetupIntent само карта — Pix/Bancontact махнати (нерелевантни за BG) (`0b88f2d`); (6+7) **висенето на
+  картата** — `da521f9` (изключен Stripe Link + return_url), после финалният фикс `da70c56`: **`elements.submit()`
+  ЗАДЪЛЖИТЕЛЕН ПРЕДИ `confirmSetup`** в react-stripe-js 6.x (без него confirmSetup виси безкрайно без грешка;
+  диагностицирано чрез systematic-debugging + жива инструментация + Stripe docs). **Тестове:** 483 (80 файла),
+  0 fail. Verify (ръчни): `verify-fees.mjs` (ledger) + `verify-billing-e2e.mjs` (реален Stripe test: SetupIntent→
+  карта→фактура→теглене, `amount_paid=105`). Оправен и `.env.example` (добавен PUBLISHABLE_KEY, махнати остарели
+  STRIPE_PRICE_*). Git: чисто, `dev==origin/dev` (`da70c56`, Vercel preview); `origin/main` непокътнат — нищо
+  билинг в прод. **ОСТАВА:** (1) Vercel **Preview** env — test Stripe ключове (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+  + `STRIPE_SECRET_KEY`, `WEBHOOK_SECRET` само за фактури) → Redeploy → жив тест на dev; (2) прод активиране:
+  live Stripe + merge main + **таргетиран db:push** на fee таблиците (`fee_events`/`fee_invoices`, не drizzle push).
+
 - **2026-07-23 (2) (`c93b9e8` dev/preview) — БИЛИНГ ИМПЛЕМЕНТАЦИЯ: ядро (Задачи 1-6) + текстове (9) на dev.**
   От одобрения спец → **имплементационен план** `docs/superpowers/plans/2026-07-23-transaction-fee-monetization.md`
   (9 задачи, TDD; self-review хвана 3 несъответствия с кода: requireShop сигнатура, owner имейл
