@@ -1,3 +1,4 @@
+import { isAuthorizedCron } from "@/lib/cron-auth";
 import { getDueAbandonedCarts, markAbandonedCartSent } from "@/db/queries/abandoned-cart";
 import { sendAbandonedCartEmail } from "@/lib/email";
 
@@ -10,10 +11,7 @@ const HOUR_MS = 60 * 60 * 1000;
  * праща по 1 напомнящ имейл и ги маркира sent. Гард с CRON_SECRET.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isAuthorizedCron(req)) return new Response("Unauthorized", { status: 401 });
 
   const due = await getDueAbandonedCarts(HOUR_MS, 100);
   let sent = 0;

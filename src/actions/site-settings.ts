@@ -13,6 +13,8 @@ import { shopCacheTag } from "@/db/queries/storefront";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
 import { sanitizeMultiline } from "@/lib/sanitize";
+import { SHOP_MEDIA_BUCKET } from "@/lib/storage";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { siteSettingsSchema, type SiteSettings } from "@/schemas/site-settings";
 
 /** Инвалидира ПУБЛИЧНИЯ кеш на магазина (използвай само при промяна на
@@ -34,10 +36,16 @@ function deepSanitize<T>(value: T): T {
   return value;
 }
 
-/** Всички "shops/..." пътища в настройките трябва да са на този магазин. */
+/** Всички "shops/..." пътища в настройките трябва да са на този магазин.
+    Функцията минава рекурсивно ВСЕКИ string (settings смесва пътища и свободен текст), затова
+    не може да е чист allowlist — но освен чужд „shops/" път (одит #4 STG-03) хващаме и path
+    traversal / подозрителни storage-подобни стойности, които не са на този магазин. */
 function findForeignImagePath(value: unknown, prefix: string): boolean {
   if (typeof value === "string") {
-    return value.startsWith("shops/") && !value.startsWith(prefix);
+    /* Чужд shops/ път ИЛИ traversal, който би могъл да излезе извън магазина. */
+    if (value.startsWith("shops/") && !value.startsWith(prefix)) return true;
+    if (value.includes("../") || value.startsWith("/shops/") || value.startsWith("shops/..")) return true;
+    return false;
   }
   if (Array.isArray(value)) return value.some((v) => findForeignImagePath(v, prefix));
   if (value && typeof value === "object") {
@@ -111,10 +119,20 @@ export async function setShopLogo(input: { path: string | null }): Promise<Actio
     return fail("Невалиден път на снимка.");
   }
 
+  const oldLogo = shop.logoPath;
   await db
     .update(shops)
     .set({ logoPath: parsed.data.path, updatedAt: new Date() })
     .where(eq(shops.id, shop.id));
+
+  /* Orphan cleanup (одит #4 STG-01): старото лого се трие, ако е сменено/премахнато. */
+  if (oldLogo && oldLogo !== parsed.data.path && oldLogo.startsWith(`shops/${shop.id}/`)) {
+    try {
+      await createSupabaseAdmin().storage.from(SHOP_MEDIA_BUCKET).remove([oldLogo]);
+    } catch (e) {
+      console.error(JSON.stringify({ scope: "orphan-logo", shopId: shop.id, error: String(e) }));
+    }
+  }
 
   revalidateShop(shop.slug);
   revalidatePath("/dashboard/website");

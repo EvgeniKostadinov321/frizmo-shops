@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import type { AbandonedLine, Shop } from "@/db";
 import { formatPrice } from "@/lib/money";
 import type { PricedLine } from "@/lib/pricing";
+import { siteUrl } from "@/lib/site-url";
 
 /**
  * Имейли при нова поръчка. Домейнът frizmo.bg е верифициран в Resend
@@ -11,12 +12,11 @@ import type { PricedLine } from "@/lib/pricing";
 const FROM = "Frizmo Shops <shops@frizmo.bg>";
 
 /** Базов публичен URL — за линкове в имейлите (потвърждение, отписване).
- *  Dev fallback към localhost, за да работят линковете при локално тестване. */
+ *  Dev fallback към localhost, за да работят линковете при локално тестване; prod fallback
+ *  минава през siteUrl() (един източник на домейна, одит #4). */
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV !== "production"
-    ? "http://localhost:3000"
-    : "https://frizmo-shops.vercel.app");
+  (process.env.NODE_ENV !== "production" ? "http://localhost:3000" : siteUrl());
 
 interface OrderEmailData {
   orderNumber: number;
@@ -105,7 +105,7 @@ export async function sendOrderEmails(shop: Shop, order: OrderEmailData): Promis
             Плащане: ${esc(order.paymentName)}
             ${order.note ? `<br/>Бележка: ${esc(order.note)}` : ""}
           </p>
-          <p><a href="https://frizmo-shops.vercel.app/dashboard/orders">Виж в панела →</a></p>`,
+          <p><a href="${BASE_URL}/dashboard/orders">Виж в панела →</a></p>`,
         ),
       }),
     );

@@ -15,6 +15,9 @@ export const metadata: Metadata = {
     description:
       "Разгледай продуктите на всички магазини във Frizmo Shops: храни, дрехи, ръчна изработка и още.",
   },
+  /* Canonical към чистия URL (одит #4 SEO-03) — иначе всяка комбинация filter/sort/page е
+     отделен индексируем дубликат. Огледало на storefront продуктовата страница. */
+  alternates: { canonical: "/products" },
 };
 
 const SORT_OPTIONS: { value: ProductSort; label: string }[] = [

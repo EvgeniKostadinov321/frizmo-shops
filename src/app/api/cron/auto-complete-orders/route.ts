@@ -1,4 +1,5 @@
 import { and, eq, lt } from "drizzle-orm";
+import { isAuthorizedCron } from "@/lib/cron-auth";
 import { db, orders } from "@/db";
 import { recordFeeCharge } from "@/db/queries/fees";
 import { AUTO_COMPLETE_DAYS } from "@/lib/fee";
@@ -11,10 +12,7 @@ export const dynamic = "force-dynamic";
  * Гарден с CRON_SECRET (Bearer). Идемпотентно: charge е onConflictDoNothing.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isAuthorizedCron(req)) return new Response("Unauthorized", { status: 401 });
 
   const cutoff = new Date(Date.now() - AUTO_COMPLETE_DAYS * 86_400_000);
   const stuck = await db

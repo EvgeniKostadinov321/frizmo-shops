@@ -1,3 +1,4 @@
+import { isAuthorizedCron } from "@/lib/cron-auth";
 import { db, shops } from "@/db";
 import {
   getCumulativeBillableBalance,
@@ -22,10 +23,7 @@ function previousMonthUtc(now: Date): { start: Date; end: Date } {
  * amountDue > 0. amountDue ≤ 0 → само audit ред, без Stripe фактура. Гарден с CRON_SECRET.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isAuthorizedCron(req)) return new Response("Unauthorized", { status: 401 });
 
   const now = new Date();
   const { start, end } = previousMonthUtc(now);

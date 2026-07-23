@@ -1,11 +1,14 @@
 import { getFeedProducts, getPublicShopCached, getShopCategoryNames } from "@/db/queries/storefront";
 import { buildProductFeed } from "@/lib/product-feed";
+import { siteUrl } from "@/lib/site-url";
 
 /** ISR: feed-ът се кешира 1 час; инвалидира се при продуктова мутация чрез
     revalidateTag(shopCacheTag(slug)), който revalidateShop вече вика. */
 export const revalidate = 3600;
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://frizmo-shops.vercel.app";
+/* Единствен източник на базовия URL + нормализира завършващ „/" (одит #4 SEO-04) — иначе
+   продуктовите <g:link> в Google Merchant feed-а може да имат двоен слаш. */
+const BASE_URL = siteUrl();
 
 export async function GET(
   _req: Request,

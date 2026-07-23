@@ -90,6 +90,18 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-24 (11) — ОДИТЕН ЦИКЪЛ #4 (нови измерения) + 10 поправки.** Четвърти одит (Storage/файлове,
+  Email/push, SEO/structured data, Config/security-headers; workflow 14 агента, 0 грешки, 0 повторения,
+  агентите не пипнаха файлове). 10 нови находки, 0 критични (както предвидих — тежкото е в #1-#3). Доклад:
+  `audits/2026-07-24-audit-cycle-4.md`. **ПОПРАВЕНИ ВСИЧКИ 10** (`pnpm check` = 498): **SEC-HDR-01**
+  (security headers в next.config — X-Frame-Options/CSP frame-ancestors/nosniff/Referrer-Policy/HSTS; беше
+  ПЪЛНА липса → clickjacking) · **SEO-01/EMAIL-01/SEO-04** („довърши CACHE-03" — robots.ts/email.ts:108/feed.xml
+  хардкодваха vercel.app; sitemap беше поправен в #2, тези 3 сестри — не; сега през siteUrl()) · **SEO-02**
+  (marketing JSON-LD цена 10€→0, безплатен модел) · **SEO-03** (каталог /products+/shops canonical) ·
+  **STG-01** (orphan cleanup при редакция на продукт+лого — старите файлове се трият) · **STG-02** (upload
+  rate-limit — 5MB беше само клиентски) · **STG-03** (site-settings path валидация +traversal guard) ·
+  **SEC-HDR-02** (нов `cron-auth.ts` isAuthorizedCron с timingSafeEqual → 4-те cron route-а). Чака push.
+
 - **2026-07-23 (10) — BL-01 РЕШЕНО (cross-month таксов кредит, running balance).** Потребителят делегира
   решението с пълно доверие. Проблемът: билингът смяташе дължимото за КАЛЕНДАРЕН месец → кредит от прието
   връщане (occurredAt=returnedAt), попаднал в месец без продажби, се губеше (amountDue≤0→continue). ~половината

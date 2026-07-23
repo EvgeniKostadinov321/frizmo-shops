@@ -117,7 +117,10 @@ export default async function LandingPage() {
             applicationCategory: "BusinessApplication",
             operatingSystem: "Web",
             description: "Платформа за създаване на онлайн магазини за българския пазар.",
-            offers: { "@type": "Offer", price: "10", priceCurrency: "EUR" },
+            /* Безплатен вход (монетизация 2026-07-23 = такса на продажба, не абонамент).
+               price:0 отразява видимото „Безплатно" — стара цена 10€ в JSON-LD беше подвеждаща
+               за Google Rich Results (одит #4 SEO-02). */
+            offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
           }),
         }}
       />

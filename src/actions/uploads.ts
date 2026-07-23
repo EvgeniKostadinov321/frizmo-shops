@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
 import { requireShop } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   ALLOWED_IMAGE_EXT,
   ALLOWED_VIDEO_EXT,
@@ -35,6 +36,12 @@ export async function requestImageUpload(input: {
   if (!parsed.success) return fail("Неподдържан формат на файла.");
 
   const { shop } = await requireShop();
+  /* Rate limit (одит #4 STG-02): размерът се налага само на клиента (signed URL не обвързва
+     размер) → без гард търговец може да генерира много signed URL-и и да качи много големи
+     файлове, раздувайки своя storage. Ограничаваме темпа на издаване per магазин. */
+  if (!(await checkRateLimit(`upload:${shop.id}`, 60, 60))) {
+    return fail("Твърде много качвания. Изчакай малко.");
+  }
   const folder = {
     product: "products",
     branding: "branding",

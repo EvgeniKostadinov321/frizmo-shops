@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { isAuthorizedCron } from "@/lib/cron-auth";
 import { revalidateTag } from "next/cache";
 import { db, orders, paymentIntents } from "@/db";
 import { restoreStock } from "@/actions/orders";
@@ -21,10 +22,7 @@ const EXP_MS = EPAY_EXP_SECONDS * 1000 + CANCEL_GRACE_MS; // 2ч30мин
  * потвърдена (от webhook) поръчка не попада в списъка.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isAuthorizedCron(req)) return new Response("Unauthorized", { status: 401 });
 
   const due = await getExpiredPendingOrders(EXP_MS, 100);
   let cancelled = 0;

@@ -184,6 +184,20 @@ export async function saveProduct(
     await insertRelations(tx, product.id, input, shop.id);
   });
 
+  /* Orphan cleanup (одит #4 STG-01): изтрий от Storage снимките, които вече не са в продукта
+     (смяна/премахване на снимка при редакция). Best-effort, само собствени пътища. */
+  const prefix = `shops/${shop.id}/`;
+  const removed = product.images.filter(
+    (p) => p.startsWith(prefix) && !values.images.includes(p),
+  );
+  if (removed.length > 0) {
+    try {
+      await createSupabaseAdmin().storage.from(SHOP_MEDIA_BUCKET).remove(removed);
+    } catch (e) {
+      console.error(JSON.stringify({ scope: "orphan-cleanup", productId: product.id, error: String(e) }));
+    }
+  }
+
   /* S14: наличност 0 → >0 → back-in-stock известия (неблокиращо). */
   if (product.stock === 0 && values.stock !== null && values.stock > 0) {
     void notifyStockAlerts(shop.id, [product.id]);

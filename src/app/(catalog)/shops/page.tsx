@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     description:
       "Открий малки български бизнеси: храни, мода, ръчна изработка, козметика и още — всички на едно място.",
   },
+  /* Canonical към чистия URL (одит #4 SEO-03) — filter/sort/page да не се индексират като дубликати. */
+  alternates: { canonical: "/shops" },
 };
 
 const SORT_OPTIONS: { value: ShopSort; label: string }[] = [
