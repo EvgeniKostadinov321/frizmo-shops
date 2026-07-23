@@ -90,6 +90,18 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (5/LIVE) (`0708eea` dev+main/ПРОД) — БИЛИНГЪТ Е 100% LIVE НА ПРОД.**
+  Месечната фактура тествана end-to-end на живо (`scripts/seed-fee-invoice.mjs`: charge в минал месец → агрегация →
+  Stripe фактура → авто-теглене от картата → paid; потвърдено „юни 2026 · 2€ · Платена"). „Премахни карта"
+  добавено (`removeCard` action + бутон с потвърждение). **Live Stripe проверен обективно (read-only):** акаунт
+  FRIZMO (`acct_1TASaqRq5DJiUm57`), BG/EUR, charges+payouts enabled (готов за реални пари); live webhook
+  `https://frizmoshops.bg/api/webhooks/stripe`, enabled, API 2026-06-24.dahlia, събития invoice.paid+payment_failed.
+  **Vercel Production env:** трите live ключа (sk_live/pk_live/whsec) + Redeploy (Ready). Landing на прод показва
+  новите текстове. **СПОДЕЛЕН Stripe акаунт** със салоните (`api-dev.frizmo.bg` webhook) — изолация през
+  `metadata.app==="frizmo-shops"` guard + отделен наш live webhook. Стари абонаментни продукти архивирани в TEST.
+  **ОСТАВА само предстартов жив тест** на frizmoshops.bg (7-стъпков план в паметта [[transaction-fee-monetization]])
+  преди реклами. ⚠️ Live = реални пари.
+
 - **2026-07-23 (4/ФИНАЛ) (`c3a6d75` dev+main/ПРОД) — card форма работи end-to-end; БИЛИНГЪТ НА ПРОД.**
   Card-gate формата вече работи изцяло, потвърдено на живо (dev+прод). **Root cause на висенето беше ДВОЕН:**
   (а) `elements.submit()` е ЗАДЪЛЖИТЕЛЕН преди `confirmSetup` в react-stripe-js 6.x — иначе confirmSetup виси
