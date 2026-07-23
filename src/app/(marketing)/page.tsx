@@ -19,12 +19,12 @@ import { db, products, shops } from "@/db";
 import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { publicImageUrl } from "@/lib/storage";
-import { PRICING_PLANS, PRICING_TRUST, TRIAL_NOTE } from "@/lib/plans-content";
+import { PRICING_PLANS, PRICING_TRUST, FEE_NOTE } from "@/lib/plans-content";
 
 export const metadata: Metadata = {
-  title: "Frizmo Shops — Продавай повече. Без хаос, без комисиони.",
+  title: "Frizmo Shops — Продавай повече. Без хаос.",
   description:
-    "Истински онлайн магазин със собствен адрес за минути: продукти, поръчки, наличности и видимост в Google. Без комисиона от продажбите. 30 дни безплатно.",
+    "Истински онлайн магазин със собствен адрес за минути: продукти, поръчки, наличности и видимост в Google. Безплатен старт — плащаш малка такса само при продажба.",
 };
 
 const STEPS: { number: string; title: string; text: string; visual: StepVisual }[] = [
@@ -57,9 +57,9 @@ const STEPS: { number: string; title: string; text: string; visual: StepVisual }
 const FAQ = [
   { value: "company", question: "Трябва ли ми фирма, за да продавам?", answer: "За редовна търговска дейност — да (ЕООД, ЕТ или регистрация като земеделски производител/занаятчия). Ако тепърва проучваш, започни безплатния период и говори със счетоводител." },
   { value: "payment", question: "Как клиентите плащат?", answer: "Наложен платеж, банков превод или на място — ти избираш кои методи предлагаш. Плащане с карта идва скоро." },
-  { value: "cancel", question: "Мога ли да откажа по всяко време?", answer: "Да. Без договори и без неустойки — спираш абонамента и толкова." },
+  { value: "cancel", question: "Мога ли да откажа по всяко време?", answer: "Да. Без договори и без неустойки — спираш когато решиш и толкова." },
   { value: "speed", question: "Колко бързо мога да започна?", answer: "Първият ти продукт може да е онлайн 10 минути след регистрацията. Сериозно." },
-  { value: "commission", question: "Има ли комисиона от продажбите?", answer: "Не. Плащаш само месечния абонамент — всичко от продажбите си е твое." },
+  { value: "commission", question: "Има ли такса?", answer: "Създаването на магазина е безплатно — без месечен абонамент. Взимаме 5% при реална продажба (минимум 0,30 евро, максимум 50 евро на поръчка). Плащаш само когато и ти печелиш." },
 ];
 
 /** Letterspaced editorial kicker с hairline продължение. */
@@ -157,9 +157,9 @@ export default async function LandingPage() {
               <h1 className="font-display text-5xl font-extrabold leading-[1.03] tracking-tight text-balance text-ink-900 sm:text-6xl lg:text-[4.5rem]">
                 Продавай повече.
                 <br />
-                Без хаос, без{" "}
+                Без{" "}
                 <span className="relative whitespace-nowrap text-brand-600">
-                  комисиони
+                  хаос
                   <span
                     aria-hidden
                     className="absolute inset-x-0 bottom-1 -z-10 h-3 rounded-sm bg-brand-100"
@@ -184,7 +184,7 @@ export default async function LandingPage() {
                 <InstallAppButton />
               </div>
               <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-3 text-sm text-ink-500">
-                {["30 дни безплатно", "Плащане след 30 дни", "Готов за 15 минути", "Без комисиона"].map(
+                {["Безплатен старт", "Без месечна такса", "Готов за 15 минути", "Плащаш при продажба"].map(
                   (item) => (
                     <li key={item} className="flex items-center gap-2">
                       <Icon name="check" size={15} className="shrink-0 text-brand-600" />
@@ -303,10 +303,8 @@ export default async function LandingPage() {
           <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
             Прости, честни цени
           </h2>
-          <p className="mt-3 text-lg text-ink-500">
-            {TRIAL_NOTE} Без комисиони от продажби.
-          </p>
-          <RevealList className="mt-12 grid gap-6 md:grid-cols-2" itemClassName="h-full">
+          <p className="mt-3 text-lg text-ink-500">{FEE_NOTE}</p>
+          <RevealList className="mx-auto mt-12 grid max-w-md gap-6" itemClassName="h-full">
             {PRICING_PLANS.map((plan) => {
               const dark = plan.highlighted;
               return (
@@ -318,45 +316,28 @@ export default async function LandingPage() {
                         : "border border-surface-200 bg-surface-0 shadow-card"
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className={`font-display text-2xl font-extrabold ${dark ? "" : "text-ink-900"}`}>
-                          {plan.name}
-                        </h3>
-                        <p className={`mt-1 text-sm ${dark ? "text-brand-surface-muted" : "text-ink-500"}`}>
-                          {plan.description}
-                        </p>
-                      </div>
-                      {dark && (
-                        <span className="rounded-full bg-brand-surface-ink/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider">
-                          Най-популярен
-                        </span>
-                      )}
+                    <div>
+                      <h3 className={`font-display text-2xl font-extrabold ${dark ? "" : "text-ink-900"}`}>
+                        {plan.name}
+                      </h3>
+                      <p className={`mt-1 text-sm ${dark ? "text-brand-surface-muted" : "text-ink-500"}`}>
+                        {plan.description}
+                      </p>
                     </div>
                     <div>
                       <p className={`font-display text-6xl font-extrabold ${dark ? "" : "text-ink-900"}`}>
-                        {plan.priceMonthly} €
-                        <span
-                          className={`ml-1 font-sans text-base font-normal ${dark ? "text-brand-surface-muted" : "text-ink-500"}`}
-                        >
-                          / месец
-                        </span>
+                        {plan.priceLabel}
                       </p>
                       <p
                         className={`mt-2 flex items-center gap-1.5 text-xs font-medium ${dark ? "text-brand-surface-muted" : "text-brand-600"}`}
                       >
                         <Icon name="check" size={13} className="shrink-0" />
-                        30 дни безплатно · плащане след 30 дни
+                        Без начално плащане · 5% само при продажба
                       </p>
                     </div>
                     <ul
                       className={`flex flex-col gap-2.5 text-sm ${dark ? "text-brand-surface-ink/90" : "text-ink-700"}`}
                     >
-                      {"featuresLead" in plan && (
-                        <li className={`pb-1 font-semibold ${dark ? "text-brand-surface-ink" : "text-ink-900"}`}>
-                          {plan.featuresLead}
-                        </li>
-                      )}
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-center gap-2.5">
                           <Icon
@@ -461,7 +442,7 @@ export default async function LandingPage() {
             <br className="hidden sm:block" /> отколкото мислиш.
           </h2>
           <p className="max-w-xl text-lg text-surface-200">
-            Регистрирай се за 2 минути. Ако не ти хареса — просто спираш. {TRIAL_NOTE}
+            Регистрирай се за 2 минути. Ако не ти хареса — просто спираш. Безплатен старт, без месечна такса.
           </p>
           <Link
             href="/auth/register?role=seller"
