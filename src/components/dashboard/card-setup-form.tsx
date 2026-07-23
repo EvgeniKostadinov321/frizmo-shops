@@ -21,7 +21,10 @@ function CardForm() {
     setBusy(true);
     const { error } = await stripe.confirmSetup({
       elements,
-      redirect: "if_required", // без redirect за карта без 3DS; иначе Stripe пренасочва
+      /* return_url е задължителен fallback — ползва се САМО ако Stripe реши, че е нужен
+         redirect (напр. 3DS). За обикновена карта без 3DS не се стига дотук (if_required). */
+      confirmParams: { return_url: `${window.location.origin}/dashboard/billing` },
+      redirect: "if_required",
     });
     if (error) {
       toast.error(error.message ?? "Картата не можа да се запази.");
@@ -34,10 +37,10 @@ function CardForm() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      {/* SetupIntent-ът е ограничен до карта (виж createSetupIntent) → само карта +
-          Apple/Google Pay (те са карта-базирани, удобни, работят в BG). Pix/Bancontact
-          отпадат от само-карта ограничението. */}
-      <PaymentElement options={{ layout: "tabs" }} />
+      {/* SetupIntent е само карта (виж createSetupIntent). Stripe Link е изключен —
+          не ни трябва за запазване на карта за таксата и усложнява потока (Email/Mobile
+          полета + виси на localhost). */}
+      <PaymentElement options={{ layout: "tabs", wallets: { link: "never" } }} />
       <Button type="submit" loading={busy} disabled={!stripe}>
         Запази картата
       </Button>
