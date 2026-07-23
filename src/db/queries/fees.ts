@@ -133,3 +133,42 @@ export async function getFeeInvoices(shopId: string) {
     .where(eq(feeInvoices.shopId, shopId))
     .orderBy(sql`${feeInvoices.periodStart} desc`);
 }
+
+/**
+ * Идемпотентно записва фактурен ред за периода (billing cron). Връща реда (нов или
+ * съществуващ) — onConflictDoNothing на (shopId, periodStart) пази от дубъл при повторно
+ * пускане на cron-а. Записва се и при amountDue ≤ 0 (за одит; без Stripe фактура тогава).
+ */
+export async function recordInvoiceForPeriod(
+  shopId: string,
+  periodStart: Date,
+  periodEnd: Date,
+  balance: { chargesCents: number; creditsCents: number; amountDueCents: number },
+) {
+  await db
+    .insert(feeInvoices)
+    .values({
+      shopId,
+      periodStart,
+      periodEnd,
+      chargesCents: balance.chargesCents,
+      creditsCents: balance.creditsCents,
+      amountDueCents: balance.amountDueCents,
+      status: "draft",
+    })
+    .onConflictDoNothing({ target: [feeInvoices.shopId, feeInvoices.periodStart] });
+  const [row] = await db
+    .select()
+    .from(feeInvoices)
+    .where(and(eq(feeInvoices.shopId, shopId), eq(feeInvoices.periodStart, periodStart)))
+    .limit(1);
+  return row;
+}
+
+/** Маркира фактура като issued + пази Stripe id (след успешно създаване на Stripe фактурата). */
+export async function markInvoiceIssued(id: string, stripeInvoiceId: string) {
+  await db
+    .update(feeInvoices)
+    .set({ status: "issued", stripeInvoiceId, updatedAt: new Date() })
+    .where(eq(feeInvoices.id, id));
+}

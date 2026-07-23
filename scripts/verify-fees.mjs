@@ -115,6 +115,20 @@ async function main() {
         and occurred_at >= ${from} and occurred_at < ${to}`;
     const net = bal.charges - bal.credits;
     check("balance: charges 205 − credits 100 = 105", net === 105, `charges=${bal.charges} credits=${bal.credits} net=${net}`);
+
+    // ---- 5. fee_invoices идемпотентност (recordInvoiceForPeriod: двоен insert → 1 ред) ----
+    const periodStart = new Date(Date.UTC(2099, 0, 1)); // далечен период, за да не се сблъска
+    const periodEnd = new Date(Date.UTC(2099, 1, 1));
+    const insertInvoice = () => sql`
+      insert into fee_invoices (shop_id, period_start, period_end, charges_cents, credits_cents, amount_due_cents, status)
+      values (${shopId}, ${periodStart}, ${periodEnd}, 205, 100, 105, 'draft')
+      on conflict (shop_id, period_start) do nothing`;
+    await insertInvoice();
+    await insertInvoice(); // втори път → без дубъл
+    const inv = await sql`select id, amount_due_cents from fee_invoices where shop_id=${shopId} and period_start=${periodStart}`;
+    check("fee_invoices: двоен insert за същия период → 1 ред", inv.length === 1, `редове=${inv.length}`);
+    check("fee_invoices: amount_due = charges − credits (105)", inv[0]?.amount_due_cents === 105, `due=${inv[0]?.amount_due_cents}`);
+    await sql`delete from fee_invoices where shop_id=${shopId} and period_start=${periodStart}`;
   } finally {
     // Чистим само каквото сме създали.
     if (orderIds.length) {
