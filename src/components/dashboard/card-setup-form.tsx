@@ -19,10 +19,17 @@ function CardForm() {
     e.preventDefault();
     if (!stripe || !elements) return;
     setBusy(true);
+    /* elements.submit() е ЗАДЪЛЖИТЕЛЕН ПРЕДИ confirmSetup в новите Elements версии
+       (react-stripe-js 6.x) — валидира формата и събира данните. Без него confirmSetup
+       виси безкрайно без грешка. (Диагностицирано 2026-07-23.) */
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      toast.error(submitError.message ?? "Провери данните на картата.");
+      setBusy(false);
+      return;
+    }
     const { error } = await stripe.confirmSetup({
       elements,
-      /* return_url е задължителен fallback — ползва се САМО ако Stripe реши, че е нужен
-         redirect (напр. 3DS). За обикновена карта без 3DS не се стига дотук (if_required). */
       confirmParams: { return_url: `${window.location.origin}/dashboard/billing` },
       redirect: "if_required",
     });
