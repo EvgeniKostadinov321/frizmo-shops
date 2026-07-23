@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireBuyer, updateWhere, countGuest } = vi.hoisted(() => ({
+const { requireBuyer, updateWhere, countByEmail } = vi.hoisted(() => ({
   requireBuyer: vi.fn(),
   updateWhere: vi.fn().mockResolvedValue(undefined),
-  countGuest: vi.fn().mockResolvedValue(2),
+  countByEmail: vi.fn().mockResolvedValue(2),
 }));
 
 vi.mock("@/lib/auth", () => ({ requireBuyer }));
@@ -13,36 +13,47 @@ vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: vi.fn().mockResolvedValue(t
 vi.mock("@/actions/cart", () => ({ clientIp: vi.fn().mockResolvedValue("1.1.1.1") }));
 vi.mock("@/db/queries/buyer", () => ({
   getBuyerFavoriteIds: vi.fn(),
-  countGuestOrdersByPhone: countGuest,
+  countGuestOrdersByEmail: countByEmail,
 }));
 vi.mock("@/db", () => ({
   db: { update: () => ({ set: () => ({ where: updateWhere }) }) },
-  orders: { buyerId: "buyerId", customerPhone: "customerPhone" },
+  orders: { buyerId: "buyerId", customerEmail: "customerEmail" },
   profiles: { id: "id" },
   buyerAddresses: { id: "id", buyerId: "buyerId" },
   buyerFavorites: { buyerId: "buyerId", productId: "productId" },
+  buyerFavoriteShops: { buyerId: "buyerId", shopId: "shopId" },
+  shops: { id: "id" },
 }));
 vi.mock("@/lib/phone", () => ({ parseBgPhone: () => ({ ok: true, e164: "+359888123456" }) }));
 
 import { linkGuestOrders } from "@/actions/buyer";
 
-describe("linkGuestOrders", () => {
+describe("linkGuestOrders (по верифициран имейл — SEC-01)", () => {
   beforeEach(() => {
     requireBuyer.mockResolvedValue({
-      user: { id: "b1" },
+      user: { id: "b1", email: "buyer@gmail.com" },
       profile: { id: "b1", phone: "+359888123456" },
     });
-    countGuest.mockResolvedValue(2);
+    countByEmail.mockResolvedValue(2);
+    updateWhere.mockClear();
   });
 
-  it("свързва гост-поръчките по телефон", async () => {
+  it("свързва гост-поръчките по имейла на акаунта", async () => {
     const res = await linkGuestOrders();
     expect(res.ok).toBe(true);
     expect(res.ok && res.data.linked).toBe(2);
+    // мачът е по имейл, не по телефон
+    expect(countByEmail).toHaveBeenCalledWith("buyer@gmail.com");
   });
 
-  it("без телефон на профила → грешка", async () => {
-    requireBuyer.mockResolvedValue({ user: { id: "b1" }, profile: { id: "b1", phone: null } });
+  it("НЕ вдига phoneVerified (беше фалшива верификация) — само orders се update-ва веднъж", async () => {
+    await linkGuestOrders();
+    // единствен update = orders (по-рано имаше втори update на profiles.phoneVerified)
+    expect(updateWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it("без имейл на акаунта → грешка (не свързва нищо)", async () => {
+    requireBuyer.mockResolvedValue({ user: { id: "b1", email: null }, profile: { id: "b1", phone: null } });
     const res = await linkGuestOrders();
     expect(res.ok).toBe(false);
   });

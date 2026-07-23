@@ -684,7 +684,11 @@ export async function requestReturn(
   if (order.status !== "completed") {
     return fail("Връщане може да се заяви само за завършена поръчка.");
   }
-  if (Date.now() - order.updatedAt.getTime() > shop.returnWindowDays * DAY_MS) {
+  /* Мери от completedAt (стабилна котва — пълни се точно веднъж при завършване), не от
+     updatedAt, който се презаписва от по-късни записи (товарителница, re-complete) и тихо
+     би удължил прозореца. Fallback към updatedAt само за стари поръчки без completedAt. */
+  const completedAt = order.completedAt ?? order.updatedAt;
+  if (Date.now() - completedAt.getTime() > shop.returnWindowDays * DAY_MS) {
     return fail(`Срокът за връщане (${shop.returnWindowDays} дни) е изтекъл.`);
   }
 
@@ -770,7 +774,7 @@ export async function updateOrderStatus(input: {
   }
 
   const now = new Date();
-  await db.transaction(async (tx) => {
+  const applied = await db.transaction(async (tx) => {
     /* Таксова колона + updatedAt заедно; completedAt/returnedAt се пълнят точно веднъж. */
     const patch: {
       status: typeof parsed.data.status;
@@ -781,7 +785,15 @@ export async function updateOrderStatus(input: {
     if (parsed.data.status === "completed" && !order.completedAt) patch.completedAt = now;
     if (parsed.data.status === "returned" && !order.returnedAt) patch.returnedAt = now;
 
-    await tx.update(orders).set(patch).where(eq(orders.id, order.id));
+    /* CAS: обновяваме само ако статусът все още е този, който прочетохме извън транзакцията.
+       Двоен клик/два таба → второто изпълнение получава празен RETURNING (първото вече е
+       сменило статуса) и прекратява БЕЗ повторно restoreStock/такса (иначе фантомен склад). */
+    const updated = await tx
+      .update(orders)
+      .set(patch)
+      .where(and(eq(orders.id, order.id), eq(orders.status, order.status)))
+      .returning({ id: orders.id });
+    if (updated.length === 0) return false;
 
     /* Отказ / прието връщане → връщаме наличностите (симетрично на декремента). */
     if (parsed.data.status === "cancelled" || parsed.data.status === "returned") {
@@ -815,7 +827,12 @@ export async function updateOrderStatus(input: {
         .set({ status: "expired", updatedAt: now })
         .where(eq(paymentIntents.orderId, order.id));
     }
+    return true;
   });
+
+  /* Друга едновременна заявка вече е направила прехода → нищо повече (без дубъл имейл/
+     revalidate/card-gate проверка). Връщаме успех — исканото състояние е постигнато. */
+  if (!applied) return ok(null);
 
   /* Известяваме купувача при ключовите статуси (ако е дал имейл). Неблокиращо —
      имейлът не бива да бави отговора към търговеца, нито да чупи смяната.

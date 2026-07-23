@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { clientIp } from "@/actions/cart";
 import {
@@ -12,7 +12,7 @@ import {
   profiles,
   shops,
 } from "@/db";
-import { countGuestOrdersByPhone, getBuyerFavoriteIds } from "@/db/queries/buyer";
+import { countGuestOrdersByEmail, getBuyerFavoriteIds } from "@/db/queries/buyer";
 import { confirmDeleteWord } from "@/lib/account-deletion";
 import { fail, ok, zodFail, type ActionResult } from "@/lib/action-result";
 import { requireBuyer } from "@/lib/auth";
@@ -154,32 +154,32 @@ export async function updateBuyerProfile(rawInput: unknown): Promise<ActionResul
   return ok(null);
 }
 
-/** Колко минали гост-поръчки могат да се свържат (по телефона на профила). */
+/** Колко минали гост-поръчки могат да се свържат (по ВЕРИФИЦИРАНИЯ имейл на акаунта). */
 export async function countLinkableGuestOrders(): Promise<ActionResult<{ count: number }>> {
-  const { profile } = await requireBuyer();
-  if (!profile.phone) return ok({ count: 0 });
-  const phone = parseBgPhone(profile.phone);
-  if (!phone.ok) return ok({ count: 0 });
-  const n = await countGuestOrdersByPhone(phone.e164);
+  const { user } = await requireBuyer();
+  if (!user.email) return ok({ count: 0 });
+  const n = await countGuestOrdersByEmail(user.email);
   return ok({ count: n });
 }
 
-/** Свързва миналите гост-поръчки с акаунта (по потвърден телефон). Вдига phoneVerified.
-    Броим ПРЕДИ update-а (колко ще свържем) — точен резултат за toast-а. */
+/**
+ * Свързва миналите гост-поръчки с акаунта — по ВЕРИФИЦИРАНИЯ имейл (user.email от Supabase),
+ * НЕ по телефон. Телефонът е самоописан в профила → всеки можеше да въведе чужд номер и да
+ * присвои чужди поръчки (одит 2026-07-23 SEC-01). Имейлът на акаунта е верифициран, затова
+ * мачът customerEmail == user.email е безопасен: свързваш само поръчки, направени с твоя имейл.
+ * Броим ПРЕДИ update-а (колко ще свържем) — точен резултат за toast-а.
+ */
 export async function linkGuestOrders(): Promise<ActionResult<{ linked: number }>> {
-  const { profile } = await requireBuyer();
-  if (!profile.phone) return fail("Добави телефон в профила, за да свържеш минали поръчки.");
-  const phone = parseBgPhone(profile.phone);
-  if (!phone.ok) return fail("Телефонът в профила е невалиден.");
-  const toLink = await countGuestOrdersByPhone(phone.e164);
+  const { user, profile } = await requireBuyer();
+  if (!user.email) return fail("Акаунтът няма имейл, с който да свържем минали поръчки.");
+  const email = user.email.trim().toLowerCase();
+  const toLink = await countGuestOrdersByEmail(email);
   await db
     .update(orders)
     .set({ buyerId: profile.id, updatedAt: new Date() })
-    .where(and(isNull(orders.buyerId), eq(orders.customerPhone, phone.e164)));
-  await db
-    .update(profiles)
-    .set({ phoneVerified: true, updatedAt: new Date() })
-    .where(eq(profiles.id, profile.id));
+    .where(
+      and(isNull(orders.buyerId), ne(orders.customerEmail, ""), eq(sql`lower(${orders.customerEmail})`, email)),
+    );
   return ok({ linked: toLink });
 }
 

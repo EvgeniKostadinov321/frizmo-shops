@@ -5,7 +5,7 @@ import { linkGuestOrders } from "@/actions/buyer";
 import { Button } from "@/components/ui";
 import { count, NOUNS } from "@/lib/plural";
 
-/** Показва се само ако има несвързани гост-поръчки по телефона на профила. */
+/** Показва се само ако има несвързани гост-поръчки с имейла на акаунта. */
 export function LinkOrdersBanner({ pending }: { pending: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -14,7 +14,7 @@ export function LinkOrdersBanner({ pending }: { pending: number }) {
   return (
     <div className="flex flex-col gap-2 rounded-card border border-brand-600/30 bg-surface-0 p-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-ink-700">
-        Намерихме {count(pending, NOUNS.order)} с твоя телефон отпреди акаунта.
+        Намерихме {count(pending, NOUNS.order)} с твоя имейл отпреди акаунта.
       </p>
       <Button
         size="sm"

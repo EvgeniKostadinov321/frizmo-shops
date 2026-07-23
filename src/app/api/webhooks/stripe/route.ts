@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, feeInvoices, stripeEvents } from "@/db";
 import { stripe, STRIPE_APP_TAG } from "@/lib/stripe";
@@ -52,11 +52,21 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       if (invoice.metadata?.app !== STRIPE_APP_TAG) return; // чужд проект
       const feeInvoiceId = invoice.metadata?.feeInvoiceId;
       if (!feeInvoiceId) return;
-      const newStatus = event.type === "invoice.paid" ? "paid" : "issued";
-      await db
-        .update(feeInvoices)
-        .set({ status: newStatus, updatedAt: new Date() })
-        .where(eq(feeInvoices.id, feeInvoiceId));
+      /* Stripe доставя at-least-once и БЕЗ гарантиран ред. Закъснял/пренареден
+         payment_failed СЛЕД paid не бива да връща платена фактура на „issued" (иначе
+         hasOverdueFees по-късно я брои като просрочена → блокира магазин, който е платил).
+         paid е финално състояние; failed се прилага само ако още не е paid. */
+      if (event.type === "invoice.paid") {
+        await db
+          .update(feeInvoices)
+          .set({ status: "paid", updatedAt: new Date() })
+          .where(eq(feeInvoices.id, feeInvoiceId));
+      } else {
+        await db
+          .update(feeInvoices)
+          .set({ status: "issued", updatedAt: new Date() })
+          .where(and(eq(feeInvoices.id, feeInvoiceId), ne(feeInvoices.status, "paid")));
+      }
       revalidatePath("/dashboard/billing");
       break;
     }

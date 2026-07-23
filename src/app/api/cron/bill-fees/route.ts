@@ -32,38 +32,57 @@ export async function GET(req: Request) {
 
   const allShops = await db.select({ id: shops.id, ownerId: shops.ownerId, name: shops.name }).from(shops);
   let issued = 0;
+  let failed = 0;
 
   for (const shop of allShops) {
-    const balance = await getBillableBalanceForPeriod(shop.id, start, end);
-    const invoice = await recordInvoiceForPeriod(shop.id, start, end, balance);
-    if (!invoice || invoice.status !== "draft" || invoice.amountDueCents <= 0) continue;
+    /* Per-shop изолация: провал за един магазин (Stripe timeout/rate-limit/липсваща карта)
+       не бива да спира издаването на фактурите за останалите. Логваме и продължаваме. */
+    try {
+      const balance = await getBillableBalanceForPeriod(shop.id, start, end);
+      const invoice = await recordInvoiceForPeriod(shop.id, start, end, balance);
+      if (!invoice || invoice.status !== "draft" || invoice.amountDueCents <= 0) continue;
 
-    /* Имейлът на собственика е в Supabase auth.users (не в profiles) → admin API по ownerId. */
-    const admin = createSupabaseAdmin();
-    const { data: authUser } = await admin.auth.admin.getUserById(shop.ownerId);
-    const email = authUser?.user?.email ?? "";
+      /* Имейлът на собственика е в Supabase auth.users (не в profiles) → admin API по ownerId. */
+      const admin = createSupabaseAdmin();
+      const { data: authUser } = await admin.auth.admin.getUserById(shop.ownerId);
+      const email = authUser?.user?.email ?? "";
 
-    const customerId = await ensureStripeCustomer(shop.id, email, shop.name);
+      const customerId = await ensureStripeCustomer(shop.id, email, shop.name);
 
-    /* Ред за Stripe API 2026-06-24.dahlia: draft фактура ПЪРВО, после invoiceItem с
-       явен invoice:id (иначе item-ът не се закача → фактура за 0 €). auto_advance:true
-       оставя Stripe да финализира + тегли автоматично от запазената карта. */
-    const stripeInvoice = await stripe.invoices.create({
-      customer: customerId,
-      collection_method: "charge_automatically",
-      auto_advance: true,
-      metadata: { app: STRIPE_APP_TAG, feeInvoiceId: invoice.id },
-    });
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      invoice: stripeInvoice.id,
-      amount: invoice.amountDueCents,
-      currency: "eur",
-      description: `Такса за продажби (${start.toISOString().slice(0, 7)})`,
-    });
-    await markInvoiceIssued(invoice.id, stripeInvoice.id!);
-    issued++;
+      /* Ред за Stripe API 2026-06-24.dahlia: draft фактура ПЪРВО, после invoiceItem с
+         явен invoice:id (иначе item-ът не се закача → фактура за 0 €). auto_advance:true
+         оставя Stripe да финализира + тегли автоматично от запазената карта.
+         idempotencyKey = feeInvoiceId → ако cron се пусне повторно (retry / частичен провал
+         преди markInvoiceIssued), Stripe връща СЪЩАТА фактура вместо да създаде втора
+         (иначе двойно авто-теглене на реални пари). */
+      const stripeInvoice = await stripe.invoices.create(
+        {
+          customer: customerId,
+          collection_method: "charge_automatically",
+          auto_advance: true,
+          metadata: { app: STRIPE_APP_TAG, feeInvoiceId: invoice.id },
+        },
+        { idempotencyKey: `fee-invoice-${invoice.id}` },
+      );
+      await stripe.invoiceItems.create(
+        {
+          customer: customerId,
+          invoice: stripeInvoice.id,
+          amount: invoice.amountDueCents,
+          currency: "eur",
+          description: `Такса за продажби (${start.toISOString().slice(0, 7)})`,
+        },
+        { idempotencyKey: `fee-invoice-item-${invoice.id}` },
+      );
+      await markInvoiceIssued(invoice.id, stripeInvoice.id!);
+      issued++;
+    } catch (e) {
+      failed++;
+      console.error(
+        JSON.stringify({ scope: "bill-fees", shopId: shop.id, error: e instanceof Error ? e.message : String(e) }),
+      );
+    }
   }
 
-  return Response.json({ issued });
+  return Response.json({ issued, failed });
 }

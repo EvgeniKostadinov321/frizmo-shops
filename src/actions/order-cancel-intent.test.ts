@@ -15,7 +15,9 @@ const {
 } = vi.hoisted(() => ({
   requireShop: vi.fn(),
   orderFindFirst: vi.fn(),
-  ordersUpdateWhere: vi.fn().mockResolvedValue(undefined),
+  /* orders update е CAS: .where(...).returning() → връща [{id}] = успял преход
+     (непразен → изпълнява restoreStock/такси/intent). */
+  ordersUpdateWhere: vi.fn().mockReturnValue({ returning: () => Promise.resolve([{ id: "o1" }]) }),
   intentsUpdateWhere: vi.fn().mockResolvedValue(undefined),
   /* restoreStock (реалният, не мокнат) чете order_items през tx → празен масив,
      за да не пипа продукти/варианти в теста. */
@@ -103,5 +105,21 @@ describe("updateOrderStatus — S3-01 intent при cancel", () => {
     const res = await updateOrderStatus({ id: "11111111-1111-4111-8111-111111111111", status: "cancelled" });
     expect(res.ok).toBe(true);
     expect(intentsUpdateWhere).not.toHaveBeenCalled();
+  });
+
+  /* DATA-01 (одит 2026-07-23): при двоен клик второто изпълнение получава празен RETURNING
+     (първото вече е сменило статуса) → CAS прекратява БЕЗ restoreStock/intent update. */
+  it("CAS: празен RETURNING (друг вече е сменил статуса) → НЕ restore-ва/пипа intent, връща ok", async () => {
+    orderFindFirst.mockResolvedValue({
+      id: "o3",
+      shopId: "s1",
+      status: "pending_payment",
+      orderNumber: 3,
+      customerEmail: "",
+    });
+    ordersUpdateWhere.mockReturnValueOnce({ returning: () => Promise.resolve([]) }); // загубил CAS-а
+    const res = await updateOrderStatus({ id: "11111111-1111-4111-8111-111111111111", status: "cancelled" });
+    expect(res.ok).toBe(true); // исканото състояние вече е постигнато от другия
+    expect(intentsUpdateWhere).not.toHaveBeenCalled(); // прескочено — без двойно действие
   });
 });

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import {
   buyerAddresses,
   buyerFavorites,
@@ -52,11 +52,24 @@ export async function getBuyerFavoriteProducts(
   });
 }
 
-/** Брой гост-поръчки (без акаунт) с даден E.164 телефон — за „свържи минали поръчки". */
-export async function countGuestOrdersByPhone(phoneE164: string): Promise<number> {
+/**
+ * Брой гост-поръчки (без акаунт) с даден имейл — за „свържи минали поръчки".
+ * Мачва по customerEmail (case-insensitive), защото имейлът на акаунта е ВЕРИФИЦИРАН от
+ * Supabase — за разлика от телефона, който всеки може да въведе в профила си и да присвои
+ * чужди поръчки (одит 2026-07-23 SEC-01). Празен имейл никога не мачва (гост без имейл).
+ */
+export async function countGuestOrdersByEmail(email: string): Promise<number> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return 0;
   const [row] = await db
     .select({ value: count() })
     .from(orders)
-    .where(and(isNull(orders.buyerId), eq(orders.customerPhone, phoneE164)));
+    .where(
+      and(
+        isNull(orders.buyerId),
+        ne(orders.customerEmail, ""),
+        eq(sql`lower(${orders.customerEmail})`, normalized),
+      ),
+    );
   return row?.value ?? 0;
 }

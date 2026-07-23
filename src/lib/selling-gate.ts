@@ -12,7 +12,18 @@ export async function requiresCard(shopId: string): Promise<boolean> {
   const { hasCharge, customerId } = await cardState(shopId);
   if (!hasCharge) return false; // няма още таксуема продажба → карта не се иска
   if (!customerId) return true; // има charge, няма Customer → иска карта
-  return !(await customerHasDefaultCard(customerId)); // има Customer но без карта → иска
+  /* customerHasDefaultCard прави жив Stripe round-trip. canAcceptOrders (→ този код) е на
+     публичния checkout път. Stripe outage/rate-limit НЕ бива да сваля продажбите на вече
+     установен магазин — билинг проблем ≠ проблем с поръчката. Fail-open: при Stripe грешка
+     не блокираме (връщаме false); следващият успешен billing цикъл ще хване липсата на карта. */
+  try {
+    return !(await customerHasDefaultCard(customerId));
+  } catch (e) {
+    console.error(
+      JSON.stringify({ scope: "requiresCard-stripe", shopId, error: e instanceof Error ? e.message : String(e) }),
+    );
+    return false;
+  }
 }
 
 /**
