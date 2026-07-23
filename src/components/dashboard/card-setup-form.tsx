@@ -17,29 +17,67 @@ function CardForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    console.log("[CARD] 1. submit влезе | stripe:", !!stripe, "| elements:", !!elements);
+    if (!stripe || !elements) {
+      console.log("[CARD] ✗ stripe или elements липсва — spinner НЕ се пуска");
+      return;
+    }
     setBusy(true);
-    /* elements.submit() е ЗАДЪЛЖИТЕЛЕН ПРЕДИ confirmSetup в новите Elements версии
-       (react-stripe-js 6.x) — валидира формата и събира данните. Без него confirmSetup
-       виси безкрайно без грешка. (Диагностицирано 2026-07-23.) */
-    const { error: submitError } = await elements.submit();
-    if (submitError) {
-      toast.error(submitError.message ?? "Провери данните на картата.");
+
+    try {
+      /* Timeout guard: ако elements.submit() или confirmSetup висят >25с, показваме го
+         явно (иначе spinner виси безкрайно без следа). */
+      const withTimeout = <T,>(p: Promise<T>, label: string): Promise<T> =>
+        Promise.race([
+          p,
+          new Promise<T>((_, rej) =>
+            setTimeout(() => rej(new Error(`TIMEOUT: ${label} не резолвна за 25с`)), 25000),
+          ),
+        ]);
+
+      console.log("[CARD] 2. извиквам elements.submit()...");
+      const submitRes = await withTimeout(elements.submit(), "elements.submit");
+      console.log("[CARD] 3. elements.submit() върна:", JSON.stringify(submitRes));
+      if (submitRes.error) {
+        console.log("[CARD] ✗ submit грешка:", submitRes.error.type, submitRes.error.message);
+        toast.error(submitRes.error.message ?? "Провери данните на картата.");
+        setBusy(false);
+        return;
+      }
+
+      console.log("[CARD] 4. извиквам confirmSetup() | return_url:", `${window.location.origin}/dashboard/billing`);
+      const confirmRes = await withTimeout(
+        stripe.confirmSetup({
+          elements,
+          confirmParams: { return_url: `${window.location.origin}/dashboard/billing` },
+          redirect: "if_required",
+        }),
+        "confirmSetup",
+      );
+      console.log("[CARD] 5. confirmSetup() върна:", JSON.stringify({
+        error: confirmRes.error
+          ? { type: confirmRes.error.type, code: confirmRes.error.code, message: confirmRes.error.message }
+          : null,
+        setupIntent: confirmRes.setupIntent
+          ? { status: confirmRes.setupIntent.status, id: confirmRes.setupIntent.id }
+          : null,
+      }));
+
+      if (confirmRes.error) {
+        console.log("[CARD] ✗ confirmSetup грешка:", confirmRes.error.type, confirmRes.error.code, confirmRes.error.message);
+        toast.error(confirmRes.error.message ?? "Картата не можа да се запази.");
+        setBusy(false);
+        return;
+      }
+      console.log("[CARD] 6. ✓ УСПЕХ — картата запазена");
+      toast.success("Картата е запазена. Вече можеш да приемаш поръчки.");
+      router.refresh();
+    } catch (err) {
+      /* Хваща TIMEOUT + всякакъв неочакван throw, който иначе би оставил spinner-а завинаги. */
+      console.error("[CARD] ✗✗ НЕОЧАКВАНА ГРЕШКА/THROW:", err);
+      toast.error(err instanceof Error ? err.message : "Възникна грешка при запазване на картата.");
       setBusy(false);
-      return;
     }
-    const { error } = await stripe.confirmSetup({
-      elements,
-      confirmParams: { return_url: `${window.location.origin}/dashboard/billing` },
-      redirect: "if_required",
-    });
-    if (error) {
-      toast.error(error.message ?? "Картата не можа да се запази.");
-      setBusy(false);
-      return;
-    }
-    toast.success("Картата е запазена. Вече можеш да приемаш поръчки.");
-    router.refresh();
   }
 
   return (
