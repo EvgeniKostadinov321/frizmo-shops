@@ -224,6 +224,20 @@ async function main() {
     );
     await sql`delete from fee_events where order_id=${feeOrder.id}`;
     await sql`delete from orders where id=${feeOrder.id}`;
+
+    // ---- Auto-complete: стар shipped над cutoff се хваща от заявката на cron-а ----
+    const [oldShipped] = await sql`
+      insert into orders (shop_id, order_number, customer_name, customer_phone,
+        shipping_name, shipping_price_cents, payment_name, payment_type,
+        subtotal_cents, discount_cents, total_cents, status, updated_at)
+      values (${shopId}, ${790000 + Math.floor(Math.random() * 9000)}, '__old_shipped__', '+359888000000',
+        'Куриер', 0, 'Наложен платеж', 'cod', 1000, 0, 1000, 'shipped', now() - interval '40 days')
+      returning id`;
+    const [{ n: stuckN }] = await sql`
+      select count(*)::int as n from orders
+      where status='shipped' and updated_at < now() - interval '30 days' and id=${oldShipped.id}`;
+    check("Auto-complete: 40-дневен shipped попада в 30-дневния cutoff", Number(stuckN) === 1);
+    await sql`delete from orders where id=${oldShipped.id}`;
   } finally {
     /* Чистим само каквото сме създали. */
     for (const id of testOrderIds) await sql`delete from orders where id = ${id}`;
