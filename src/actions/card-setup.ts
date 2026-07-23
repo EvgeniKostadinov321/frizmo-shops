@@ -1,5 +1,7 @@
 "use server";
 
+import { eq } from "drizzle-orm";
+import { db, subscriptions } from "@/db";
 import { requireShop } from "@/lib/auth";
 import { stripe, ensureStripeCustomer } from "@/lib/stripe";
 import { ok, fail, type ActionResult } from "@/lib/action-result";
@@ -26,5 +28,41 @@ export async function createSetupIntent(): Promise<ActionResult<{ clientSecret: 
   } catch (error) {
     console.error("createSetupIntent се провали:", error);
     return fail("Възникна грешка. Опитай пак.");
+  }
+}
+
+/**
+ * След успешен confirmSetup: задава запазената карта като default_payment_method на
+ * Customer-а. БЕЗ това `customerHasDefaultCard` връща false → card-gate никога не пада
+ * (месечната такса няма от какво да се тегли). Извиква се от клиента с setupIntentId.
+ */
+export async function setDefaultCard(setupIntentId: string): Promise<ActionResult> {
+  try {
+    const { shop } = await requireShop();
+    /* Сигурност: работим САМО с Customer-а на ТОЗИ магазин (от нашата база), не с
+       произволен от SetupIntent-а — иначе търговец би задал карта на чужд customer. */
+    const [sub] = await db
+      .select({ customerId: subscriptions.stripeCustomerId })
+      .from(subscriptions)
+      .where(eq(subscriptions.shopId, shop.id))
+      .limit(1);
+    if (!sub?.customerId) return fail("Липсва клиент за картата.");
+
+    const intent = await stripe.setupIntents.retrieve(setupIntentId);
+    const paymentMethodId = intent.payment_method;
+    if (!paymentMethodId || typeof paymentMethodId !== "string") {
+      return fail("Картата не е намерена. Опитай пак.");
+    }
+    /* SetupIntent-ът трябва да е за НАШИЯ customer (не чужд). */
+    const intentCustomer = typeof intent.customer === "string" ? intent.customer : intent.customer?.id;
+    if (intentCustomer !== sub.customerId) return fail("Картата не принадлежи на този магазин.");
+
+    await stripe.customers.update(sub.customerId, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
+    return ok(null);
+  } catch (error) {
+    console.error("setDefaultCard се провали:", error);
+    return fail("Картата се запази, но настройката ѝ като основна се провали.");
   }
 }

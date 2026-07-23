@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { getStripe } from "@/lib/stripe-client";
-import { createSetupIntent } from "@/actions/card-setup";
+import { createSetupIntent, setDefaultCard } from "@/actions/card-setup";
 
 /** Вътрешната форма — рендерира се в <Elements> с наличен clientSecret. */
 function CardForm() {
@@ -69,7 +69,21 @@ function CardForm() {
         setBusy(false);
         return;
       }
-      console.log("[CARD] 6. ✓ УСПЕХ — картата запазена");
+      console.log("[CARD] 6. confirmSetup успя — задавам default карта...");
+      /* КЛЮЧОВО: задаваме картата като default_payment_method (confirmSetup само я записва,
+         не я прави default). Без това card-gate никога не пада. */
+      const setupIntentId = confirmRes.setupIntent?.id;
+      if (setupIntentId) {
+        const defRes = await setDefaultCard(setupIntentId);
+        console.log("[CARD] 7. setDefaultCard:", defRes.ok ? "✓ default зададен" : "✗ " + defRes.error);
+        if (!defRes.ok) {
+          toast.error(defRes.error);
+          setBusy(false);
+          return;
+        }
+      }
+      console.log("[CARD] 8. ✓ ГОТОВО — картата запазена + default");
+      setBusy(false);
       toast.success("Картата е запазена. Вече можеш да приемаш поръчки.");
       router.refresh();
     } catch (err) {
