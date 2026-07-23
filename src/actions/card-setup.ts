@@ -66,3 +66,33 @@ export async function setDefaultCard(setupIntentId: string): Promise<ActionResul
     return fail("Картата се запази, но настройката ѝ като основна се провали.");
   }
 }
+
+/**
+ * Премахва запазената карта (detach на default_payment_method от Customer-а).
+ * ⚠️ Ако магазинът има таксуема продажба, след премахване card-gate се вдига →
+ * магазинът спира да приема нови поръчки, докато не запази нова карта. Търговецът
+ * решава — предупреждението е в UI-а.
+ */
+export async function removeCard(): Promise<ActionResult> {
+  try {
+    const { shop } = await requireShop();
+    const [sub] = await db
+      .select({ customerId: subscriptions.stripeCustomerId })
+      .from(subscriptions)
+      .where(eq(subscriptions.shopId, shop.id))
+      .limit(1);
+    if (!sub?.customerId) return fail("Няма запазена карта.");
+
+    const customer = await stripe.customers.retrieve(sub.customerId);
+    if (customer.deleted) return fail("Няма запазена карта.");
+    const pmId = customer.invoice_settings?.default_payment_method;
+    if (!pmId || typeof pmId !== "string") return fail("Няма запазена карта.");
+
+    /* Detach-ва картата — Stripe автоматично маха и default_payment_method. */
+    await stripe.paymentMethods.detach(pmId);
+    return ok(null);
+  } catch (error) {
+    console.error("removeCard се провали:", error);
+    return fail("Картата не можа да се премахне. Опитай пак.");
+  }
+}
