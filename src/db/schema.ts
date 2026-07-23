@@ -418,6 +418,11 @@ export const paymentIntents = pgTable(
     uniqueIndex("payment_intents_ref_idx").on(t.shopId, t.provider, t.providerRef),
     index("payment_intents_order_idx").on(t.orderId),
     index("payment_intents_shop_idx").on(t.shopId),
+    /* Глобален expire-payments cron: status='pending' + createdAt < cutoff (без shopId).
+       Partial WHERE status='pending' → малък (pending set е малък и преходен). Одит #3 PERF-03. */
+    index("payment_intents_pending_created_idx")
+      .on(t.status, t.createdAt)
+      .where(sql`${t.status} = 'pending'`),
   ],
 ).enableRLS();
 
@@ -610,6 +615,12 @@ export const orders = pgTable(
     uniqueIndex("orders_idempotency_idx")
       .on(t.shopId, t.idempotencyKey)
       .where(sql`${t.idempotencyKey} is not null`),
+    /* Глобален (без shopId) auto-complete cron: shipped + updatedAt < cutoff. Всички други
+       индекси водят с shopId → seq scan. Partial WHERE status='shipped' → малък (само
+       in-flight). Одит #3 PERF-02. */
+    index("orders_status_updated_idx")
+      .on(t.status, t.updatedAt)
+      .where(sql`${t.status} = 'shipped'`),
   ],
 ).enableRLS();
 

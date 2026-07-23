@@ -33,7 +33,10 @@ export async function getShopQuestions(shopId: string) {
       /* pending (0) преди answered (1), после най-нови първи. */
       asc(sql`case when ${productQuestions.status} = 'pending' then 0 else 1 end`),
       desc(productQuestions.createdAt),
-    );
+    )
+    /* Таван срещу unbounded fetch (одит #3 PERF-04): pending са отгоре (важните). Ако
+       потрябва пълна пагинация — по образеца на getAnsweredQuestions (limit+offset+count). */
+    .limit(200);
   return rows.map((r) => ({
     ...r.question,
     productName: r.productName,

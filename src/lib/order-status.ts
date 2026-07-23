@@ -10,7 +10,10 @@ export const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   new: ["confirmed", "cancelled"],
   confirmed: ["shipped", "cancelled"],
   shipped: ["completed", "cancelled"],
-  completed: [],
+  /* completed → return_requested е легитимен преход (заявка за връщане от купувача през
+     requestReturn). Държим го в таблицата, за да е тя авторитетна (одит #3 BL-02). Търговецът
+     НЕ може да го тригерне през updateOrderStatus — неговият enum не включва return_requested. */
+  completed: ["return_requested"],
   cancelled: [],
   return_requested: ["returned", "completed"],
   returned: [],

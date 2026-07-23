@@ -90,6 +90,20 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (9) — ОДИТЕН ЦИКЪЛ #3 (нови измерения) + 8 поправки + 1 отворено.** Трети одит (Error/
+  resilience, Business-logic, Performance/N+1, Auth/session; workflow 16 агента, 0 грешки, 0 повторения,
+  ✅ агентите НЕ пипнаха файлове — усилен промпт). 11 нови находки. Доклад: `audits/2026-07-23-audit-cycle-3.md`.
+  **ПОПРАВЕНИ 8** (план `2026-07-23-audit-fixes-3.md`, `pnpm check` = 489 теста): **PERF-01** (reorderToCart
+  N+1 → batch inArray) · **AUTH-01** (searchOfficesForShop rate limit — публичен endpoint изчерпваше куриерската
+  квота) · **ERR-01** (notifyStockAlerts try/catch — unhandledRejection) · **ERR-02** (auto-complete cron
+  per-order try/catch + CAS брояч) · **BL-02** (ALLOWED_TRANSITIONS +completed→return_requested + re-request
+  guard) · **PERF-04** (getShopQuestions cap 200) · **PERF-02/03** (partial индекси orders(status,updatedAt
+  WHERE shipped) + payment_intents(status,createdAt WHERE pending) — таргетиран SQL на прод, pg_trgm запазени,
+  verify-schema-parity dev↔прод ЧИСТ). ⚠️ Гоча пак: `drizzle-kit push` на dev изтри trgm → възстановени с
+  setup-search. **🟠 ОТВОРЕНО (изисква решение): BL-01** — cross-month return кредит се губи (търговец надплаща);
+  УМИШЛЕНО (спец §7.2), но спецът СИ ПРОТИВОРЕЧИ (schema ред 198 „пренася се" vs §7.2 „не се пренася"). Дребните
+  BL-03/04/PERF-05 → дълг. Чака push.
+
 - **2026-07-23 (8) — ОДИТЕН ЦИКЪЛ #2 (нови измерения) + 11 поправки.** Втори одит по същия процес
   (subagenti workflow, 4 НОВИ измерения: Валидация/санитизация, A11y дълбок, Кеш/RSC, Concurrency дълбок;
   17 агента, 0 грешки). Подадени находките от #1 → 0 повторения; 13 уникални нови находки. Доклад:

@@ -6,6 +6,8 @@ import { courierOffices, db, shopCourierAccounts } from "@/db";
 import { requireShop } from "@/lib/auth";
 import { getCourier, type CourierId } from "@/lib/couriers";
 import { searchCachedOffices } from "@/db/queries/couriers";
+import { clientIp } from "@/actions/cart";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { courierAccountSchema } from "@/schemas/courier";
 
@@ -32,6 +34,14 @@ export async function searchOfficesForShop(
 
   const cached = await searchCachedOffices(provider, trimmed);
   if (cached.length > 0) return toPublic(cached);
+
+  /* Rate limit ПРЕДИ живата рефреш пътека (одит #3 AUTH-01): това е публичен endpoint;
+     без гард атакуващ с публичния shopId зацикля произволни градове → изчерпва куриерската
+     API квота на магазина + замърсява споделената офис-номенклатура. Cache hits (горе) не
+     минават оттук → остават бързи; троттлва се само скъпият external+upsert път. */
+  if (!(await checkRateLimit(`courier-search:${await clientIp()}:${shopId}`, 20, 60))) {
+    return [];
+  }
 
   /* Празен кеш → опресни от куриера с акаунта на този магазин, после чети пак. */
   const account = await db.query.shopCourierAccounts.findFirst({

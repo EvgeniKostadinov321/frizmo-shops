@@ -685,8 +685,16 @@ export async function requestReturn(
     ),
   });
   if (!order) return fail("Поръчката не съществува.");
-  if (order.status !== "completed") {
+  /* Валидираме през таблицата (одит #3 BL-02) — тя е авторитетна за легитимните преходи
+     (completed → return_requested). */
+  if (!ALLOWED_TRANSITIONS[order.status]?.includes("return_requested")) {
     return fail("Връщане може да се заяви само за завършена поръчка.");
+  }
+  /* Re-request guard: ако вече е имало заявка (returnRequestedAt е set), а поръчката е пак
+     completed, значи търговецът е отхвърлил връщането → не позволяваме повторна заявка (иначе
+     купувачът може да зацикли request→reject→request и да спами търговеца в прозореца). */
+  if (order.returnRequestedAt) {
+    return fail("Вече е подавана заявка за връщане на тази поръчка. Свържи се с магазина.");
   }
   /* Мери от completedAt (стабилна котва — пълни се точно веднъж при завършване), не от
      updatedAt, който се презаписва от по-късни записи (товарителница, re-complete) и тихо

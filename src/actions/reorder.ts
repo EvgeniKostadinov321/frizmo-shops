@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, orderItems, orders, products, shops } from "@/db";
 import { clientIp } from "@/actions/cart";
@@ -38,6 +38,16 @@ export async function reorderToCart(
 
   const items = await db.query.orderItems.findMany({ where: eq(orderItems.orderId, order.id) });
 
+  /* Batch: един products.findMany вместо заявка на ред (беше N+1 — одит #3 PERF-01).
+     House pattern (cart.ts/storefront.ts) — scope по shopId, резолв от Map в цикъла. */
+  const productIds = [...new Set(items.map((i) => i.productId).filter((id): id is string => !!id))];
+  const productRows = productIds.length
+    ? await db.query.products.findMany({
+        where: and(eq(products.shopId, shop.id), inArray(products.id, productIds)),
+      })
+    : [];
+  const productMap = new Map(productRows.map((p) => [p.id, p]));
+
   const lines: ReorderLine[] = [];
   const skipped: string[] = [];
 
@@ -46,9 +56,7 @@ export async function reorderToCart(
       skipped.push(item.productName);
       continue;
     }
-    const product = await db.query.products.findFirst({
-      where: and(eq(products.id, item.productId), eq(products.shopId, shop.id)),
-    });
+    const product = productMap.get(item.productId);
     /* Наличността се проверява на ниво продукт (product.stock). Вариантът се носи
        като snapshot variantKey — валидира се повторно от pricing-а на количката
        (priceCartAction). Reorder е удобство, не гаранция. */
