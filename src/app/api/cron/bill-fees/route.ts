@@ -1,6 +1,6 @@
 import { db, shops } from "@/db";
 import {
-  getBillableBalanceForPeriod,
+  getCumulativeBillableBalance,
   recordInvoiceForPeriod,
   markInvoiceIssued,
 } from "@/db/queries/fees";
@@ -38,7 +38,10 @@ export async function GET(req: Request) {
     /* Per-shop изолация: провал за един магазин (Stripe timeout/rate-limit/липсваща карта)
        не бива да спира издаването на фактурите за останалите. Логваме и продължаваме. */
     try {
-      const balance = await getBillableBalanceForPeriod(shop.id, start, end);
+      /* Кумулативен баланс (одит #3 BL-01): дължимо = целият нефактуриран нетен ledger −
+         вече наплатени фактури. Така cross-month кредит от връщане покрива бъдещи такси,
+         вместо да се губи в месец без продажби (per-window агрегацията го изпускаше). */
+      const balance = await getCumulativeBillableBalance(shop.id, start, end);
       const invoice = await recordInvoiceForPeriod(shop.id, start, end, balance);
       if (!invoice || invoice.status !== "draft" || invoice.amountDueCents <= 0) continue;
 

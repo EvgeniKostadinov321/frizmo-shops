@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, sql } from "drizzle-orm";
+import { and, eq, gt, gte, lt, sql } from "drizzle-orm";
 import { db, feeEvents, feeInvoices, subscriptions } from "@/db";
 import { feeBaseCents, feeCents, FEE_GRACE_DAYS } from "@/lib/fee";
 
@@ -83,6 +83,66 @@ export async function getBillableBalanceForPeriod(
   const chargesCents = Number(row?.charges ?? 0);
   const creditsCents = Number(row?.credits ?? 0);
   return { chargesCents, creditsCents, amountDueCents: chargesCents - creditsCents };
+}
+
+/**
+ * КУМУЛАТИВЕН баланс за фактуриране (одит #3 BL-01 — running balance, не календарен прозорец).
+ * дължимо = (Σ charges − Σ credits за ВСИЧКИ събития с occurredAt < periodEnd)
+ *         − (Σ вече издадени положителни фактури на магазина преди този период).
+ *
+ * Така кредит от прието връщане, попаднал в месец без продажби, НЕ се губи (както при
+ * per-window агрегацията) — остава в кумулатива и покрива бъдещи такси, докато се изчерпа.
+ * Спазва обещанието в условията (чл.3: „кредит в следваща фактура"). chargesCents/creditsCents
+ * връщаме за ПЕРИОДА (одит на фактурата); amountDueCents е кумулативната нетна разлика.
+ */
+export async function getCumulativeBillableBalance(
+  shopId: string,
+  periodStart: Date,
+  periodEnd: Date,
+): Promise<{ chargesCents: number; creditsCents: number; amountDueCents: number }> {
+  /* Такси/кредити САМО за периода — за chargesCents/creditsCents полетата на фактурата (одит). */
+  const [periodRow] = await db
+    .select({
+      charges: sql<number>`coalesce(sum(case when ${feeEvents.type} = 'charge' then ${feeEvents.amountCents} else 0 end), 0)`,
+      credits: sql<number>`coalesce(sum(case when ${feeEvents.type} = 'credit' then ${feeEvents.amountCents} else 0 end), 0)`,
+    })
+    .from(feeEvents)
+    .where(
+      and(
+        eq(feeEvents.shopId, shopId),
+        gte(feeEvents.occurredAt, periodStart),
+        lt(feeEvents.occurredAt, periodEnd),
+      ),
+    );
+
+  /* Кумулативен нетен баланс на целия ledger до края на периода. */
+  const [cumRow] = await db
+    .select({
+      net: sql<number>`coalesce(sum(case when ${feeEvents.type} = 'charge' then ${feeEvents.amountCents} else -${feeEvents.amountCents} end), 0)`,
+    })
+    .from(feeEvents)
+    .where(and(eq(feeEvents.shopId, shopId), lt(feeEvents.occurredAt, periodEnd)));
+
+  /* Вече наплатено = сумата на всички ПРЕДИШНИ издадени положителни фактури (draft-ове с
+     amountDue ≤ 0 не са теглени → не се броят; текущият период още няма ред). */
+  const [paidRow] = await db
+    .select({
+      paid: sql<number>`coalesce(sum(${feeInvoices.amountDueCents}), 0)`,
+    })
+    .from(feeInvoices)
+    .where(
+      and(
+        eq(feeInvoices.shopId, shopId),
+        lt(feeInvoices.periodStart, periodStart),
+        gt(feeInvoices.amountDueCents, 0),
+      ),
+    );
+
+  const chargesCents = Number(periodRow?.charges ?? 0);
+  const creditsCents = Number(periodRow?.credits ?? 0);
+  const cumulativeNet = Number(cumRow?.net ?? 0);
+  const alreadyPaid = Number(paidRow?.paid ?? 0);
+  return { chargesCents, creditsCents, amountDueCents: cumulativeNet - alreadyPaid };
 }
 
 /** Има ли просрочена (issued) фактура извън grace периода → блокира продажби. */

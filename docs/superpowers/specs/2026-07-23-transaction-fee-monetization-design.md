@@ -195,15 +195,15 @@ fee_invoices
   periodEnd         date NOT NULL
   chargesCents      integer NOT NULL   -- snapshot на сумата charge за периода
   creditsCents      integer NOT NULL   -- snapshot на сумата credit за периода
-  amountDueCents    integer NOT NULL   -- charges - credits (може да е 0 или отрицателно → пренася се)
+  amountDueCents    integer NOT NULL   -- КУМУЛАТИВЕН нетен ledger − вече наплатено (може да е ≤ 0 → отрицателният остатък се ПРЕНАСЯ напред, покрива бъдещи такси). Виж ADR 2026-07-23-cross-month-fee-credit-carryover.
   stripeInvoiceId   text               -- връзка към Stripe фактурата (NULL докато не се създаде)
   status            enum('draft','issued','paid','uncollectible') NOT NULL default 'draft'
   createdAt, updatedAt
 
 uniqueIndex(shopId, periodStart)        -- един фактурен ред на магазин на месец
 ```
-- Месечен **billing cron** (нов, `CRON_SECRET`) за всеки активен магазин смята баланса за изминалия месец, прави идемпотентен `INSERT` в `fee_invoices` (`onConflictDoNothing` на `(shopId, periodStart)`), после създава Stripe фактура за `amountDueCents`, ако е > 0.
-- `amountDueCents <= 0` (кредитите надвишават таксите за месеца) → **не** се издава Stripe фактура. Отрицателният остатък **не** се пренася напред и **не** създава дълг на платформата към търговеца — просто този месец не се таксува. (Всеки кредит вече е с `occurredAt` в своя месец и не се брои повторно, така двойно приспадане е невъзможно.) Записът в `fee_invoices` пак се създава (`amountDueCents` може да е ≤ 0) за одит, но със `status='draft'` и без Stripe фактура.
+- Месечен **billing cron** (нов, `CRON_SECRET`) за всеки активен магазин смята **кумулативния** баланс (`getCumulativeBillableBalance`: целият нефактуриран нетен ledger до края на периода − вече издадените положителни фактури), прави идемпотентен `INSERT` в `fee_invoices` (`onConflictDoNothing` на `(shopId, periodStart)`), после създава Stripe фактура за `amountDueCents`, ако е > 0.
+- `amountDueCents <= 0` → **не** се издава Stripe фактура този месец. Отрицателният остатък **СЕ ПРЕНАСЯ напред** (running balance) — остава в кумулатива и покрива бъдещи такси, докато се изчерпа, вместо да се губи. Така кредит от прието връщане, попаднал в месец без продажби, не изчезва — точно както обещават Условията чл.3 („кредит в следваща фактура"). Отрицателен баланс НЕ създава паричен дълг на платформата към търговеца (не връщаме кеш) — само занулява бъдещи такси. Записът в `fee_invoices` пак се създава (`amountDueCents` може да е ≤ 0) за одит, но със `status='draft'` и без Stripe фактура (тези ≤0 редове не се броят във „вече наплатено"). **Одит #3 BL-01 фикс** (по-рано per-window агрегация губеше cross-month кредита). Виж ADR `docs/decisions/2026-07-23-cross-month-fee-credit-carryover.md`.
 
 ### 7.3 Stripe механизъм — авто-теглене със запазена карта
 Плащаме таксата през **съществуващата** Stripe инфраструктура (`stripe.ts`, `billing.ts`, webhook `stripe/route.ts`), но с различен режим: вместо `mode: "subscription"` (flat), таксовите фактури са **еднократни Stripe Invoices** (invoice items за периода).
