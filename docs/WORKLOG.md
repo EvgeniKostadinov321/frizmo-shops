@@ -90,6 +90,30 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (2) (`c93b9e8` dev/preview) — БИЛИНГ ИМПЛЕМЕНТАЦИЯ: ядро (Задачи 1-6) + текстове (9) на dev.**
+  От одобрения спец → **имплементационен план** `docs/superpowers/plans/2026-07-23-transaction-fee-monetization.md`
+  (9 задачи, TDD; self-review хвана 3 несъответствия с кода: requireShop сигнатура, owner имейл
+  през Supabase admin, reuse ensureCustomer). Изпълнени **inline Задачи 1-6 (ядро) + 9 (текстове)**;
+  Задачи 7-8 (Stripe card/фактуриране) ОТЛОЖЕНИ за live ключове.
+  **Направено (на dev):** (1) `src/lib/fee.ts` — 5% + мин 0.30€ + таван 50€, база subtotal−discount,
+  база≤0→0, монотонна; 10 теста. (2) Схема — `fee_events` (immutable ledger, unique(orderId,type)) +
+  `fee_invoices` (unique(shopId,periodStart)) + `orders.completedAt`/`returnedAt` + индекс; db:push на dev.
+  (3) `src/db/queries/fees.ts` — recordFeeCharge/recordFeeCredit (идемпотентни) + getBillableBalanceForPeriod
+  + hasOverdueFees + requiresCard (DB-only засега); `scripts/verify-fees.mjs` (8 проверки). (4) charge при
+  `→completed` + credit при `→returned` в `updateOrderStatus` (в транзакция, completedAt/returnedAt); verify
+  „двойно completing→1 charge". (5) `auto-complete-orders` cron (30 дни shipped→completed+charge, anti-gaming)
+  + vercel.json. (6) **plan.ts ИЗТРИТ** → `src/lib/selling-gate.ts` (`canAcceptOrders` = !hasOverdueFees &&
+  !requiresCard); 5 вносителя мигрирани (orders/products/billing/checkout/layout); maxProducts лимит премахнат.
+  (9) Оттеглено „без комисиона": `platform-legal.ts` раздел 3 (такса за продажби), landing hero „Без хаос"
+  (комисиони→хаос акцентна дума), FAQ, trust баджове, `plans-content.ts` (1 безплатен план вместо Starter/Pro),
+  ADR `docs/decisions/2026-07-23-transaction-fee-monetization.md`. 478 теста + 2 verify зелени.
+  **ГОЧА ПОТВЪРДЕН:** `drizzle-kit push` на dev ИЗТРИ pg_trgm индексите → възстановени с `setup-search.mjs`.
+  → прод db:push ТРЯБВА да е таргетиран SQL (не push).
+  **ОСТАВА за пълен билинг:** Task 7 (card SetupIntent, `requiresCard` реален Stripe), Task 8 (месечен
+  billing cron + Stripe charge_automatically + webhook) — чакат Stripe акаунт (test за код, live за прод).
+  Прод активиране: 7-8 готови → Stripe live + Vercel env → таргетиран db:push на fee таблиците → merge main.
+  ⚠️ Task 9 текстовете са на dev preview, НЕ на прод (не рекламирай такса без работещ механизъм).
+
 - **2026-07-23 (`842b440` dev+main/PROD) — made-to-order cap фикс + монетизационен спец + build hardening + прод env.**
   **НАПРАВЕНО и ТЕСТВАНО (на прод):** (1) **Made-to-order cap фикс** — таванът броеше редове
   (order_items), сега брои **БРОЙКИ**: `sumActiveMadeToOrderQty` (`src/db/queries/orders.ts:80-96`,
