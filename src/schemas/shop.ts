@@ -1,6 +1,17 @@
 import { z } from "zod";
 import { parseBgPhone } from "@/lib/phone";
+import { isSafeHref } from "@/lib/safe-url";
 import { workingHoursSchema } from "@/lib/working-hours";
+
+/* Социален линк: празен ИЛИ безопасен http(s) URL. z.url() пропуска javascript:/data:
+   (одит #2 VAL-01) → изрично изискваме безопасен протокол. */
+const socialUrlField = () =>
+  z
+    .string()
+    .trim()
+    .max(300)
+    .refine((s) => s === "" || (/^https?:\/\//i.test(s) && isSafeHref(s)), "Невалиден линк (само https://)")
+    .default("");
 
 export const BUSINESS_CATEGORIES = [
   "Дрехи и мода",
@@ -33,10 +44,10 @@ export const shopSchema = z.object({
     ),
   email: z.union([z.email("Невалиден имейл"), z.literal("")]).default(""),
   workingHours: workingHoursSchema,
-  facebook: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
-  instagram: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
-  tiktok: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
-  youtube: z.union([z.url("Невалиден линк"), z.literal("")]).default(""),
+  facebook: socialUrlField(),
+  instagram: socialUrlField(),
+  tiktok: socialUrlField(),
+  youtube: socialUrlField(),
   /* Viber = линк (https://) ИЛИ телефон (viber://chat?number=…) — приемаме
      произволен низ до 200 знака, за да не блокираме телефонния формат. */
   viber: z.string().trim().max(200).default(""),

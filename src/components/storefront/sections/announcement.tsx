@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui";
+import { safeHref } from "@/lib/safe-url";
 import type { SectionOfType } from "@/schemas/site-settings";
 
 /** Ключ per текст → скриеш точно тази обява; нов текст я показва пак. */
@@ -49,8 +50,8 @@ export function AnnouncementSection({ data }: { data: SectionOfType<"announcemen
      тема (за разлика от --sf-primary + бяло — нечетимо при светъл акцент). */
   return (
     <div className="relative flex min-h-9 w-full items-center justify-center gap-3 bg-(--sf-text) px-10 py-1.5 text-center text-(--sf-bg)">
-      {data.href ? (
-        <Link href={data.href} className="underline-offset-2 hover:underline">
+      {safeHref(data.href) ? (
+        <Link href={safeHref(data.href)} className="underline-offset-2 hover:underline">
           {content}
         </Link>
       ) : (

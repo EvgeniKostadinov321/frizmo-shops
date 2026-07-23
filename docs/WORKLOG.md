@@ -90,6 +90,23 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-23 (8) — ОДИТЕН ЦИКЪЛ #2 (нови измерения) + 11 поправки.** Втори одит по същия процес
+  (subagenti workflow, 4 НОВИ измерения: Валидация/санитизация, A11y дълбок, Кеш/RSC, Concurrency дълбок;
+  17 агента, 0 грешки). Подадени находките от #1 → 0 повторения; 13 уникални нови находки. Доклад:
+  `docs/superpowers/audits/2026-07-23-audit-cycle-2.md`. ⚠️ verify-агент наруши „само откриване" и пипна
+  5 файла → **върнати** (git checkout). Вторична проверка: сверих CONC-01/CACHE-01 срещу кода + VAL-01
+  **емпирично** (`z.url()` наистина приема `javascript:`). **ПОПРАВЕНИ 11** (план `2026-07-23-audit-fixes-2.md`,
+  `pnpm check` зелен = 488 теста): **CONC-01** (expire-payments cron CAS guard — отменяше платена поръчка,
+  същият клас като DATA-01 но cron остана незащитен) · **CONC-02** (newsletter CAS — дублиран welcome купон
+  при паралелно потвърждение) · **CACHE-01/02** (ePay поръчка/webhook/cron сега инвалидират feed кеша —
+  COD пътят го правеше, ePay не → feed рекламираше грешна наличност) · **CACHE-03** (нов `siteUrl()` helper
+  за metadataBase+sitemap — хардкоднат vercel.app щеше да чупи canonical/sitemap след смяна на домейн) ·
+  **VAL-01** (нов `safe-url.ts`: `isSafeHref`/`safeHref` — storefront link полета приемаха `javascript:`/`data:`
+  URL → stored XSS; schema refine + render defense-in-depth на socials/hero/announcement/promo/navLinks) ·
+  **A11Y-01/04** (warning-600/success-600 затъмнени за WCAG AA в light) · **A11Y-02** (купон input aria-label) ·
+  **A11Y-03** (role=alert на 5 форми) · **A11Y-05** (нов `useFocusTrap` хук в Drawer+Modal). **ОТЛОЖЕНИ:**
+  CACHE-04 (react cache дедуп), CACHE-05 (ownerId в RSC). Чака push разрешение.
+
 - **2026-07-23 (7) — ОДИТЕН ЦИКЪЛ (нов+стар код) + 7 поправки.** Процес: субагенти (workflow, 4
   измерения × find+adversarial verify = 20 агента) → моя вторична проверка (лично сверих 5 срещу
   кода, 0 халюцинации) → триаж → inline поправки. Резултати: `docs/superpowers/audits/2026-07-23-audit-cycle.md`

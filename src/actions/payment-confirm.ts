@@ -1,9 +1,11 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { db, orders, paymentIntents } from "@/db";
+import { revalidateTag } from "next/cache";
+import { db, orders, paymentIntents, shops } from "@/db";
 import { restoreStock } from "@/actions/orders";
 import { getShopPaymentAccount } from "@/db/queries/payment-accounts";
+import { shopCacheTag } from "@/db/queries/storefront";
 import { getPaymentProvider, type PaymentCreds } from "@/lib/payments";
 
 type ConfirmResult = { invoice: string; result: "ok" | "ignored" | "invalid" };
@@ -100,6 +102,16 @@ export async function confirmEpayPayment(body: {
           .where(eq(orders.id, intent.orderId));
         await restoreStock(tx, intent.orderId);
       });
+      /* Върнат склад → инвалидирай storefront feed кеша (ISR, не се самообновява от
+         server-to-server webhook), иначе feed.xml остава out_of_stock до 1ч (одит #2
+         CACHE-02). Резолвваме slug през поръчката. */
+      const [row] = await db
+        .select({ slug: shops.slug })
+        .from(orders)
+        .innerJoin(shops, eq(orders.shopId, shops.id))
+        .where(eq(orders.id, intent.orderId))
+        .limit(1);
+      if (row) revalidateTag(shopCacheTag(row.slug), "max");
       return { invoice: decoded, result: "ok" };
     }
 

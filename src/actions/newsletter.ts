@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { campaigns, coupons, db, referrals, shops, subscribers } from "@/db";
 import { clientIp } from "@/actions/cart";
@@ -151,14 +151,16 @@ export async function confirmNewsletter(rawInput: unknown): Promise<ConfirmOutco
     return { result: "unsubscribed" };
   }
 
-  /* Вече потвърден → НЕ издаваме втори код (идемпотентност). */
-  if (row.status === "confirmed") return { result: "already" };
-
+  /* CAS: атомарен преход pending→confirmed. Само печелившият (RETURNING непразен) издава
+     купоните. Иначе паралелно/двойно потвърждение (няколко таба, retry) издаваше по 2
+     welcome+referral купона от 1 абонамент (одит #2 CONC-02). */
   const now = new Date();
-  await db
+  const claimed = await db
     .update(subscribers)
     .set({ status: "confirmed", confirmedAt: now, updatedAt: now })
-    .where(eq(subscribers.id, row.id));
+    .where(and(eq(subscribers.id, row.id), ne(subscribers.status, "confirmed")))
+    .returning({ id: subscribers.id });
+  if (claimed.length === 0) return { result: "already" }; // друг вече го потвърди
 
   const out: ConfirmOutcome = { result: "confirmed" };
 

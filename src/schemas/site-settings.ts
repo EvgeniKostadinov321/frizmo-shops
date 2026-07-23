@@ -1,7 +1,12 @@
 import { z } from "zod";
+import { isSafeHref } from "@/lib/safe-url";
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Невалиден цвят");
 const shortText = (max: number) => z.string().trim().max(max).default("");
+/* href поле: къс текст + защита срещу javascript:/data: (одит #2 VAL-01). Позволява
+   вътрешен път, http(s)://, mailto:, tel: или празно. */
+const hrefText = (max: number) =>
+  z.string().trim().max(max).refine(isSafeHref, "Невалиден линк").default("");
 
 /* Всяка секция: { id, type, enabled, data } */
 const base = { id: z.uuid(), enabled: z.boolean().default(true) };
@@ -28,7 +33,7 @@ export const sectionSchemas = {
       title: shortText(120),
       subtitle: shortText(200),
       ctaLabel: shortText(40),
-      ctaHref: shortText(300),
+      ctaHref: hrefText(300),
       imagePaths: z.array(z.string().max(300)).max(5).default([]),
       /* Видео фон (само за poster вариант). Празно = снимков hero. Първата
          снимка от imagePaths е постер (reduced-motion + докато зарежда). */
@@ -44,7 +49,7 @@ export const sectionSchemas = {
   announcement: z.object({
     ...base,
     type: z.literal("announcement"),
-    data: z.object({ text: shortText(120), href: shortText(300) }),
+    data: z.object({ text: shortText(120), href: hrefText(300) }),
   }),
   "featured-products": z.object({
     ...base,
@@ -78,7 +83,7 @@ export const sectionSchemas = {
       title: shortText(100),
       text: shortText(200),
       ctaLabel: shortText(40),
-      ctaHref: shortText(300),
+      ctaHref: hrefText(300),
       imagePath: z.string().max(300).default(""),
       /* Отброяване до дата (ISO низ, напр. „2026-08-01T18:00"). Празно = без
          таймер. При изтичане таймерът се скрива, банерът остава. */
@@ -255,7 +260,7 @@ export const siteSettingsSchema = z.object({
       z.object({
         id: z.uuid(),
         label: shortText(40),
-        href: z.string().trim().max(300).default(""),
+        href: hrefText(300),
       }),
     )
     .max(8)

@@ -64,7 +64,7 @@ export function QuestionForm({ shopSlug, productId }: { shopSlug: string; produc
         aria-label="Твоят въпрос"
         className="rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3.5 py-2.5 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
       />
-      {error && <p className="text-sm text-danger-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
       <button
         type="submit"
         disabled={busy}

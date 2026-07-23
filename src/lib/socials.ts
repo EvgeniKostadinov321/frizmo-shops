@@ -1,4 +1,5 @@
 import type { IconName } from "@/components/ui";
+import { safeHref } from "@/lib/safe-url";
 
 /** Съхранените соц. линкове на магазина (shops.socialLinks jsonb). */
 export interface SocialLinks {
@@ -44,7 +45,9 @@ export function buildSocialItems(links: SocialLinks | null | undefined): SocialI
   for (const { key, label, icon } of ORDER) {
     const raw = (l[key] ?? "").trim();
     if (!raw) continue;
-    const href = key === "viber" ? viberHref(raw) : raw;
+    /* safeHref неутрализира легаси javascript:/data: стойности при рендер (одит #2 VAL-01) —
+       защита в дълбочина освен schema валидацията на записа. viber има собствена нормализация. */
+    const href = key === "viber" ? viberHref(raw) : safeHref(raw);
     if (href) items.push({ href, label, icon });
   }
   return items;

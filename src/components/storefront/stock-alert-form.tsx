@@ -66,7 +66,7 @@ export function StockAlertForm({ shopSlug, productId }: StockAlertFormProps) {
           {busy ? "Записване…" : "Извести ме"}
         </button>
       </div>
-      {error && <p className="text-sm text-danger-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
       <p className="text-xs text-(--sf-muted)">
         Един имейл, само когато се върне в наличност. Без абонамент.
       </p>

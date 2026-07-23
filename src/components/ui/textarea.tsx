@@ -51,7 +51,7 @@ export function Textarea({
         <p id={`${inputId}-hint`} className="text-sm text-ink-500">{hint}</p>
       )}
       {error && (
-        <p id={`${inputId}-error`} className="text-sm text-danger-600">{error}</p>
+        <p id={`${inputId}-error`} role="alert" className="text-sm text-danger-600">{error}</p>
       )}
     </div>
   );

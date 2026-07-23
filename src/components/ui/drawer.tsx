@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 import { useLatest } from "@/lib/use-latest";
 
 export interface DrawerProps {
@@ -21,6 +22,7 @@ export function Drawer({ open, onClose, title, children, footer }: DrawerProps) 
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useLatest(onClose);
+  useFocusTrap(panelRef, open); // Tab не излиза зад drawer-а (A11Y-05)
 
   useEffect(() => {
     if (!open) return;

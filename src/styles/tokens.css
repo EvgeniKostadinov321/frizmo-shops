@@ -44,8 +44,10 @@
   /* Семантични */
   --color-danger-600: #b4442c;
   --color-danger-700: #8f3722;
-  --color-success-600: #2e7d4f;
-  --color-warning-600: #b97e14;
+  /* success/warning затъмнени за WCAG AA 4.5:1 при малък текст на светъл фон
+     (билинг статус + badge; одит #2 A11Y-01/A11Y-04). Dark стойностите са отделни по-долу. */
+  --color-success-600: #2b7549;
+  --color-warning-600: #8a5d0c;
 
   /* Focus ring */
   --color-focus: #7f4712;

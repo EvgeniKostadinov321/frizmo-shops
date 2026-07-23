@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 import { and, eq } from "drizzle-orm";
 import { db, products, shops } from "@/db";
 import { getAllPosts } from "@/lib/blog";
-
-const BASE = "https://frizmo-shops.vercel.app";
+import { siteUrl } from "@/lib/site-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const BASE = siteUrl();
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/shops`, changeFrequency: "daily", priority: 0.9 },

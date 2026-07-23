@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Icon } from "@/components/ui";
+import { safeHref } from "@/lib/safe-url";
 import type { SectionOfType } from "@/schemas/site-settings";
 import type { SectionContext } from "../index";
 
@@ -26,7 +27,7 @@ export function HeroCta({
 }) {
   return (
     <Link
-      href={href || `${base}/products`}
+      href={safeHref(href) || `${base}/products`}
       className={`sf-cta inline-flex items-center rounded-(--sf-radius) bg-(--sf-primary) font-medium text-(--sf-on-primary) transition-all hover:opacity-90 hover:shadow-lg ${
         large ? "h-14 px-9 text-lg" : "h-12 px-7"
       }`}

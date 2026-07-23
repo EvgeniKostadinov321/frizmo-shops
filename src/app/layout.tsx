@@ -5,6 +5,7 @@ import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { CookieConsent } from "@/components/ui/cookie-consent";
 import { Toaster } from "@/components/ui/toaster";
 import { BRAND_THEME_COLOR } from "@/lib/brand";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 /* Платформена типография: Sofia Sans — body; Onest — display заглавия (R1, замества Condensed) */
@@ -31,7 +32,7 @@ const playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "-
 const oswald = Oswald({ subsets: ["latin", "cyrillic"], variable: "--font-condensed", preload: false });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://frizmo-shops.vercel.app"),
+  metadataBase: new URL(siteUrl()),
   title: "Frizmo Shops",
   description: "Твоят онлайн магазин. Готов днес. Без програмист.",
   applicationName: "Frizmo Shops",

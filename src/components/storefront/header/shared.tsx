@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { safeHref } from "@/lib/safe-url";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
@@ -65,8 +66,11 @@ export function buildNav(
           label: c.name,
         }))
       : [{ href: `${base}/products`, label: "Продукти" }];
+  /* safeHref неутрализира легаси javascript:/data: href-ове (одит #2 VAL-01) — празният
+     резултат отпада на филтъра, така че опасен линк изобщо не се рендира. */
   const manual: NavItem[] = navLinks
-    .filter((l) => l.label.trim() && l.href.trim())
+    .map((l) => ({ label: l.label.trim(), href: safeHref(l.href) }))
+    .filter((l) => l.label && l.href)
     .map((l) => ({ label: l.label, href: l.href, external: isExternal(l.href) }));
   return [
     ...categoryNav,

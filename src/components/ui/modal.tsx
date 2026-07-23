@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 import { useLatest } from "@/lib/use-latest";
 import { Icon } from "./icon";
 
@@ -17,6 +18,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useLatest(onClose);
+  useFocusTrap(panelRef, open); // Tab не излиза зад модала (A11Y-05)
 
   /*
    * Зависи САМО от `open`: inline onClose е нова функция при всеки re-render

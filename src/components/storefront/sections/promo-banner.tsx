@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { safeHref } from "@/lib/safe-url";
 import { publicImageUrl } from "@/lib/storage";
 import type { SectionOfType } from "@/schemas/site-settings";
 import { PromoCountdown } from "./promo-countdown";
@@ -99,7 +100,7 @@ export function PromoBannerSection({
         {(data.text || data.ctaLabel) && (
           <div className="mt-2">
             {data.ctaLabel ? (
-              <Link href={data.ctaHref || `${ctx.base}/products`} className={ticketClass}>
+              <Link href={safeHref(data.ctaHref) || `${ctx.base}/products`} className={ticketClass}>
                 {ticketInner}
               </Link>
             ) : (

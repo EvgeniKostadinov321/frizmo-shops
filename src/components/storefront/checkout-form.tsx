@@ -710,6 +710,7 @@ export function CheckoutForm({
                   }
                 }}
                 placeholder="Промо код"
+                aria-label="Промо код"
                 className="h-10 w-0 min-w-0 flex-1 bg-transparent px-3 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:outline-none"
               />
               <button

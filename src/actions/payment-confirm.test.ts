@@ -27,13 +27,22 @@ vi.mock("@/db", () => ({
           },
         }),
       }),
+    /* feed-инвалидацията (CACHE-02) резолвва slug: db.select().from().innerJoin().where().limit() */
+    select: () => ({
+      from: () => ({
+        innerJoin: () => ({ where: () => ({ limit: () => [{ slug: "shop-1" }] }) }),
+      }),
+    }),
   },
   paymentIntents: { providerRef: "providerRef", id: "id", status: "status" },
-  orders: { id: "id", status: "status" },
+  orders: { id: "id", status: "status", shopId: "shopId" },
+  shops: { id: "id", slug: "slug" },
   shopPaymentAccounts: {},
 }));
 vi.mock("@/actions/orders", () => ({ restoreStock }));
 vi.mock("@/db/queries/payment-accounts", () => ({ getShopPaymentAccount }));
+vi.mock("@/db/queries/storefront", () => ({ shopCacheTag: (s: string) => `shop:${s}` }));
+vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 
 import { confirmEpayPayment } from "@/actions/payment-confirm";
 

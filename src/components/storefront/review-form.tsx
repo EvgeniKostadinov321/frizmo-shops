@@ -113,7 +113,7 @@ export function ReviewForm({ shopSlug, productId }: { shopSlug: string; productI
         className="h-11 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) px-3.5 text-sm text-(--sf-text) placeholder:text-(--sf-muted) focus:border-(--sf-primary) focus:outline-none"
       />
 
-      {error && <p className="text-sm text-danger-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
 
       <button
         type="submit"

@@ -472,6 +472,10 @@ export async function createOrder(
       return fail("Плащането не можа да се стартира. Опитай пак.");
     }
     revalidatePath("/dashboard/orders");
+    /* Поръчката декрементира наличности (безусловно, като COD) → инвалидирай storefront
+       feed кеша, иначе feed.xml рекламира изчерпан продукт до 1ч (одит #2 CACHE-01;
+       симетрично на COD пътя по-долу). */
+    revalidateTag(shopCacheTag(shop.slug), "max");
     return ok({ orderId: created.orderId, token: created.publicToken, epay });
   }
 
