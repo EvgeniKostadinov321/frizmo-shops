@@ -529,6 +529,13 @@ export async function createManualOrder(
 
   const { shop } = await requireShop();
 
+  /* Card-gate: ръчната поръчка е НОВА продажба (еквивалент на createOrder откъм
+     таксите) → същият гард. Иначе търговецът заобикаля card-gate-а, като добавя
+     всичките си продажби ръчно през касата (одит 2026-07-23). */
+  if (!(await canAcceptOrders(shop.id))) {
+    return fail("Магазинът временно не приема поръчки. Запази карта, за да продължиш.");
+  }
+
   const phone = parseBgPhone(input.customerPhone);
   if (!phone.ok) return fail("Невалиден телефонен номер.");
 
