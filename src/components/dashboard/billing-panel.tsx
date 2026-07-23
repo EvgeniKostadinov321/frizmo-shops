@@ -1,85 +1,80 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button, Card, Input, Select } from "@/components/ui";
-import { createCheckoutSession, createPortalSession } from "@/actions/billing";
+import { Card } from "@/components/ui";
+import { formatPrice } from "@/lib/money";
+import { CardSetupForm } from "./card-setup-form";
+import type { FeeInvoiceView } from "@/actions/billing";
 
 interface BillingPanelProps {
-  status: string;
-  plan: string;
-  currentPeriodEnd: string | null;
+  needsCard: boolean;
+  overdue: boolean;
+  invoices: FeeInvoiceView[];
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  trial: "Пробен период",
-  trial_expired: "Пробният период изтече",
-  trialing: "Пробен период",
-  active: "Активен",
-  past_due: "Забавено плащане",
-  suspended: "Спрян — без плащане",
-  canceled: "Отказан",
+const INVOICE_STATUS_LABEL: Record<string, string> = {
+  draft: "Изготвя се",
+  issued: "За плащане",
+  paid: "Платена",
+  uncollectible: "Несъбираема",
 };
 
-/* Статусите без Stripe subscription — показваме формата за абониране, не портала. */
-const NO_SUBSCRIPTION = new Set(["trial", "trial_expired"]);
+/** Форматира периода (начало на месец) като „юли 2026". */
+function periodLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString("bg-BG", { month: "long", year: "numeric" });
+}
 
-export function BillingPanel({ status, plan, currentPeriodEnd }: BillingPanelProps) {
-  const [busy, setBusy] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(plan === "pro" ? "pro" : "starter");
-  const [promo, setPromo] = useState("");
-  const hasSubscription = !NO_SUBSCRIPTION.has(status);
-
-  async function subscribe() {
-    setBusy(true);
-    try {
-      const res = await createCheckoutSession({ plan: selectedPlan, promoCode: promo.trim() || undefined });
-      if (!res.ok) { toast.error(res.error); return; }
-      window.location.href = res.data.url;
-    } finally { setBusy(false); }
-  }
-
-  async function manage() {
-    setBusy(true);
-    try {
-      const res = await createPortalSession();
-      if (!res.ok) { toast.error(res.error); return; }
-      window.location.href = res.data.url;
-    } finally { setBusy(false); }
-  }
-
+/**
+ * Билинг панел (таксов модел): показва card-gate формата при нужда, предупреждение
+ * при просрочена фактура, и списък с месечните такси. Няма абонамент/планове.
+ */
+export function BillingPanel({ needsCard, overdue, invoices }: BillingPanelProps) {
   return (
-    <Card className="flex flex-col gap-4">
-      <div>
-        <h2 className="font-bold text-ink-900">Абонамент</h2>
-        <p className="mt-1 text-sm text-ink-500">
-          Състояние: <span className="font-medium text-ink-900">{STATUS_LABEL[status] ?? status}</span>
-          {currentPeriodEnd && ` · до ${new Date(currentPeriodEnd).toLocaleDateString("bg-BG")}`}
-        </p>
-      </div>
-
-      {hasSubscription ? (
-        <Button loading={busy} onClick={manage}>Управлявай абонамента</Button>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <Select
-            label="План"
-            options={[
-              { value: "starter", label: "Starter — 10 €/мес" },
-              { value: "pro", label: "Pro — 20 €/мес" },
-            ]}
-            value={selectedPlan}
-            onChange={(e) => setSelectedPlan(e.target.value as "starter" | "pro")}
-          />
-          <Input
-            label="Промо код (по избор)"
-            placeholder="напр. FRIZMO50"
-            value={promo}
-            onChange={(e) => setPromo(e.target.value)}
-          />
-          <Button loading={busy} onClick={subscribe}>Абонирай се</Button>
+    <div className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-bold text-ink-900">Такси и плащане</h2>
+          <p className="mt-1 text-sm text-ink-500">
+            Магазинът е безплатен. Взимаме 5% при реална продажба (мин. 0,30 €, макс. 50 € на
+            поръчка) — таксите се обобщават в месечна фактура.
+          </p>
         </div>
-      )}
-    </Card>
+
+        {overdue && (
+          <div className="rounded-control border border-danger-600/30 bg-danger-600/5 p-3 text-sm text-danger-700">
+            Има неплатена фактура. Магазинът временно не приема нови поръчки, докато таксата не
+            бъде уредена.
+          </div>
+        )}
+
+        {needsCard && <CardSetupForm />}
+
+        {!needsCard && !overdue && (
+          <p className="text-sm text-success-600">
+            Всичко е наред — плащането на таксите е настроено.
+          </p>
+        )}
+      </Card>
+
+      <Card className="flex flex-col gap-3">
+        <h3 className="font-bold text-ink-900">Месечни такси</h3>
+        {invoices.length === 0 ? (
+          <p className="text-sm text-ink-500">Още няма издадени фактури.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-surface-200">
+            {invoices.map((inv) => (
+              <li key={inv.id} className="flex items-center justify-between py-2.5 text-sm">
+                <span className="text-ink-700">{periodLabel(inv.periodStart)}</span>
+                <span className="flex items-center gap-3">
+                  <span className="font-medium text-ink-900 tabular-nums">
+                    {formatPrice(inv.amountDueCents)}
+                  </span>
+                  <span className="text-ink-500">{INVOICE_STATUS_LABEL[inv.status] ?? inv.status}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
   );
 }

@@ -63,6 +63,10 @@ vi.mock("@/lib/email", () => ({
 vi.mock("@/lib/push", () => ({ sendNewOrderPush: vi.fn(), sendPushToUser: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 vi.mock("@/db/queries/storefront", () => ({ shopCacheTag: () => "tag" }));
+/* selling-gate е server-only (Stripe) + fees прави реални DB заявки — mock-ваме ги,
+   този тест е за intent логиката при cancel, не за таксите. */
+vi.mock("@/lib/selling-gate", () => ({ canAcceptOrders: vi.fn().mockResolvedValue(true) }));
+vi.mock("@/db/queries/fees", () => ({ recordFeeCharge: vi.fn(), recordFeeCredit: vi.fn() }));
 
 import { updateOrderStatus } from "@/actions/orders";
 

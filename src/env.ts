@@ -53,10 +53,10 @@ export function validateEnv(): void {
     warnings.push(
       "CRON_SECRET — Vercel Cron ще връща 401: expire-payments (неплатени поръчки не се отменят, наличности заседват) и abandoned-carts няма да работят.",
     );
-  if (!process.env.STRIPE_SECRET_KEY) warnings.push("STRIPE_SECRET_KEY — билингът е изключен.");
-  if (!process.env.STRIPE_WEBHOOK_SECRET) warnings.push("STRIPE_WEBHOOK_SECRET — Stripe webhook няма да работи.");
-  if (!process.env.STRIPE_PRICE_STARTER || !process.env.STRIPE_PRICE_PRO)
-    warnings.push("STRIPE_PRICE_* — Stripe Price ID-тата липсват (билинг checkout ще гърми).");
+  if (!process.env.STRIPE_SECRET_KEY) warnings.push("STRIPE_SECRET_KEY — билингът (такса) е изключен.");
+  if (!process.env.STRIPE_WEBHOOK_SECRET) warnings.push("STRIPE_WEBHOOK_SECRET — Stripe webhook (fee_invoices статус) няма да работи.");
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+    warnings.push("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY — card формата (запазване на карта) няма да зареди.");
   if (warnings.length > 0) {
     console.warn(`[env] Липсват препоръчани ключове:\n${warnings.map((w) => `  • ${w}`).join("\n")}`);
   }

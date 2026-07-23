@@ -103,24 +103,26 @@ export async function hasOverdueFees(shopId: string): Promise<boolean> {
 }
 
 /**
- * Card-gate: магазинът трябва да запази карта СЛЕД първата завършена продажба.
- * requiresCard = имало е ≥1 charge И няма запазена карта.
- * ЗАСЕГА (Task 6): „няма карта" = няма stripeCustomerId в subscriptions.
- * Task 7 надгражда с реалната Stripe default_payment_method проверка.
+ * DB-състоянието за card-gate решението (чисто, без Stripe — за да остане fees.ts
+ * непокътнат от server-only). `requiresCard` в selling-gate.ts комбинира това с
+ * реалната Stripe default_payment_method проверка.
+ *  - hasCharge: имало ли е ≥1 таксуема продажба (тогава изобщо се иска карта)
+ *  - customerId: Stripe Customer id (null = още няма → сигурно иска карта)
  */
-export async function requiresCard(shopId: string): Promise<boolean> {
+export async function cardState(
+  shopId: string,
+): Promise<{ hasCharge: boolean; customerId: string | null }> {
   const [charge] = await db
     .select({ id: feeEvents.id })
     .from(feeEvents)
     .where(and(eq(feeEvents.shopId, shopId), eq(feeEvents.type, "charge")))
     .limit(1);
-  if (!charge) return false; // няма още таксуема продажба → карта не се иска
   const [sub] = await db
     .select({ customerId: subscriptions.stripeCustomerId })
     .from(subscriptions)
     .where(eq(subscriptions.shopId, shopId))
     .limit(1);
-  return !sub?.customerId; // няма Customer/карта → иска карта
+  return { hasCharge: Boolean(charge), customerId: sub?.customerId ?? null };
 }
 
 /** Фактурите на магазин (за dashboard billing секцията), най-новите първо. */

@@ -1,15 +1,15 @@
 import { getBillingStatus } from "@/actions/billing";
 import { BillingPanel } from "@/components/dashboard/billing-panel";
 
-export const metadata = { title: "Абонамент — Frizmo Shops" };
+export const metadata = { title: "Такси — Frizmo Shops" };
 
 export default async function BillingPage() {
   const res = await getBillingStatus();
-  const data = res.ok ? res.data : { status: "trial", plan: "pro", currentPeriodEnd: null };
+  const data = res.ok ? res.data : { needsCard: false, overdue: false, invoices: [] };
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <BillingPanel status={data.status} plan={data.plan} currentPeriodEnd={data.currentPeriodEnd} />
+      <BillingPanel needsCard={data.needsCard} overdue={data.overdue} invoices={data.invoices} />
     </div>
   );
 }
