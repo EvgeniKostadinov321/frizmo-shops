@@ -45,17 +45,21 @@ export async function GET(req: Request) {
 
     const customerId = await ensureStripeCustomer(shop.id, email, shop.name);
 
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      amount: invoice.amountDueCents,
-      currency: "eur",
-      description: `Такса за продажби (${start.toISOString().slice(0, 7)})`,
-    });
+    /* Ред за Stripe API 2026-06-24.dahlia: draft фактура ПЪРВО, после invoiceItem с
+       явен invoice:id (иначе item-ът не се закача → фактура за 0 €). auto_advance:true
+       оставя Stripe да финализира + тегли автоматично от запазената карта. */
     const stripeInvoice = await stripe.invoices.create({
       customer: customerId,
       collection_method: "charge_automatically",
       auto_advance: true,
       metadata: { app: STRIPE_APP_TAG, feeInvoiceId: invoice.id },
+    });
+    await stripe.invoiceItems.create({
+      customer: customerId,
+      invoice: stripeInvoice.id,
+      amount: invoice.amountDueCents,
+      currency: "eur",
+      description: `Такса за продажби (${start.toISOString().slice(0, 7)})`,
     });
     await markInvoiceIssued(invoice.id, stripeInvoice.id!);
     issued++;
