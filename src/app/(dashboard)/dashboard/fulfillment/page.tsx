@@ -3,7 +3,7 @@ import { FulfillmentManager } from "@/components/dashboard/fulfillment-manager";
 import { OrderSettings } from "@/components/dashboard/order-settings";
 import { PaymentAccounts } from "@/components/dashboard/payment-accounts";
 import { Tabs, TabPanel } from "@/components/ui";
-import { getCourierAccounts } from "@/db/queries/couriers";
+import { getCourierAccounts, getCourierDeliveryOptions } from "@/db/queries/couriers";
 import {
   ensureDefaultMethods,
   getPaymentMethods,
@@ -19,14 +19,15 @@ export default async function FulfillmentPage() {
   const { shop } = await requireShop();
   await ensureDefaultMethods(shop.id);
 
-  const [shipping, payment, zones, courierAccounts, paymentAccount] = await Promise.all([
-    getShippingMethods(shop.id),
-    getPaymentMethods(shop.id),
-    getZonesForShop(shop.id),
-    getCourierAccounts(shop.id),
-    getShopPaymentAccount(shop.id, "epay"),
-  ]);
-  const hasCourier = courierAccounts.length > 0;
+  const [shipping, payment, zones, courierAccounts, deliveryOptions, paymentAccount] =
+    await Promise.all([
+      getShippingMethods(shop.id),
+      getPaymentMethods(shop.id),
+      getZonesForShop(shop.id),
+      getCourierAccounts(shop.id),
+      getCourierDeliveryOptions(shop.id),
+      getShopPaymentAccount(shop.id, "epay"),
+    ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,13 +42,7 @@ export default async function FulfillmentPage() {
         ]}
       >
         <TabPanel tabKey="shipping">
-          <FulfillmentManager
-            only="shipping"
-            shipping={shipping}
-            payment={payment}
-            zones={zones}
-            hasCourier={hasCourier}
-          />
+          <FulfillmentManager only="shipping" shipping={shipping} payment={payment} zones={zones} />
         </TabPanel>
         <TabPanel tabKey="payment">
           <div className="flex flex-col gap-6">
@@ -56,7 +51,7 @@ export default async function FulfillmentPage() {
           </div>
         </TabPanel>
         <TabPanel tabKey="couriers">
-          <CourierAccounts accounts={courierAccounts} />
+          <CourierAccounts accounts={courierAccounts} deliveryOptions={deliveryOptions} />
         </TabPanel>
         <TabPanel tabKey="orders">
           <OrderSettings

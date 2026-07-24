@@ -6,26 +6,39 @@ import { toast } from "sonner";
 import {
   deleteCourierAccount,
   saveCourierAccount,
+  saveCourierDeliveryOption,
   testCourierConnection,
 } from "@/actions/couriers";
-import type { ShopCourierAccount } from "@/db";
-import { Badge, Button, Card, ConfirmDialog, Drawer, InfoHint, Input } from "@/components/ui";
+import type { CourierDeliveryOption, ShopCourierAccount } from "@/db";
+import { Badge, Button, Card, Checkbox, ConfirmDialog, Drawer, InfoHint, Input, PriceInput } from "@/components/ui";
+import { centsToInput } from "@/lib/money";
+import { AddressAutocomplete } from "./address-autocomplete";
 
 type Provider = "econt" | "speedy";
+type Target = "office" | "address";
 
 const PROVIDERS: { id: Provider; name: string; hint: string }[] = [
   { id: "econt", name: "Еконт", hint: "Потребител и парола от e-Econt акаунта." },
   { id: "speedy", name: "Спиди", hint: "Потребител и парола от Speedy API акаунта." },
 ];
 
+const TARGET_LABEL: Record<Target, string> = {
+  office: "До офис на куриера",
+  address: "До адрес на клиента",
+};
+
 interface Props {
   accounts: ShopCourierAccount[];
+  deliveryOptions: CourierDeliveryOption[];
 }
 
-/** Таб „Куриери" — карта за Еконт + Спиди: ключове + подател + провери връзка + изтрий. */
-export function CourierAccounts({ accounts }: Props) {
+/** Таб „Куриери" — карта за Еконт + Спиди: ключове + подател + провери връзка +
+    настройка на доставка (офис/адрес, резервна цена, праг безплатна) + изтрий. */
+export function CourierAccounts({ accounts, deliveryOptions }: Props) {
   const router = useRouter();
   const byProvider = new Map(accounts.map((a) => [a.provider, a]));
+  const optionFor = (provider: Provider, target: Target) =>
+    deliveryOptions.find((o) => o.provider === provider && o.deliveryTarget === target) ?? null;
   const [editing, setEditing] = useState<Provider | null>(null);
   const [toDelete, setToDelete] = useState<Provider | null>(null);
 
@@ -72,6 +85,28 @@ export function CourierAccounts({ accounts }: Props) {
                 </>
               )}
             </div>
+
+            {/* Настройка на доставка — само за свързан куриер. Две опции (офис/адрес),
+                всяка с резервна цена + праг за безплатна. Live цената идва от куриера. */}
+            {account && (
+              <div className="flex flex-col gap-3 border-t border-surface-200 pt-4">
+                <p className="text-sm font-medium text-ink-700">Доставка с {p.name}</p>
+                <p className="text-xs text-ink-500">
+                  Цената се изчислява автоматично от {p.name} при поръчка. Резервната цена
+                  се ползва само ако {p.name} не върне цена.
+                </p>
+                {(["office", "address"] as Target[]).map((target) => (
+                  <DeliveryOptionForm
+                    key={target}
+                    provider={p.id}
+                    target={target}
+                    option={optionFor(p.id, target)}
+                    courierName={p.name}
+                    onSaved={() => router.refresh()}
+                  />
+                ))}
+              </div>
+            )}
           </Card>
         );
       })}
@@ -142,6 +177,11 @@ function CourierDrawer({
   onSaved: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  /* Град + адрес на подателя са контролирани, за да ги попълва address autocomplete-ът
+     (HERE) наведнъж при избор — по-малко грешки от ръчно въвеждане. Формата е action-
+     базирана, затова стойностите пътуват през hidden input-и. */
+  const [senderCity, setSenderCity] = useState(account?.senderCity ?? "");
+  const [senderAddress, setSenderAddress] = useState(account?.senderAddress ?? "");
   const name = provider === "econt" ? "Еконт" : "Спиди";
   /* Пояснения за API креденшълите — това НЕ е обикновен вход, а достъп до API-то
      на куриера (различен от паролата за уебсайта им). */
@@ -194,8 +234,25 @@ function CourierDrawer({
         <p className="text-sm font-medium text-ink-700">Данни на подателя (за товарителницата)</p>
         <Input label="Име" name="senderName" defaultValue={account?.senderName ?? ""} required />
         <Input label="Телефон" name="senderPhone" defaultValue={account?.senderPhone ?? ""} required />
-        <Input label="Град" name="senderCity" defaultValue={account?.senderCity ?? ""} required />
-        <Input label="Адрес" name="senderAddress" defaultValue={account?.senderAddress ?? ""} required />
+        {/* Адрес с autocomplete (HERE): при избор попълва и адреса, и града наведнъж. */}
+        <AddressAutocomplete
+          value={senderAddress}
+          onChange={setSenderAddress}
+          onSelect={(result) => {
+            setSenderAddress(result.fullAddress);
+            if (result.city) setSenderCity(result.city);
+          }}
+        />
+        <Input
+          label="Град"
+          value={senderCity}
+          onChange={(e) => setSenderCity(e.target.value)}
+          hint="Попълва се автоматично при избор на адрес."
+          required
+        />
+        {/* Стойностите пътуват към action-а през hidden input-и (формата е action-базирана). */}
+        <input type="hidden" name="senderCity" value={senderCity} />
+        <input type="hidden" name="senderAddress" value={senderAddress} />
         <div className="flex gap-2">
           <Button type="submit" loading={saving}>
             Запази
@@ -206,5 +263,88 @@ function CourierDrawer({
         </div>
       </form>
     </Drawer>
+  );
+}
+
+/**
+ * Настройка на един вариант на куриерска доставка (офис ИЛИ адрес). Inline форма:
+ * превключвател „предлагай", име в checkout, резервна цена, праг за безплатна.
+ */
+function DeliveryOptionForm({
+  provider,
+  target,
+  option,
+  courierName,
+  onSaved,
+}: {
+  provider: Provider;
+  target: Target;
+  option: CourierDeliveryOption | null;
+  courierName: string;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [active, setActive] = useState(option?.active ?? false);
+
+  async function save(formData: FormData) {
+    setSaving(true);
+    try {
+      formData.set("provider", provider);
+      formData.set("deliveryTarget", target);
+      formData.set("active", active ? "on" : "");
+      const res = await saveCourierDeliveryOption({}, formData);
+      if (!res.ok) {
+        toast.error(res.error ?? "Провери въведените данни.");
+        return;
+      }
+      toast.success("Настройката е запазена.");
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const defaultName = option?.displayName || `${TARGET_LABEL[target]} (${courierName})`;
+
+  return (
+    <form action={save} className="flex flex-col gap-3 rounded-card border border-surface-200 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-medium text-ink-900">{TARGET_LABEL[target]}</span>
+        <Checkbox
+          checked={active}
+          onChange={(e) => setActive(e.target.checked)}
+          label="Предлагай"
+        />
+      </div>
+      {active && (
+        <>
+          <Input
+            label="Име в checkout"
+            name="displayName"
+            defaultValue={defaultName}
+            required
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PriceInput
+              label="Резервна цена"
+              name="fallbackPrice"
+              defaultValue={centsToInput(option?.fallbackPriceCents ?? 0)}
+              required
+            />
+            <PriceInput
+              label="Безплатна над"
+              name="freeOver"
+              defaultValue={centsToInput(option?.freeOverCents ?? null)}
+              hint="Празно = никога"
+            />
+          </div>
+        </>
+      )}
+      <div>
+        <Button type="submit" size="sm" loading={saving}>
+          Запази
+        </Button>
+      </div>
+    </form>
   );
 }
