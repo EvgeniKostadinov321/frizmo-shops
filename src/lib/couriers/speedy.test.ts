@@ -122,6 +122,45 @@ describe("speedy.createWaybill", () => {
   });
 });
 
+describe("speedy.calculatePrice", () => {
+  it("парсва calculations[0].price.total (EUR) към центове", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ calculations: [{ serviceId: 505, price: { total: 3.44, currency: "EUR" } }] }),
+        { status: 200 },
+      ),
+    );
+    const res = await speedy.calculatePrice(
+      { officeId: "2", city: "София", weightGrams: 800, codCents: null },
+      creds,
+    );
+    expect(res).toEqual({ amountCents: 344 });
+  });
+
+  it("бизнес грешка (200 с { error }) → null (fallback към резервна)", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "x" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const res = await speedy.calculatePrice(
+      { officeId: "2", city: "София", weightGrams: 800, codCents: null },
+      creds,
+    );
+    expect(res).toBeNull();
+  });
+
+  it("HTTP грешка → null (не хвърля)", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response("fail", { status: 500 }));
+    const res = await speedy.calculatePrice(
+      { officeId: "2", city: "София", weightGrams: 800, codCents: null },
+      creds,
+    );
+    expect(res).toBeNull();
+  });
+});
+
 describe("speedy.trackingUrl", () => {
   it("връща tracking URL с номера", () => {
     expect(speedy.trackingUrl("XYZ789")).toContain("XYZ789");

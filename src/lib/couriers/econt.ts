@@ -87,6 +87,42 @@ export const econt: CourierProvider = {
     };
   },
 
+  async calculatePrice(input, creds) {
+    /* Същата createLabel заявка, но mode:"calculate" → връща цена без да създава
+       пратка (Econt: validate/calculate/create). Цената е в EUR (еврозона от 01.2026).
+       ⚠️ Полето `label.totalPrice` се СВЕРЯВА на живо (T9); коригирай ако е различно.
+       null при всяка грешка → викащият пада на резервната цена. */
+    try {
+      const data = await econtPost<{ label?: { totalPrice?: number } }>(
+        "/Shipments/LabelService.createLabel.json",
+        creds,
+        {
+          mode: "calculate",
+          label: {
+            senderClient: { name: "-", phones: ["0000000000"] },
+            senderAddress: { city: { name: "София" }, street: "-" },
+            receiverClient: { name: "-", phones: ["0000000000"] },
+            receiverOfficeCode: input.officeId ?? undefined,
+            receiverAddress: input.officeId
+              ? undefined
+              : { city: { name: input.city }, street: "-" },
+            packCount: 1,
+            weight: input.weightGrams / 1000,
+            services:
+              input.codCents != null
+                ? { cdAmount: input.codCents / 100, cdType: "get" }
+                : undefined,
+          },
+        },
+      );
+      const total = data.label?.totalPrice;
+      if (typeof total !== "number") return null;
+      return { amountCents: Math.round(total * 100) };
+    } catch {
+      return null;
+    }
+  },
+
   trackingUrl(trackingNumber) {
     return `https://www.econt.com/services/track-shipment/${trackingNumber}`;
   },

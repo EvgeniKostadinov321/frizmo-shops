@@ -63,6 +63,41 @@ describe("econt.searchOffices", () => {
   });
 });
 
+describe("econt.calculatePrice", () => {
+  /* ⚠️ Полето `label.totalPrice` е предположение — СВЕРЯВА се на живо (T9 от плана).
+     Ако Econt върне друго поле, коригирай кода + този тест. */
+  it("парсва label.totalPrice (EUR) към центове", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ label: { totalPrice: 4.2 } }), { status: 200 }),
+    );
+    const res = await econt.calculatePrice(
+      { officeId: "1234", city: "София", weightGrams: 800, codCents: null },
+      creds,
+    );
+    expect(res).toEqual({ amountCents: 420 });
+  });
+
+  it("HTTP грешка → null (не хвърля, fallback към резервна)", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response("fail", { status: 500 }));
+    const res = await econt.calculatePrice(
+      { officeId: "1", city: "София", weightGrams: 500, codCents: null },
+      creds,
+    );
+    expect(res).toBeNull();
+  });
+
+  it("липсва цена в отговора → null", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ label: {} }), { status: 200 }),
+    );
+    const res = await econt.calculatePrice(
+      { officeId: "1", city: "София", weightGrams: 500, codCents: null },
+      creds,
+    );
+    expect(res).toBeNull();
+  });
+});
+
 describe("econt.trackingUrl", () => {
   it("връща tracking URL с номера", () => {
     expect(econt.trackingUrl("ABC123")).toContain("ABC123");

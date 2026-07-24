@@ -105,6 +105,38 @@ export const speedy: CourierProvider = {
     return { waybillId: parcelId, trackingNumber: parcelId, labelPdf };
   },
 
+  async calculatePrice(input, creds) {
+    /* POST /calculate — сверено на живо (2026-07-24): `calculations[0].price.total`
+       в EUR (България е в еврозоната от 01.2026 → без конверсия). null при всяка
+       грешка → викащият пада на резервната цена (не блокира checkout). */
+    try {
+      const data = await speedyPost<{
+        calculations?: { price?: { total?: number } }[];
+      }>("/calculate", creds, {
+        recipient: {
+          privatePerson: true,
+          pickupOfficeId: input.officeId ? Number(input.officeId) : undefined,
+          address: input.officeId ? undefined : { siteName: input.city },
+        },
+        service: {
+          autoAdjustPickupDate: true,
+          serviceIds: [SPEEDY_STANDARD_SERVICE],
+          additionalServices:
+            input.codCents != null
+              ? { cod: { amount: input.codCents / 100, processingType: "CASH" } }
+              : undefined,
+        },
+        content: { parcelsCount: 1, totalWeight: input.weightGrams / 1000 },
+        payment: { courierServicePayer: input.codCents != null ? "RECIPIENT" : "SENDER" },
+      });
+      const total = data.calculations?.[0]?.price?.total;
+      if (typeof total !== "number") return null;
+      return { amountCents: Math.round(total * 100) };
+    } catch {
+      return null;
+    }
+  },
+
   trackingUrl(trackingNumber) {
     return `https://www.speedy.bg/bg/track-shipment?shipmentNumber=${trackingNumber}`;
   },
