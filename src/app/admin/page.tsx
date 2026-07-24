@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminMonetization } from "@/components/dashboard/admin-monetization";
 import { AdminOrdersTable } from "@/components/dashboard/admin-orders-table";
+import { AdminPager } from "@/components/dashboard/admin-pager";
 import { AdminShopActions } from "@/components/dashboard/admin-shop-actions";
 import { AdminInvoiceRetry } from "@/components/dashboard/admin-invoice-actions";
 import { AdminUsersTable } from "@/components/dashboard/admin-users-table";
@@ -274,21 +275,77 @@ export default async function AdminPage({ searchParams }: PageProps) {
 
         {/* ── Монетизация ── */}
         <TabPanel tabKey="monetization">
-          <AdminMonetization
-            stats={monetization}
-            invoices={feeInvoices.items}
-            ledger={feeLedger}
-          />
+          <div className="flex flex-col gap-4">
+            <AdminMonetization
+              stats={monetization}
+              invoices={feeInvoices.items}
+              ledger={feeLedger}
+            />
+            <AdminPager
+              page={feeInvoices.page}
+              total={feeInvoices.total}
+              pageSize={feeInvoices.pageSize}
+              paramName="invPage"
+              baseParams="tab=monetization"
+            />
+          </div>
         </TabPanel>
 
         {/* ── Потребители ── */}
         <TabPanel tabKey="users">
-          <AdminUsersTable users={users.items} />
+          <div className="flex flex-col gap-4">
+            <AdminUsersTable users={users.items} />
+            <AdminPager
+              page={users.page}
+              total={users.total}
+              pageSize={users.pageSize}
+              paramName="userPage"
+              baseParams="tab=users"
+            />
+          </div>
         </TabPanel>
 
         {/* ── Поръчки ── */}
         <TabPanel tabKey="orders">
-          <AdminOrdersTable orders={platformOrders.items} />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "", label: "Всички" },
+                { value: "new", label: "Нови" },
+                { value: "confirmed", label: "Потвърдени" },
+                { value: "shipped", label: "Изпратени" },
+                { value: "completed", label: "Завършени" },
+                { value: "cancelled", label: "Отказани" },
+                { value: "pending_payment", label: "Чакат плащане" },
+              ].map((f) => {
+                const active = (sp.orderStatus ?? "") === f.value;
+                const href = f.value
+                  ? `/admin?tab=orders&orderStatus=${f.value}`
+                  : "/admin?tab=orders";
+                return (
+                  <Link
+                    key={f.value}
+                    href={href}
+                    className={`flex h-9 items-center rounded-full border px-3 text-sm transition-colors ${
+                      active
+                        ? "border-brand-600 bg-brand-600 text-white"
+                        : "border-surface-300 text-ink-700 hover:border-brand-500"
+                    }`}
+                  >
+                    {f.label}
+                  </Link>
+                );
+              })}
+            </div>
+            <AdminOrdersTable orders={platformOrders.items} />
+            <AdminPager
+              page={platformOrders.page}
+              total={platformOrders.total}
+              pageSize={platformOrders.pageSize}
+              paramName="orderPage"
+              baseParams={sp.orderStatus ? `tab=orders&orderStatus=${sp.orderStatus}` : "tab=orders"}
+            />
+          </div>
         </TabPanel>
       </Tabs>
     </div>

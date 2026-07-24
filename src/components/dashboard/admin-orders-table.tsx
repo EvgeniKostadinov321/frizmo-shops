@@ -24,7 +24,7 @@ const PAYMENT_LABEL: Record<string, string> = {
 export function AdminOrdersTable({ orders }: { orders: PlatformOrderRow[] }) {
   return (
     <Card className="flex flex-col gap-3">
-      <h2 className="font-bold text-ink-900">Последни поръчки ({orders.length})</h2>
+      <h2 className="font-bold text-ink-900">Поръчки</h2>
       {orders.length === 0 ? (
         <p className="py-6 text-center text-sm text-ink-500">Още няма поръчки.</p>
       ) : (

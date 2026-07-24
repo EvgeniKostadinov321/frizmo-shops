@@ -9,7 +9,7 @@ const ROLE_LABEL: Record<string, string> = { seller: "Търговец", buyer: 
 export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
   return (
     <Card className="flex flex-col gap-3">
-      <h2 className="font-bold text-ink-900">Потребители ({users.length})</h2>
+      <h2 className="font-bold text-ink-900">Потребители</h2>
       {users.length === 0 ? (
         <p className="py-6 text-center text-sm text-ink-500">Няма потребители.</p>
       ) : (
