@@ -59,6 +59,8 @@ export function validateEnv(): void {
   if (!process.env.STRIPE_WEBHOOK_SECRET) warnings.push("STRIPE_WEBHOOK_SECRET — Stripe webhook (fee_invoices статус) няма да работи.");
   if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
     warnings.push("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY — card формата (запазване на карта) няма да зареди.");
+  if (!process.env.INV_BG_TOKEN)
+    warnings.push("INV_BG_TOKEN — официални inv.bg фактури за таксата няма да се издават (само Stripe).");
   if (warnings.length > 0) {
     console.warn(`[env] Липсват препоръчани ключове:\n${warnings.map((w) => `  • ${w}`).join("\n")}`);
   }

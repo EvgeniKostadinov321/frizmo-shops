@@ -3,6 +3,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, feeInvoices, stripeEvents } from "@/db";
 import { stripe, STRIPE_APP_TAG } from "@/lib/stripe";
+import { issueInvBgForFeeInvoice } from "@/lib/invbg-issue";
 
 export async function POST(req: Request): Promise<Response> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -61,6 +62,23 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           .update(feeInvoices)
           .set({ status: "paid", updatedAt: new Date() })
           .where(eq(feeInvoices.id, feeInvoiceId));
+        /* Официална inv.bg фактура — best-effort, НЕ блокира webhook-а. Провал →
+           маркира invBgStatus='failed' (retry job/admin го поема), но плащането
+           остава синхронизирано (иначе Stripe би retry-нал целия event излишно). */
+        try {
+          const r = await issueInvBgForFeeInvoice(feeInvoiceId);
+          if (r.status === "failed") {
+            console.error(JSON.stringify({ scope: "invbg-issue", feeInvoiceId, reason: r.reason }));
+          }
+        } catch (e) {
+          console.error(
+            JSON.stringify({
+              scope: "invbg-issue",
+              feeInvoiceId,
+              error: e instanceof Error ? e.message : String(e),
+            }),
+          );
+        }
       } else {
         await db
           .update(feeInvoices)

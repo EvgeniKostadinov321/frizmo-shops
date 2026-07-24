@@ -5,6 +5,7 @@ import { db, subscriptions } from "@/db";
 import { requireShop } from "@/lib/auth";
 import { ok, type ActionResult } from "@/lib/action-result";
 import { getFeeInvoices, hasOverdueFees } from "@/db/queries/fees";
+import { getMerchantBillingDetails, type MerchantBillingDetails } from "@/db/queries/billing-details";
 import { requiresCard } from "@/lib/selling-gate";
 import { getDefaultCard, type SavedCard } from "@/lib/stripe";
 
@@ -13,6 +14,9 @@ export interface FeeInvoiceView {
   periodStart: string;
   amountDueCents: number;
   status: string;
+  /** Публичен PDF линк на официалната фактура (inv.bg), ако е издадена. */
+  invBgPdfLink: string | null;
+  invBgNumber: string | null;
 }
 
 /**
@@ -23,13 +27,20 @@ export interface FeeInvoiceView {
  *  - invoices: месечните фактури, най-новите първо
  */
 export async function getBillingStatus(): Promise<
-  ActionResult<{ needsCard: boolean; overdue: boolean; card: SavedCard | null; invoices: FeeInvoiceView[] }>
+  ActionResult<{
+    needsCard: boolean;
+    overdue: boolean;
+    card: SavedCard | null;
+    invoices: FeeInvoiceView[];
+    billingDetails: MerchantBillingDetails | null;
+  }>
 > {
   const { shop } = await requireShop();
-  const [needsCard, overdue, invoices, sub] = await Promise.all([
+  const [needsCard, overdue, invoices, billingDetails, sub] = await Promise.all([
     requiresCard(shop.id),
     hasOverdueFees(shop.id),
     getFeeInvoices(shop.id),
+    getMerchantBillingDetails(shop.id),
     db
       .select({ customerId: subscriptions.stripeCustomerId })
       .from(subscriptions)
@@ -42,11 +53,14 @@ export async function getBillingStatus(): Promise<
     needsCard,
     overdue,
     card,
+    billingDetails,
     invoices: invoices.map((inv) => ({
       id: inv.id,
       periodStart: inv.periodStart.toISOString(),
       amountDueCents: inv.amountDueCents,
       status: inv.status,
+      invBgPdfLink: inv.invBgPdfLink ?? null,
+      invBgNumber: inv.invBgNumber ?? null,
     })),
   });
 }

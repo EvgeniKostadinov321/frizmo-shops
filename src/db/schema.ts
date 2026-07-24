@@ -308,6 +308,12 @@ export const feeInvoiceStatusEnum = pgEnum("fee_invoice_status", [
   "uncollectible",
 ]);
 
+/* Данъчни данни на търговеца за официалната фактура (inv.bg). Търговецът избира
+   дали получателят е фирма (ЕИК) или физическо лице (ЕГН) — toggle във формата. */
+export const billingClientTypeEnum = pgEnum("billing_client_type", ["company", "individual"]);
+/* Статус на реалната inv.bg фактура (различен от Stripe статуса на таксата). */
+export const invBgStatusEnum = pgEnum("inv_bg_status", ["pending", "issued", "failed"]);
+
 /* Куриерска интеграция (Еконт/Спиди) — офис доставка + товарителница. */
 export const courierProviderEnum = pgEnum("courier_provider", ["econt", "speedy"]);
 export const deliveryTargetEnum = pgEnum("delivery_target", ["address", "office"]);
@@ -697,12 +703,64 @@ export const feeInvoices = pgTable(
     amountDueCents: integer("amount_due_cents").notNull(),
     stripeInvoiceId: text("stripe_invoice_id"),
     status: feeInvoiceStatusEnum("status").notNull().default("draft"),
+    /* ── inv.bg официална фактура (издава се при invoice.paid) ─────────────────
+       Snapshot на данъчните данни към момента на издаване — издадена фактура е
+       НАП запис (10г запазване), не бива да се мени, ако търговецът смени данните
+       си после. Всички nullable: пълнят се само при реално издаване. */
+    billingClientType: billingClientTypeEnum("billing_client_type"),
+    billingCompanyName: text("billing_company_name"),
+    billingEik: text("billing_eik"),
+    billingMol: text("billing_mol"),
+    billingVatNumber: text("billing_vat_number"),
+    billingEgn: text("billing_egn"),
+    billingAddress: text("billing_address"),
+    billingCity: text("billing_city"),
+    /* inv.bg резултат (id + 10-цифрен номер + shareable PDF линк). */
+    invBgId: integer("inv_bg_id"),
+    invBgNumber: text("inv_bg_number"),
+    invBgPdfLink: text("inv_bg_pdf_link"),
+    invBgStatus: invBgStatusEnum("inv_bg_status"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     /* Един фактурен ред на магазин на месец — onConflictDoNothing разчита на това. */
     uniqueIndex("fee_invoices_shop_period_idx").on(t.shopId, t.periodStart),
+  ],
+).enableRLS();
+
+/** Данъчни данни на търговеца за официалната фактура (inv.bg) за месечната такса.
+ *  Един ред на магазин (unique shopId). Попълва се при card-gate (след 1-вата продажба)
+ *  и се редактира в Настройки. НЕ съдържа snapshot — фактурите замразяват копие в feeInvoices. */
+export const merchantBillingDetails = pgTable(
+  "merchant_billing_details",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    /* Фирма (ЕИК) или физическо лице (ЕГН) — toggle във формата. */
+    clientType: billingClientTypeEnum("client_type").notNull().default("company"),
+    /* Юридическо име (фирма) или име на физическото лице. */
+    companyName: text("company_name").notNull(),
+    /* ЕИК/Булстат — задължителен за фирма. */
+    eik: text("eik"),
+    /* Материално отговорно лице — за фирма. */
+    mol: text("mol"),
+    /* ДДС номер — по избор (повечето търговци не са по ДДС). */
+    vatNumber: text("vat_number"),
+    /* ЕГН — задължителен за физическо лице. */
+    egn: text("egn"),
+    address: text("address").notNull(),
+    city: text("city").notNull(),
+    /* Търговецът може да откаже официална фактура (тогава само Stripe таксата). */
+    wantsInvoice: boolean("wants_invoice").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    /* Един запис на магазин. */
+    uniqueIndex("merchant_billing_details_shop_idx").on(t.shopId),
   ],
 ).enableRLS();
 

@@ -7,7 +7,7 @@ export default async function BillingPage() {
   const res = await getBillingStatus();
   const data = res.ok
     ? res.data
-    : { needsCard: false, overdue: false, card: null, invoices: [] };
+    : { needsCard: false, overdue: false, card: null, invoices: [], billingDetails: null };
 
   return (
     <div className="mx-auto w-full max-w-xl">
@@ -16,6 +16,7 @@ export default async function BillingPage() {
         overdue={data.overdue}
         card={data.card}
         invoices={data.invoices}
+        billingDetails={data.billingDetails}
       />
     </div>
   );

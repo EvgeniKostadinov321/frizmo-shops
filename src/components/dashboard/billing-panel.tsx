@@ -4,14 +4,17 @@ import { Card, Icon } from "@/components/ui";
 import { formatPrice } from "@/lib/money";
 import { CardSetupForm } from "./card-setup-form";
 import { SavedCard } from "./saved-card";
+import { BillingDetailsForm } from "./billing-details-form";
 import type { FeeInvoiceView } from "@/actions/billing";
 import type { SavedCard as SavedCardData } from "@/lib/stripe";
+import type { MerchantBillingDetails } from "@/db/queries/billing-details";
 
 interface BillingPanelProps {
   needsCard: boolean;
   overdue: boolean;
   card: SavedCardData | null;
   invoices: FeeInvoiceView[];
+  billingDetails: MerchantBillingDetails | null;
 }
 
 /** Статус на фактура → етикет + цветови тон. */
@@ -31,7 +34,7 @@ function periodLabel(iso: string): string {
  * Билинг панел (таксов модел): визуализира запазената карта / card-gate формата,
  * предупреждение при просрочена фактура, и списък с месечните такси.
  */
-export function BillingPanel({ needsCard, overdue, card, invoices }: BillingPanelProps) {
+export function BillingPanel({ needsCard, overdue, card, invoices, billingDetails }: BillingPanelProps) {
   return (
     <div className="flex flex-col gap-4">
       <Card className="flex flex-col gap-4">
@@ -68,6 +71,14 @@ export function BillingPanel({ needsCard, overdue, card, invoices }: BillingPane
         )}
       </Card>
 
+      {/* Данъчни данни за официалната фактура. Показва се, когато има карта/нужда от карта
+          (т.е. има реална продажба → ще има и такса за фактуриране) ИЛИ вече са попълнени. */}
+      {(needsCard || card || billingDetails) && (
+        <Card>
+          <BillingDetailsForm details={billingDetails} />
+        </Card>
+      )}
+
       <Card className="flex flex-col gap-3">
         <h3 className="font-bold text-ink-900">Месечни такси</h3>
         {invoices.length === 0 ? (
@@ -84,6 +95,18 @@ export function BillingPanel({ needsCard, overdue, card, invoices }: BillingPane
                       {formatPrice(inv.amountDueCents)}
                     </span>
                     <span className={`text-xs font-medium ${status.tone}`}>{status.label}</span>
+                    {inv.invBgPdfLink && (
+                      <a
+                        href={inv.invBgPdfLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-800"
+                        title={inv.invBgNumber ? `Фактура № ${inv.invBgNumber}` : "Официална фактура"}
+                      >
+                        <Icon name="download" size={14} className="shrink-0" />
+                        Фактура
+                      </a>
+                    )}
                   </span>
                 </li>
               );
