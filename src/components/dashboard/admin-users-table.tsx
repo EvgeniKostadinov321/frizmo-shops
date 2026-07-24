@@ -15,15 +15,13 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
       ) : (
         <Table>
           <THead>
-            <TRow>
-              <TH>Имейл</TH>
-              <TH>Роля</TH>
-              <TH>Вход</TH>
-              <TH>Потвърден</TH>
-              <TH>Магазини</TH>
-              <TH>Посл. вход</TH>
-              <TH>Регистриран</TH>
-            </TRow>
+            <TH>Имейл</TH>
+            <TH>Роля</TH>
+            <TH>Вход</TH>
+            <TH>Потвърден</TH>
+            <TH>Магазини</TH>
+            <TH>Посл. вход</TH>
+            <TH>Регистриран</TH>
           </THead>
           <TBody>
             {users.map((u) => (

@@ -52,14 +52,12 @@ export function AdminMonetization({
         ) : (
           <Table>
             <THead>
-              <TRow>
-                <TH>Магазин</TH>
-                <TH>Период</TH>
-                <TH>Дължимо</TH>
-                <TH>Статус</TH>
-                <TH>inv.bg</TH>
-                <TH aria-label="Действия" />
-              </TRow>
+              <TH>Магазин</TH>
+              <TH>Период</TH>
+              <TH>Дължимо</TH>
+              <TH>Статус</TH>
+              <TH>inv.bg</TH>
+              <TH aria-label="Действия" />
             </THead>
             <TBody>
               {invoices.map((inv) => {
@@ -103,13 +101,11 @@ export function AdminMonetization({
         ) : (
           <Table>
             <THead>
-              <TRow>
-                <TH>Магазин</TH>
-                <TH>Тип</TH>
-                <TH>Сума</TH>
-                <TH>База</TH>
-                <TH>Дата</TH>
-              </TRow>
+              <TH>Магазин</TH>
+              <TH>Тип</TH>
+              <TH>Сума</TH>
+              <TH>База</TH>
+              <TH>Дата</TH>
             </THead>
             <TBody>
               {ledger.map((e) => (

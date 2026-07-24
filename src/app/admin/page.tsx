@@ -143,13 +143,11 @@ export default async function AdminPage({ searchParams }: PageProps) {
                 </h2>
                 <Table>
                   <THead>
-                    <TRow>
-                      <TH>Магазин</TH>
-                      <TH>Период</TH>
-                      <TH>Сума</TH>
-                      <TH>Статус</TH>
-                      <TH aria-label="Действия" />
-                    </TRow>
+                    <TH>Магазин</TH>
+                    <TH>Период</TH>
+                    <TH>Сума</TH>
+                    <TH>Статус</TH>
+                    <TH aria-label="Действия" />
                   </THead>
                   <TBody>
                     {problemInvoices.map((inv) => (

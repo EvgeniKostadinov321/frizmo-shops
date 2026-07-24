@@ -30,14 +30,12 @@ export function AdminOrdersTable({ orders }: { orders: PlatformOrderRow[] }) {
       ) : (
         <Table>
           <THead>
-            <TRow>
-              <TH>№</TH>
-              <TH>Магазин</TH>
-              <TH>Сума</TH>
-              <TH>Статус</TH>
-              <TH>Плащане</TH>
-              <TH>Дата</TH>
-            </TRow>
+            <TH>№</TH>
+            <TH>Магазин</TH>
+            <TH>Сума</TH>
+            <TH>Статус</TH>
+            <TH>Плащане</TH>
+            <TH>Дата</TH>
           </THead>
           <TBody>
             {orders.map((o) => {
