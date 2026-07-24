@@ -2,14 +2,18 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { courierOffices, db, shopCourierAccounts } from "@/db";
+import { courierDeliveryOptions, courierOffices, db, shopCourierAccounts } from "@/db";
 import { requireShop } from "@/lib/auth";
 import { getCourier, type CourierId } from "@/lib/couriers";
 import { searchCachedOffices } from "@/db/queries/couriers";
 import { clientIp } from "@/actions/cart";
+import { resolveCourierShippingCents } from "@/lib/courier-pricing";
+import { toCents } from "@/lib/money";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { courierAccountSchema } from "@/schemas/courier";
+import { courierDeliveryOptionSchema } from "@/schemas/fulfillment";
+import { z } from "zod";
 
 export type CourierActionState = { error?: string; ok?: boolean };
 
@@ -211,4 +215,116 @@ export async function refreshOffices(
   } catch (err) {
     console.error(JSON.stringify({ scope: "courier-refresh", provider, error: String(err) }));
   }
+}
+
+/**
+ * Записва/обновява настройка на куриерска доставка (таб „Куриери"). Upsert по
+ * (shop, provider, target). Цените са низове от формата → центове през toCents.
+ */
+export async function saveCourierDeliveryOption(
+  _prev: CourierActionState,
+  formData: FormData,
+): Promise<CourierActionState> {
+  const { shop } = await requireShop();
+  const parsed = courierDeliveryOptionSchema.safeParse({
+    provider: formData.get("provider"),
+    deliveryTarget: formData.get("deliveryTarget"),
+    active: formData.get("active"),
+    displayName: formData.get("displayName"),
+    fallbackPrice: formData.get("fallbackPrice"),
+    freeOver: formData.get("freeOver") ?? "",
+  });
+  if (!parsed.success) return { error: "Провери въведените данни." };
+  const d = parsed.data;
+
+  const values = {
+    active: d.active,
+    displayName: sanitizeText(d.displayName, 60),
+    fallbackPriceCents: toCents(d.fallbackPrice)!,
+    freeOverCents: d.freeOver ? toCents(d.freeOver) : null,
+  };
+
+  await db
+    .insert(courierDeliveryOptions)
+    .values({
+      shopId: shop.id,
+      provider: d.provider,
+      deliveryTarget: d.deliveryTarget,
+      ...values,
+    })
+    .onConflictDoUpdate({
+      target: [
+        courierDeliveryOptions.shopId,
+        courierDeliveryOptions.provider,
+        courierDeliveryOptions.deliveryTarget,
+      ],
+      set: { ...values, updatedAt: new Date() },
+    });
+
+  revalidatePath("/dashboard/fulfillment");
+  return { ok: true };
+}
+
+/**
+ * ПУБЛИЧНО (checkout): цена на куриерска доставка за конкретна поръчка.
+ * Приоритет: безплатна над праг → live от куриера → резервна. Rate-limited по shopId.
+ * Никога не хвърля към клиента — при проблем връща резервната/0 (checkout не бива да гърми).
+ */
+const courierPriceSchema = z.object({
+  shopId: z.string().uuid(),
+  provider: z.enum(["econt", "speedy"]),
+  deliveryTarget: z.enum(["address", "office"]),
+  officeId: z.string().nullable(),
+  city: z.string().max(120).default(""),
+  subtotalCents: z.number().int().min(0),
+  weightGrams: z.number().int().min(1),
+  codCents: z.number().int().nullable(),
+});
+
+export async function getCourierPrice(
+  raw: unknown,
+): Promise<{ cents: number; free: boolean }> {
+  const parsed = courierPriceSchema.safeParse(raw);
+  if (!parsed.success) return { cents: 0, free: false };
+  const p = parsed.data;
+
+  if (!(await checkRateLimit(`courier-price:${p.shopId}`, 60, 60))) {
+    return { cents: 0, free: false };
+  }
+
+  const option = await db.query.courierDeliveryOptions.findFirst({
+    where: and(
+      eq(courierDeliveryOptions.shopId, p.shopId),
+      eq(courierDeliveryOptions.provider, p.provider),
+      eq(courierDeliveryOptions.deliveryTarget, p.deliveryTarget),
+      eq(courierDeliveryOptions.active, true),
+    ),
+  });
+  if (!option) return { cents: 0, free: false };
+
+  const account = await db.query.shopCourierAccounts.findFirst({
+    where: and(
+      eq(shopCourierAccounts.shopId, p.shopId),
+      eq(shopCourierAccounts.provider, p.provider),
+    ),
+  });
+
+  const res = await resolveCourierShippingCents({
+    subtotalCents: p.subtotalCents,
+    freeOverCents: option.freeOverCents,
+    fallbackPriceCents: option.fallbackPriceCents,
+    live: async () => {
+      if (!account) return null;
+      return getCourier(p.provider).calculatePrice(
+        {
+          officeId: p.officeId,
+          city: p.city,
+          weightGrams: p.weightGrams,
+          codCents: p.codCents,
+        },
+        account.credentials as Record<string, string>,
+      );
+    },
+  });
+  return { cents: res.cents, free: res.free };
 }
