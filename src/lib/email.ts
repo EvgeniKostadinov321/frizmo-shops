@@ -6,10 +6,14 @@ import type { PricedLine } from "@/lib/pricing";
 import { siteUrl } from "@/lib/site-url";
 
 /**
- * Имейли при нова поръчка. Домейнът frizmo.bg е верифициран в Resend
- * (споделен акаунт с Frizmo). Липсващ ключ не чупи поръчки — само логва.
+ * Имейли при нова поръчка. Изпращащият адрес живее в EMAIL_FROM (env), за да може
+ * да се смени домейнът без деплой. Fallback = shops@frizmo.bg — единственият Verified
+ * домейн в Resend (споделен акаунт с Frizmo; frizmoshops.bg НЕ се добавя, защото Resend
+ * free план дава само 1 домейн, а Pro е излишен разход за козметична смяна — решение
+ * 2026-07-25). Домейнът ТРЯБВА да е Verified, иначе изпращането се отхвърля.
+ * Липсващ ключ не чупи поръчки — само логва.
  */
-const FROM = "Frizmo Shops <shops@frizmo.bg>";
+const FROM = process.env.EMAIL_FROM || "Frizmo Shops <shops@frizmo.bg>";
 
 /** Базов публичен URL — за линкове в имейлите (потвърждение, отписване).
  *  Dev fallback към localhost, за да работят линковете при локално тестване; prod fallback

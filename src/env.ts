@@ -47,6 +47,8 @@ export function validateEnv(): void {
     warnings.push("VAPID двойка — web push е изключен.");
   if (!process.env.NEXT_PUBLIC_SITE_URL)
     warnings.push("NEXT_PUBLIC_SITE_URL — имейл линковете ще ползват fallback домейн.");
+  /* EMAIL_FROM е опционален — fallback shops@frizmo.bg е Verified в Resend, така че
+     липсата НЕ деградира нищо. Не се добавя към warnings (за да не шуми напразно). */
   if (!process.env.PLATFORM_ADMIN_EMAILS)
     warnings.push("PLATFORM_ADMIN_EMAILS — /admin ще е недостъпен.");
   if (!process.env.CRON_SECRET)
