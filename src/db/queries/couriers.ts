@@ -1,11 +1,28 @@
 import { and, eq } from "drizzle-orm";
-import { courierOffices, db, shopCourierAccounts } from "@/db";
+import { courierDeliveryOptions, courierOffices, db, shopCourierAccounts } from "@/db";
 import type { CourierId } from "@/lib/couriers";
 
 /** Всички куриерски акаунти на магазина (за таба „Куриери"). */
 export async function getCourierAccounts(shopId: string) {
   return db.query.shopCourierAccounts.findMany({
     where: eq(shopCourierAccounts.shopId, shopId),
+  });
+}
+
+/** Настройките на куриерска доставка (за таба „Куриери" — всички, вкл. неактивните). */
+export async function getCourierDeliveryOptions(shopId: string) {
+  return db.query.courierDeliveryOptions.findMany({
+    where: eq(courierDeliveryOptions.shopId, shopId),
+  });
+}
+
+/** Само активните настройки на куриерска доставка (за checkout методите). */
+export async function getActiveCourierDeliveryOptions(shopId: string) {
+  return db.query.courierDeliveryOptions.findMany({
+    where: and(
+      eq(courierDeliveryOptions.shopId, shopId),
+      eq(courierDeliveryOptions.active, true),
+    ),
   });
 }
 
