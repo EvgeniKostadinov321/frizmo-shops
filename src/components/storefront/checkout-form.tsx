@@ -228,11 +228,12 @@ export function CheckoutForm({
   /* Куриерски метод (Еконт/Спиди) → цената идва live от куриера. */
   const isCourier = shipping?.type === "courier" && shipping?.courierProvider != null;
   const isCod = selectedPayment?.type === "cod";
-  /* Д3.1: зони на избрания метод. Цената се мачва АВТОМАТИЧНО по града (без picker) —
-     клиентски matchZone за instant preview; сървърът е финалният източник. */
+  /* Д3.1: зони на избрания метод (собствена доставка от производителя = local).
+     Цената се мачва АВТОМАТИЧНО по града; клиентски matchZone за instant preview,
+     сървърът е финалният източник. Куриерите нямат зони (live цена). */
   const methodZones = useMemo(
     () =>
-      shipping?.type === "courier"
+      shipping?.type === "local"
         ? zones.filter((z) => z.shippingMethodId === shipping.id)
         : [],
     [shipping, zones],
@@ -289,24 +290,29 @@ export function CheckoutForm({
     }
     let cancelled = false;
     queueMicrotask(() => setCourierPriceLoading(true));
-    getCourierPrice({
-      shopId,
-      provider: shipping.courierProvider,
-      deliveryTarget: shipping.deliveryTarget,
-      officeId: isOffice ? (courierOffice?.officeId ?? null) : null,
-      city: form.city.trim(),
-      subtotalCents: cart.subtotalCents,
-      codCents: isCod ? cart.subtotalCents : null,
-      lines: stored.map((l) => ({ productId: l.productId, qty: l.qty })),
-    })
-      .then((r) => {
-        if (!cancelled) setCourierPrice(r);
+    /* Дебоунс — при address доставка градът се пише буква по буква; изчакваме 500ms
+       да спре въвеждането, преди да питаме куриера (спестява заявки). */
+    const timer = setTimeout(() => {
+      getCourierPrice({
+        shopId,
+        provider: shipping.courierProvider,
+        deliveryTarget: shipping.deliveryTarget,
+        officeId: isOffice ? (courierOffice?.officeId ?? null) : null,
+        city: form.city.trim(),
+        subtotalCents: cart.subtotalCents,
+        codCents: isCod ? cart.subtotalCents : null,
+        lines: stored.map((l) => ({ productId: l.productId, qty: l.qty })),
       })
-      .finally(() => {
-        if (!cancelled) setCourierPriceLoading(false);
-      });
+        .then((r) => {
+          if (!cancelled) setCourierPrice(r);
+        })
+        .finally(() => {
+          if (!cancelled) setCourierPriceLoading(false);
+        });
+    }, 500);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -331,11 +337,18 @@ export function CheckoutForm({
     if (!cart || !shipping) return null;
     let free: boolean;
     let shippingCents: number;
+    /* Куриер без изчислена цена (липсва дестинация) → доставката е още неизвестна;
+       НЕ я включваме в „Общо" (иначе тоталът показва резервна, а редът „Избери офис"). */
+    let shippingPending = false;
     if (isCourier) {
-      /* Куриер: live цената от сървъра (безплатна>live>резервна). Докато не е
-         изчислена → резервната цена на метода като placeholder. */
+      /* Куриер: live цената от сървъра (безплатна>live>резервна). */
       free = courierPrice?.free ?? false;
-      shippingCents = courierPrice ? courierPrice.cents : shipping.priceCents;
+      if (courierPrice) {
+        shippingCents = courierPrice.cents;
+      } else {
+        shippingCents = 0;
+        shippingPending = true;
+      }
     } else {
       /* Собствена доставка: безплатна над праг; зона по града (instant preview). */
       free = shipping.freeOverCents !== null && cart.subtotalCents >= shipping.freeOverCents;
@@ -346,6 +359,7 @@ export function CheckoutForm({
     return {
       free,
       shippingCents,
+      shippingPending,
       giftCents,
       totalCents: cart.subtotalCents - discountCents + shippingCents + giftCents,
     };
@@ -851,8 +865,16 @@ export function CheckoutForm({
         {totals && (
           <div className="flex justify-between text-lg font-bold text-(--sf-text)">
             <span>Общо</span>
-            <span>{formatPrice(totals.totalCents)}</span>
+            <span>
+              {formatPrice(totals.totalCents)}
+              {totals.shippingPending && " + доставка"}
+            </span>
           </div>
+        )}
+        {totals?.shippingPending && (
+          <p className="text-xs text-(--sf-muted)">
+            Цената на доставката се добавя след като избереш {isOffice ? "офис" : "град"}.
+          </p>
         )}
         {error && (
           <p role="alert" className="text-sm font-medium text-(--sf-accent)">

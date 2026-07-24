@@ -236,12 +236,13 @@ async function resolveCourierShipping(
     weights,
     COURIER_FALLBACK_WEIGHT_GRAMS,
   );
-  const subtotalCents = 0; // subtotal се знае едва след priceCart; безплатната се решава там,
-  // затова тук изключваме прага (freeOverCents подаваме отделно към priceCart чрез обекта).
-
+  /* Тук НЕ прилагаме прага за безплатна (subtotal се знае едва след priceCart) — затова
+     freeOverCents:null + subtotalCents:0 карат resolveCourierShippingCents да върне
+     чистата live/резервна цена. Прагът се прилага после в priceCart през върнатия
+     freeOverCents. Така безплатната логика живее на ЕДНО място (priceCart). */
   const res = await resolveCourierShippingCents({
-    subtotalCents,
-    freeOverCents: null, // прагът се прилага в priceCart през върнатия freeOverCents по-долу
+    subtotalCents: 0,
+    freeOverCents: null,
     fallbackPriceCents: option.fallbackPriceCents,
     live: async () => {
       if (!account) return null;

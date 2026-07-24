@@ -25,10 +25,12 @@ export async function ensureDefaultMethods(shopId: string) {
     .from(shippingMethods)
     .where(eq(shippingMethods.shopId, shopId));
   if ((shipping?.value ?? 0) === 0) {
+    /* Дефолтен метод = собствена доставка до адрес (local). Куриерите (Еконт/Спиди)
+       с live цена се настройват отделно в таб „Куриери". */
     await db.insert(shippingMethods).values({
       shopId,
-      type: "courier",
-      name: "Куриер до адрес",
+      type: "local",
+      name: "Доставка до адрес",
       priceCents: 500,
       freeOverCents: 6000,
     });
