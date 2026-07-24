@@ -311,8 +311,10 @@ export const feeInvoiceStatusEnum = pgEnum("fee_invoice_status", [
 /* Данъчни данни на търговеца за официалната фактура (inv.bg). Търговецът избира
    дали получателят е фирма (ЕИК) или физическо лице (ЕГН) — toggle във формата. */
 export const billingClientTypeEnum = pgEnum("billing_client_type", ["company", "individual"]);
-/* Статус на реалната inv.bg фактура (различен от Stripe статуса на таксата). */
-export const invBgStatusEnum = pgEnum("inv_bg_status", ["pending", "issued", "failed"]);
+/* Статус на реалната inv.bg фактура (различен от Stripe статуса на таксата).
+   pending=атомарно заявена (POST предстои); issued=успех; failed=API провал (retry cron);
+   skipped=няма данъчни данни/opt-out (не се retry-ва автоматично). */
+export const invBgStatusEnum = pgEnum("inv_bg_status", ["pending", "issued", "failed", "skipped"]);
 
 /* Куриерска интеграция (Еконт/Спиди) — офис доставка + товарителница. */
 export const courierProviderEnum = pgEnum("courier_provider", ["econt", "speedy"]);
@@ -720,6 +722,8 @@ export const feeInvoices = pgTable(
     invBgNumber: text("inv_bg_number"),
     invBgPdfLink: text("inv_bg_pdf_link"),
     invBgStatus: invBgStatusEnum("inv_bg_status"),
+    /* Локален запис за анулирана фактура (админ; inv.bg пази анулирания НАП запис). */
+    invBgAnnulledAt: timestamp("inv_bg_annulled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

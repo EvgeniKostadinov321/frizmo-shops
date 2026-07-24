@@ -95,12 +95,20 @@ export function buildInvoicePayload(
   const amountEur = round2(invoice.amountDueCents / 100);
   const amountBgn = round2(amountEur * EUR_TO_BGN);
 
+  /* M4: данъчна фактура без получател не бива да се създава мълчаливо. companyName е
+     .notNull()+Zod min(2), но директно извикване/бъдещ код би подал празно → хвърляме. */
+  if (!billing.companyName.trim()) {
+    throw new Error("inv.bg: липсва име на получателя (companyName) — фактура не се създава");
+  }
+
   const payload: Record<string, unknown> = {
     type: "dan", // данъчна фактура
     is_to_person: isIndividual,
-    to_name: billing.companyName || "Клиент",
+    to_name: billing.companyName,
     to_address: [billing.address, billing.city].filter(Boolean).join(", ") || "България",
     to_country: "BG",
+    /* to_is_reg_vat описва ПОЛУЧАТЕЛЯ (търговеца) — той може да е по ДДС, това е ОК.
+       0% ДДС + чл.113 ал.9 идва от ИЗДАТЕЛЯ (нас — нерегистрирани), не от получателя (L2). */
     to_is_reg_vat: Boolean(billing.vatNumber),
     date_create: invoice.paidAt.toISOString(),
     date_event: invoice.paidAt.toISOString(),
@@ -122,6 +130,9 @@ export function buildInvoicePayload(
       payment_amount_total: amountBgn,
     },
     vat: { percent: 0, reason_without: NO_VAT_REASON },
+    /* M1: ЕДИН ред, quantity 1 → сумата на реда (EUR) == payment_amount == main_currency тотала
+       (BGN). Сверката е тривиална при 1 ред. АКО някога стане многоредова фактура, трябва да се
+       добави per-ред BGN и да се гарантира sum(редове BGN) === main_currency.payment_amount_total. */
     items: [
       {
         name: `Такса за продажби (Frizmo Shops) — ${invoice.periodLabel}`,
@@ -164,17 +175,25 @@ export async function createInvBgInvoice(
     body: JSON.stringify(payload),
   });
 
-  // Публичен PDF линк (валиден 30 дни) — за dashboard бутона.
+  const pdfLink = await shareInvoicePdf(created.id);
+  return { id: created.id, number: created.number, pdfLink };
+}
+
+/**
+ * Връща свеж публичен PDF линк за фактура (валиден 30 дни). Използва се и при
+ * създаване, и за регенериране от dashboard (L3 — замразеният линк мъртъв след 30 дни;
+ * данъчните фактури се пазят 10г, затова линкът се прави наново при поискване).
+ */
+export async function shareInvoicePdf(invBgId: number): Promise<string> {
   const validUntil = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
   const share = await invFetch<{ success: boolean; link: string }>("/links/share", {
     method: "POST",
     body: JSON.stringify({
-      items: [{ type: "invoices", ids: [created.id], language: "BG" }],
+      items: [{ type: "invoices", ids: [invBgId], language: "BG" }],
       valid_until: validUntil,
     }),
   });
-
-  return { id: created.id, number: created.number, pdfLink: share.link };
+  return share.link;
 }
 
 /**
@@ -211,4 +230,35 @@ export async function annulInvBgInvoice(invBgId: number): Promise<void> {
     method: "PATCH",
     body: JSON.stringify({ is_annulled: 1 }),
   });
+}
+
+/** Фирмени данни от Търговския регистър по ЕИК (за авто-попълване на формата, т.5). */
+export interface CompanyLookup {
+  name: string | null;
+  address: string | null;
+  city: string | null;
+  vatNumber: string | null;
+}
+
+/**
+ * Търси фирма в Търговския регистър по ЕИК (inv.bg /utils/commercial-register).
+ * Връща null при ненамерена/грешка — авто-попълването е UX бонус, не критичен път.
+ */
+export async function lookupCompanyByEik(eik: string): Promise<CompanyLookup | null> {
+  if (!/^\d{9}$|^\d{13}$/.test(eik)) return null;
+  try {
+    const res = await invFetch<Record<string, unknown>>(
+      `/utils/commercial-register?eik=${encodeURIComponent(eik)}`,
+    );
+    if (!res || typeof res !== "object") return null;
+    const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+    return {
+      name: str(res.name) ?? str(res.company_name),
+      address: str(res.address),
+      city: str(res.town) ?? str(res.city),
+      vatNumber: str(res.vat_number),
+    };
+  } catch {
+    return null;
+  }
 }

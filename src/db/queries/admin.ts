@@ -87,3 +87,33 @@ export async function getAdminShops(filters: {
 
   return { items, total: Number(countRows[0]?.total ?? 0), page, pageSize: ADMIN_PAGE_SIZE };
 }
+
+export interface ProblemInvoiceRow {
+  id: string;
+  shopName: string;
+  periodStart: Date;
+  amountDueCents: number;
+  invBgStatus: string;
+}
+
+/** inv.bg фактури с проблем (failed/skipped, без издаден документ) — за админ ръчна намеса. */
+export async function getProblemInvBgInvoices(): Promise<ProblemInvoiceRow[]> {
+  const rows = (await db.execute(rawSql`
+    select fi.id, s.name as shop_name, fi.period_start, fi.amount_due_cents, fi.inv_bg_status
+    from fee_invoices fi
+    join shops s on s.id = fi.shop_id
+    where fi.status = 'paid'
+      and fi.inv_bg_id is null
+      and fi.inv_bg_status in ('failed', 'skipped')
+    order by fi.period_start desc
+    limit 100
+  `)) as unknown as Record<string, unknown>[];
+
+  return rows.map((r) => ({
+    id: String(r.id),
+    shopName: String(r.shop_name),
+    periodStart: new Date(String(r.period_start)),
+    amountDueCents: Number(r.amount_due_cents),
+    invBgStatus: String(r.inv_bg_status),
+  }));
+}

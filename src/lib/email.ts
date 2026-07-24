@@ -509,3 +509,45 @@ export async function sendCardRequiredEmail(input: {
     console.error("Имейл за нужна карта се провали:", e);
   }
 }
+
+/**
+ * Имейл до търговеца, че месечната такса е платена и официалната фактура е готова.
+ * Праща се след успешно inv.bg издаване (т.3). Без ключ → логва и пропуска.
+ */
+export async function sendFeeInvoicePaidEmail(input: {
+  toEmail: string;
+  periodLabel: string;
+  amountCents: number;
+  invBgNumber: string;
+  pdfLink: string;
+}): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY липсва — имейлът за платена такса е пропуснат.");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const billingUrl = `${BASE_URL}/dashboard/billing`;
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: input.toEmail,
+      subject: `Фактура за таксата — ${input.periodLabel}`,
+      html: shell(
+        `Таксата е платена`,
+        `<p style="font-size:14px;line-height:1.6;">
+          Месечната такса за <strong>${esc(input.periodLabel)}</strong> е удържана успешно
+          (<strong>${formatPrice(input.amountCents)}</strong>). Издадена е официална фактура
+          № ${esc(input.invBgNumber)}.
+        </p>
+        <p style="margin:24px 0;">
+          <a href="${input.pdfLink}" style="display:inline-block;background:#1c1c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Изтегли фактурата</a>
+        </p>
+        <p style="font-size:13px;line-height:1.6;color:#6b7280;">
+          Всички фактури са достъпни и в <a href="${billingUrl}" style="color:#6b7280;">таблото</a>.
+        </p>`,
+      ),
+    });
+  } catch (e) {
+    console.error("Имейл за платена такса се провали:", e);
+  }
+}

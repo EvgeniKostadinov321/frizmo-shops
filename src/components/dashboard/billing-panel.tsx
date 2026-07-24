@@ -5,6 +5,7 @@ import { formatPrice } from "@/lib/money";
 import { CardSetupForm } from "./card-setup-form";
 import { SavedCard } from "./saved-card";
 import { BillingDetailsForm } from "./billing-details-form";
+import { InvoicePdfButton } from "./invoice-pdf-button";
 import type { FeeInvoiceView } from "@/actions/billing";
 import type { SavedCard as SavedCardData } from "@/lib/stripe";
 import type { MerchantBillingDetails } from "@/db/queries/billing-details";
@@ -74,7 +75,18 @@ export function BillingPanel({ needsCard, overdue, card, invoices, billingDetail
       {/* Данъчни данни за официалната фактура. Показва се, когато има карта/нужда от карта
           (т.е. има реална продажба → ще има и такса за фактуриране) ИЛИ вече са попълнени. */}
       {(needsCard || card || billingDetails) && (
-        <Card>
+        <Card className="flex flex-col gap-4">
+          {/* т.4: подкана ако има/предстои такса, но данъчните данни липсват → таксата ще
+              се тегли БЕЗ официална фактура (тихо). Не блокира, само подканя. */}
+          {(needsCard || card) && !billingDetails && (
+            <div className="flex items-start gap-2.5 rounded-control border border-warning-600/30 bg-warning-600/5 p-3 text-sm text-warning-700">
+              <Icon name="wallet" size={16} className="mt-0.5 shrink-0" />
+              <span>
+                Попълни данъчните данни по-долу, за да получаваш официална фактура за таксите.
+                Без тях таксата се удържа, но фактура не се издава.
+              </span>
+            </div>
+          )}
           <BillingDetailsForm details={billingDetails} />
         </Card>
       )}
@@ -95,18 +107,7 @@ export function BillingPanel({ needsCard, overdue, card, invoices, billingDetail
                       {formatPrice(inv.amountDueCents)}
                     </span>
                     <span className={`text-xs font-medium ${status.tone}`}>{status.label}</span>
-                    {inv.invBgPdfLink && (
-                      <a
-                        href={inv.invBgPdfLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-800"
-                        title={inv.invBgNumber ? `Фактура № ${inv.invBgNumber}` : "Официална фактура"}
-                      >
-                        <Icon name="download" size={14} className="shrink-0" />
-                        Фактура
-                      </a>
-                    )}
+                    {inv.invBgPdfLink && <InvoicePdfButton feeInvoiceId={inv.id} number={inv.invBgNumber} />}
                   </span>
                 </li>
               );

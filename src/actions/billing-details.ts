@@ -1,10 +1,12 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db, merchantBillingDetails } from "@/db";
+import { db, feeInvoices, merchantBillingDetails } from "@/db";
 import { requireShop } from "@/lib/auth";
 import { sanitizeText } from "@/lib/sanitize";
 import { billingDetailsSchema } from "@/schemas/billing-details";
+import { shareInvoicePdf, lookupCompanyByEik, type CompanyLookup } from "@/lib/invbg";
 
 export type BillingDetailsState = { error?: string; ok?: boolean };
 
@@ -35,16 +37,19 @@ export async function saveBillingDetails(
   const d = parsed.data;
 
   const isCompany = d.clientType === "company";
+  /* ЕИК/ЕГН → само цифри (M2): sanitizeText свива интервали, но не гарантира числов
+     формат ако regex-ът се разхлаби; в НАП фактурата трябва да влязат само цифри. */
+  const digitsOnly = (s: string) => s.replace(/\D/g, "");
   const values = {
     shopId: shop.id,
     clientType: d.clientType,
     companyName: sanitizeText(d.companyName, 200),
     /* Само релевантните за типа полета се пазят — другите се нулират, за да не
        остане стар ЕГН при смяна фирма→ФЛ (или обратно). */
-    eik: isCompany ? sanitizeText(d.eik, 20) : null,
+    eik: isCompany ? digitsOnly(d.eik) : null,
     mol: isCompany ? sanitizeText(d.mol, 200) : null,
-    vatNumber: isCompany && d.vatNumber ? sanitizeText(d.vatNumber, 20) : null,
-    egn: isCompany ? null : sanitizeText(d.egn, 10),
+    vatNumber: isCompany && d.vatNumber ? sanitizeText(d.vatNumber, 20).toUpperCase() : null,
+    egn: isCompany ? null : digitsOnly(d.egn),
     address: sanitizeText(d.address, 300),
     city: sanitizeText(d.city, 100),
     wantsInvoice: d.wantsInvoice,
@@ -60,4 +65,34 @@ export async function saveBillingDetails(
 
   revalidatePath("/dashboard/billing");
   return { ok: true };
+}
+
+/**
+ * Авто-попълване по ЕИК от Търговския регистър (т.5). requireShop за да не е публичен
+ * (rate-косвено през auth). Връща null-полета при ненамерена фирма — UX бонус.
+ */
+export async function lookupCompany(eik: string): Promise<CompanyLookup | null> {
+  await requireShop();
+  return lookupCompanyByEik(eik.replace(/\D/g, ""));
+}
+
+/**
+ * Връща свеж PDF линк за фактура (L3 — замразеният в базата линк умира след 30 дни).
+ * Tenant-изолиран: само фактури на СВОЯ магазин. Dashboard бутонът го вика при клик.
+ */
+export async function getFreshInvoicePdfUrl(
+  feeInvoiceId: string,
+): Promise<{ url?: string; error?: string }> {
+  const { shop } = await requireShop();
+  const invoice = await db.query.feeInvoices.findFirst({
+    where: and(eq(feeInvoices.id, feeInvoiceId), eq(feeInvoices.shopId, shop.id)),
+    columns: { invBgId: true },
+  });
+  if (!invoice?.invBgId) return { error: "Фактурата няма официален документ." };
+  try {
+    const url = await shareInvoicePdf(invoice.invBgId);
+    return { url };
+  } catch {
+    return { error: "Линкът към фактурата не можа да се генерира. Опитай пак." };
+  }
 }

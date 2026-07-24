@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminShopActions } from "@/components/dashboard/admin-shop-actions";
+import { AdminInvoiceRetry } from "@/components/dashboard/admin-invoice-actions";
 import { Badge, Card, Table, TBody, TCell, TH, THead, TRow } from "@/components/ui";
-import { getAdminShops, getPlatformStats } from "@/db/queries/admin";
+import { getAdminShops, getPlatformStats, getProblemInvBgInvoices } from "@/db/queries/admin";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
 
@@ -25,15 +26,17 @@ export default async function AdminPage({ searchParams }: PageProps) {
   await requireAdmin();
   const sp = await searchParams;
 
-  const [stats, { items, total, page, pageSize }] = await Promise.all([
+  const [stats, { items, total, page, pageSize }, problemInvoices] = await Promise.all([
     getPlatformStats(),
     getAdminShops({
       search: sp.search,
       status: sp.status,
       page: sp.page ? Number(sp.page) : 1,
     }),
+    getProblemInvBgInvoices(),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const invPeriod = new Intl.DateTimeFormat("bg-BG", { month: "long", year: "numeric" });
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-6">
@@ -68,6 +71,44 @@ export default async function AdminPage({ searchParams }: PageProps) {
           </p>
         </Card>
       </div>
+
+      {/* Проблемни inv.bg фактури (т.2): платена такса без официален документ.
+          failed=API провал (retry cron ще пробва); skipped=няма данъчни данни. */}
+      {problemInvoices.length > 0 && (
+        <Card className="flex flex-col gap-3 border-warning-600/30">
+          <h2 className="font-bold text-ink-900">
+            Фактури за преиздаване ({problemInvoices.length})
+          </h2>
+          <Table>
+            <THead>
+              <TRow>
+                <TH>Магазин</TH>
+                <TH>Период</TH>
+                <TH>Сума</TH>
+                <TH>Статус</TH>
+                <TH> </TH>
+              </TRow>
+            </THead>
+            <TBody>
+              {problemInvoices.map((inv) => (
+                <TRow key={inv.id}>
+                  <TCell className="font-medium text-ink-900">{inv.shopName}</TCell>
+                  <TCell>{invPeriod.format(inv.periodStart)}</TCell>
+                  <TCell className="tabular-nums">{formatPrice(inv.amountDueCents)}</TCell>
+                  <TCell>
+                    <Badge tone={inv.invBgStatus === "failed" ? "danger" : "warning"}>
+                      {inv.invBgStatus === "failed" ? "Провал" : "Няма данни"}
+                    </Badge>
+                  </TCell>
+                  <TCell>
+                    <AdminInvoiceRetry feeInvoiceId={inv.id} />
+                  </TCell>
+                </TRow>
+              ))}
+            </TBody>
+          </Table>
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {[{ value: "", label: "Всички" }, ...Object.entries(STATUS_META).map(([value, m]) => ({ value, label: m.label }))].map(

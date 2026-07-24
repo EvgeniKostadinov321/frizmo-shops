@@ -3,7 +3,11 @@
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button, Checkbox, Input } from "@/components/ui";
-import { saveBillingDetails, type BillingDetailsState } from "@/actions/billing-details";
+import {
+  saveBillingDetails,
+  lookupCompany,
+  type BillingDetailsState,
+} from "@/actions/billing-details";
 import type { MerchantBillingDetails } from "@/db/queries/billing-details";
 
 type ClientType = "company" | "individual";
@@ -16,6 +20,12 @@ type ClientType = "company" | "individual";
 export function BillingDetailsForm({ details }: { details: MerchantBillingDetails | null }) {
   const [clientType, setClientType] = useState<ClientType>(details?.clientType ?? "company");
   const [state, action] = useActionState(saveBillingDetails, {} as BillingDetailsState);
+  /* Controlled полета — за да може „Провери ЕИК" да ги авто-попълни (т.5). */
+  const [eik, setEik] = useState(details?.eik ?? "");
+  const [companyName, setCompanyName] = useState(details?.companyName ?? "");
+  const [address, setAddress] = useState(details?.address ?? "");
+  const [city, setCity] = useState(details?.city ?? "");
+  const [looking, setLooking] = useState(false);
 
   useEffect(() => {
     if (!state.ok) return;
@@ -23,6 +33,20 @@ export function BillingDetailsForm({ details }: { details: MerchantBillingDetail
   }, [state.ok]);
 
   const isCompany = clientType === "company";
+
+  async function checkEik() {
+    setLooking(true);
+    const res = await lookupCompany(eik);
+    setLooking(false);
+    if (res?.name) {
+      setCompanyName(res.name);
+      if (res.address) setAddress(res.address);
+      if (res.city) setCity(res.city);
+      toast.success("Данните са попълнени от Търговския регистър.");
+    } else {
+      toast.error("Фирма с този ЕИК не е намерена. Попълни ръчно.");
+    }
+  }
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -65,21 +89,28 @@ export function BillingDetailsForm({ details }: { details: MerchantBillingDetail
       <Input
         name="companyName"
         label={isCompany ? "Име на фирмата" : "Име и фамилия"}
-        defaultValue={details?.companyName ?? ""}
+        value={companyName}
+        onChange={(e) => setCompanyName(e.target.value)}
         required
         maxLength={200}
       />
 
       {isCompany ? (
         <div className="flex flex-col gap-4 sm:flex-row">
-          <Input
-            name="eik"
-            label="ЕИК / Булстат"
-            defaultValue={details?.eik ?? ""}
-            inputMode="numeric"
-            placeholder="123456789"
-            className="flex-1"
-          />
+          <div className="flex flex-1 items-end gap-2">
+            <Input
+              name="eik"
+              label="ЕИК / Булстат"
+              value={eik}
+              onChange={(e) => setEik(e.target.value)}
+              inputMode="numeric"
+              placeholder="123456789"
+              className="flex-1"
+            />
+            <Button type="button" variant="secondary" loading={looking} onClick={checkEik}>
+              Провери
+            </Button>
+          </div>
           <Input
             name="mol"
             label="МОЛ (отговорно лице)"
@@ -111,7 +142,8 @@ export function BillingDetailsForm({ details }: { details: MerchantBillingDetail
         <Input
           name="address"
           label="Адрес"
-          defaultValue={details?.address ?? ""}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
           required
           maxLength={300}
           className="flex-1"
@@ -119,7 +151,8 @@ export function BillingDetailsForm({ details }: { details: MerchantBillingDetail
         <Input
           name="city"
           label="Населено място"
-          defaultValue={details?.city ?? ""}
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
           required
           maxLength={100}
           className="flex-1"

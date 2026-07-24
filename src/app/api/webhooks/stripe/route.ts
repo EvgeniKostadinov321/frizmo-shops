@@ -3,7 +3,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, feeInvoices, stripeEvents } from "@/db";
 import { stripe, STRIPE_APP_TAG } from "@/lib/stripe";
-import { issueInvBgForFeeInvoice } from "@/lib/invbg-issue";
+import { issueInvBgForFeeInvoice, notifyMerchantInvoicePaid } from "@/lib/invbg-issue";
 
 export async function POST(req: Request): Promise<Response> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -62,6 +62,25 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           .update(feeInvoices)
           .set({ status: "paid", updatedAt: new Date() })
           .where(eq(feeInvoices.id, feeInvoiceId));
+        /* M3: сверка — официалната фактура се сглобява от нашата amountDueCents; тя
+           ТРЯБВА да съвпада с реално инкасираното от Stripe. Разминаване (ръчна корекция
+           на Stripe фактурата, proration) → логваме, за да е видимо (не блокираме плащането). */
+        if (typeof invoice.amount_paid === "number") {
+          const localInvoice = await db.query.feeInvoices.findFirst({
+            where: eq(feeInvoices.id, feeInvoiceId),
+            columns: { amountDueCents: true },
+          });
+          if (localInvoice && localInvoice.amountDueCents !== invoice.amount_paid) {
+            console.error(
+              JSON.stringify({
+                scope: "invbg-amount-mismatch",
+                feeInvoiceId,
+                localCents: localInvoice.amountDueCents,
+                stripePaidCents: invoice.amount_paid,
+              }),
+            );
+          }
+        }
         /* Официална inv.bg фактура — best-effort, НЕ блокира webhook-а. Провал →
            маркира invBgStatus='failed' (retry job/admin го поема), но плащането
            остава синхронизирано (иначе Stripe би retry-нал целия event излишно). */
@@ -69,6 +88,12 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
           const r = await issueInvBgForFeeInvoice(feeInvoiceId);
           if (r.status === "failed") {
             console.error(JSON.stringify({ scope: "invbg-issue", feeInvoiceId, reason: r.reason }));
+          } else if (r.status === "issued" && r.issued) {
+            /* т.3: извести търговеца с PDF линк. Best-effort — имейл провал не бива да
+               засяга издадената фактура. Взимаме имейла от собственика на магазина. */
+            await notifyMerchantInvoicePaid(r.issued).catch((e) =>
+              console.error(JSON.stringify({ scope: "invbg-email", feeInvoiceId, error: String(e) })),
+            );
           }
         } catch (e) {
           console.error(

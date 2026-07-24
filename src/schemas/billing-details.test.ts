@@ -10,7 +10,7 @@ const base = {
 
 describe("billingDetailsSchema — фирма", () => {
   it("приема валиден ЕИК (9 цифри) + МОЛ", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "123456789", mol: "Иван Петров" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "831641791", mol: "Иван Петров" });
     expect(r.success).toBe(true);
   });
 
@@ -25,14 +25,14 @@ describe("billingDetailsSchema — фирма", () => {
   });
 
   it("иска МОЛ за фирма", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "123456789", mol: "" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "831641791", mol: "" });
     expect(r.success).toBe(false);
   });
 });
 
 describe("billingDetailsSchema — физическо лице", () => {
   it("приема валиден ЕГН (10 цифри)", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "individual", egn: "7501010101" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "individual", egn: "7523169263" });
     expect(r.success).toBe(true);
   });
 
@@ -42,24 +42,24 @@ describe("billingDetailsSchema — физическо лице", () => {
   });
 
   it("НЕ иска ЕИК за физическо лице", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "individual", egn: "7501010101", eik: "" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "individual", egn: "7523169263", eik: "" });
     expect(r.success).toBe(true);
   });
 });
 
 describe("billingDetailsSchema — ДДС номер", () => {
   it("приема празен (по избор)", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "123456789", mol: "Иван", vatNumber: "" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "831641791", mol: "Иван", vatNumber: "" });
     expect(r.success).toBe(true);
   });
 
   it("приема валиден BG формат", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "123456789", mol: "Иван", vatNumber: "BG123456789" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "831641791", mol: "Иван", vatNumber: "BG123456789" });
     expect(r.success).toBe(true);
   });
 
   it("отхвърля грешен формат", () => {
-    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "123456789", mol: "Иван", vatNumber: "123456789" });
+    const r = billingDetailsSchema.safeParse({ ...base, clientType: "company", eik: "831641791", mol: "Иван", vatNumber: "123456789" });
     expect(r.success).toBe(false);
   });
 });
