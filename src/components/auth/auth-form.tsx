@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Button, Checkbox, Icon, Input, Logo } from "@/components/ui";
-import { signInWithProvider, type AuthFormState } from "@/actions/auth";
+import { resendConfirmation, signInWithProvider, type AuthFormState } from "@/actions/auth";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -29,6 +29,72 @@ const BUYER_PROOFS = [
   "Запазени адреси за бърза поръчка",
   "Любими продукти, синхронизирани навсякъде",
 ];
+
+/**
+ * Екран „Провери имейла си" — показва се когато акаунтът чака потвърждение (нова
+ * регистрация с включено имейл потвърждение, или вход преди клик на линка). Дава
+ * бутон за повторно изпращане (собствен action + rate-limit на сървъра).
+ */
+function ConfirmationNotice({ email }: { email: string }) {
+  const [state, formAction, pending] = useActionState(resendConfirmation, {
+    needsConfirmation: true,
+    email,
+  } as AuthFormState);
+
+  return (
+    <div className="flex flex-col items-center gap-6 text-center">
+      <Image
+        src="/bee-wave.png"
+        alt=""
+        aria-hidden
+        width={320}
+        height={320}
+        priority
+        className="h-36 w-36 select-none drop-shadow-[0_12px_28px_rgba(28,36,32,0.18)]"
+      />
+      <div className="flex flex-col gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
+          Още една стъпка
+        </p>
+        <h1 className="text-balance font-display text-3xl font-extrabold tracking-tight text-ink-900">
+          Провери имейла си
+        </h1>
+        <p className="text-pretty text-ink-500">
+          Изпратихме линк за потвърждение на{" "}
+          <span className="font-medium text-ink-900">{email}</span>. Отвори имейла и
+          кликни линка, за да активираш профила си и да влезеш.
+        </p>
+      </div>
+
+      <div className="w-full rounded-card border border-surface-200 bg-surface-0 p-4 text-left text-sm text-ink-500">
+        Не виждаш имейла? Провери папка „Спам“ или изчакай минута. Ако още го няма,
+        изпрати го наново.
+      </div>
+
+      {/* Повторно изпращане — собствена форма (не пипа основния state). */}
+      <form action={formAction} className="w-full">
+        <input type="hidden" name="email" value={email} />
+        {state.resent ? (
+          <p className="rounded-control bg-success-50 px-4 py-3 text-sm font-medium text-success-700">
+            Изпратихме нов имейл за потвърждение.
+          </p>
+        ) : (
+          <Button type="submit" variant="secondary" size="lg" loading={pending} className="w-full">
+            Изпрати имейла наново
+          </Button>
+        )}
+        {state.error && <p className="mt-2 text-sm text-danger-600">{state.error}</p>}
+      </form>
+
+      <Link
+        href="/auth/login"
+        className="text-sm font-medium text-brand-600 hover:underline"
+      >
+        Обратно към входа
+      </Link>
+    </div>
+  );
+}
 
 export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -98,6 +164,10 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
             <Logo href="/" />
           </div>
 
+          {state.needsConfirmation && state.email ? (
+            <ConfirmationNotice email={state.email} />
+          ) : (
+            <>
           {/* Мобилен hero блок: едра центрирана пчела + заглавие (панелът поема
               това на desktop). Центрирането разтоварва „натрупания" вид. */}
           <div className="flex flex-col items-center gap-4 text-center lg:hidden">
@@ -292,6 +362,8 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               </>
             )}
           </p>
+            </>
+          )}
         </div>
       </main>
 
