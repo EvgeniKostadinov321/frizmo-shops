@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /* Празна env var („") НЕ се хваща от `?? fallback` (само undefined/null),
    а `new URL("")` хвърля ERR_INVALID_URL и събаря целия билд. Затова падаме
@@ -42,4 +43,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/* Sentry обвива конфига: качва source maps при билд (нужен SENTRY_AUTH_TOKEN — иначе
+   само warning, билдът минава) и създава tunnelRoute /monitoring, който заобикаля
+   ad-blockers (иначе ~20% от клиентските грешки не стигат до Sentry). org/project са
+   на акаунта frizmo-tech-ltd. Без Turbopack → webpack source maps работят нормално. */
+export default withSentryConfig(nextConfig, {
+  org: "frizmo-tech-ltd",
+  project: "frizmo-shops",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+  tunnelRoute: "/monitoring",
+  silent: !process.env.CI,
+});

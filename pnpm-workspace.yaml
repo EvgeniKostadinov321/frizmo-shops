@@ -4,6 +4,9 @@ verifyDepsBeforeRun: false
 # Изрично решение за build скриптовете: none билдват (esbuild/sharp/
 # unrs-resolver ползват готови binary-та). Спира ERR_PNPM_IGNORED_BUILDS.
 allowBuilds:
+  # @sentry/cli: binary за source map upload — нужен САМО при билд със SENTRY_AUTH_TOKEN.
+  # false засега (не качваме source maps); обърни на true ако добавиш токена.
+  '@sentry/cli': false
   esbuild: false
   sharp: false
   unrs-resolver: false
