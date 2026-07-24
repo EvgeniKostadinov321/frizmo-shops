@@ -117,3 +117,150 @@ export async function getProblemInvBgInvoices(): Promise<ProblemInvoiceRow[]> {
     invBgStatus: String(r.inv_bg_status),
   }));
 }
+
+/* ─── Монетизация (супер-админ таб) ─── */
+
+export interface MonetizationStats {
+  totalChargedCents: number;
+  totalCreditsCents: number;
+  unpaidCount: number;
+  unpaidCents: number;
+}
+
+/** Обобщени такси: начислено, кредитирано (връщания), неплатени фактури (status≠paid). */
+export async function getMonetizationStats(): Promise<MonetizationStats> {
+  const rows = (await db.execute(rawSql`
+    select
+      (select coalesce(sum(amount_cents), 0) from fee_events where type = 'charge') as total_charged,
+      (select coalesce(sum(amount_cents), 0) from fee_events where type = 'credit') as total_credits,
+      (select count(*) from fee_invoices where status <> 'paid') as unpaid_count,
+      (select coalesce(sum(amount_due_cents), 0) from fee_invoices where status <> 'paid') as unpaid_cents
+  `)) as unknown as Record<string, unknown>[];
+  const r = rows[0] ?? {};
+  return {
+    totalChargedCents: Number(r.total_charged ?? 0),
+    totalCreditsCents: Number(r.total_credits ?? 0),
+    unpaidCount: Number(r.unpaid_count ?? 0),
+    unpaidCents: Number(r.unpaid_cents ?? 0),
+  };
+}
+
+export const ADMIN_INV_PAGE_SIZE = 20;
+
+export interface FeeInvoiceRow {
+  id: string;
+  shopName: string;
+  periodStart: Date;
+  amountDueCents: number;
+  status: string;
+  invBgStatus: string | null;
+  chargesCents: number;
+  creditsCents: number;
+}
+
+/** Списък месечни фактури (неплатени първо, после по период низходящо). */
+export async function getFeeInvoicesList(page = 1) {
+  const offset = (Math.max(1, page) - 1) * ADMIN_INV_PAGE_SIZE;
+  const rows = (await db.execute(rawSql`
+    select fi.id, s.name as shop_name, fi.period_start, fi.amount_due_cents,
+           fi.status, fi.inv_bg_status, fi.charges_cents, fi.credits_cents
+    from fee_invoices fi
+    left join shops s on s.id = fi.shop_id
+    order by (fi.status <> 'paid') desc, fi.period_start desc
+    limit ${ADMIN_INV_PAGE_SIZE} offset ${offset}
+  `)) as unknown as Record<string, unknown>[];
+  const countRows = (await db.execute(
+    rawSql`select count(*)::int as total from fee_invoices`,
+  )) as unknown as { total: number }[];
+  const items: FeeInvoiceRow[] = rows.map((r) => ({
+    id: String(r.id),
+    shopName: (r.shop_name as string) ?? "—",
+    periodStart: new Date(String(r.period_start)),
+    amountDueCents: Number(r.amount_due_cents),
+    status: String(r.status),
+    invBgStatus: r.inv_bg_status ? String(r.inv_bg_status) : null,
+    chargesCents: Number(r.charges_cents),
+    creditsCents: Number(r.credits_cents),
+  }));
+  return { items, total: Number(countRows[0]?.total ?? 0), page: Math.max(1, page), pageSize: ADMIN_INV_PAGE_SIZE };
+}
+
+export interface FeeLedgerRow {
+  id: string;
+  shopName: string;
+  type: "charge" | "credit";
+  amountCents: number;
+  baseCents: number;
+  occurredAt: Date;
+}
+
+/** Последни fee_events (начисления/кредити) за наблюдение. */
+export async function getFeeLedger(limit = 30): Promise<FeeLedgerRow[]> {
+  const rows = (await db.execute(rawSql`
+    select fe.id, s.name as shop_name, fe.type, fe.amount_cents, fe.base_cents, fe.created_at
+    from fee_events fe
+    left join shops s on s.id = fe.shop_id
+    order by fe.created_at desc
+    limit ${limit}
+  `)) as unknown as Record<string, unknown>[];
+  return rows.map((r) => ({
+    id: String(r.id),
+    shopName: (r.shop_name as string) ?? "—",
+    type: r.type as "charge" | "credit",
+    amountCents: Number(r.amount_cents),
+    baseCents: Number(r.base_cents),
+    occurredAt: new Date(String(r.created_at)),
+  }));
+}
+
+/* ─── Платформени поръчки (супер-админ таб) ─── */
+
+export const ADMIN_ORDER_PAGE_SIZE = 25;
+
+const ORDER_STATUSES = [
+  "new",
+  "confirmed",
+  "shipped",
+  "completed",
+  "cancelled",
+  "pending_payment",
+];
+
+export interface PlatformOrderRow {
+  id: string;
+  orderNumber: number;
+  shopName: string;
+  totalCents: number;
+  status: string;
+  paymentType: string;
+  createdAt: Date;
+}
+
+/** Последни поръчки през ЦЯЛАТА платформа (по избор филтрирани по статус). */
+export async function getPlatformOrders(filters: { page?: number; status?: string }) {
+  const page = Math.max(1, filters.page ?? 1);
+  const offset = (page - 1) * ADMIN_ORDER_PAGE_SIZE;
+  const statusOk = filters.status ? ORDER_STATUSES.includes(filters.status) : false;
+  const whereClause = statusOk ? rawSql`where o.status = ${filters.status}` : rawSql``;
+  const rows = (await db.execute(rawSql`
+    select o.id, o.order_number, s.name as shop_name, o.total_cents, o.status, o.payment_type, o.created_at
+    from orders o
+    left join shops s on s.id = o.shop_id
+    ${whereClause}
+    order by o.created_at desc
+    limit ${ADMIN_ORDER_PAGE_SIZE} offset ${offset}
+  `)) as unknown as Record<string, unknown>[];
+  const countRows = (await db.execute(
+    rawSql`select count(*)::int as total from orders o ${whereClause}`,
+  )) as unknown as { total: number }[];
+  const items: PlatformOrderRow[] = rows.map((r) => ({
+    id: String(r.id),
+    orderNumber: Number(r.order_number),
+    shopName: (r.shop_name as string) ?? "—",
+    totalCents: Number(r.total_cents),
+    status: String(r.status),
+    paymentType: String(r.payment_type),
+    createdAt: new Date(String(r.created_at)),
+  }));
+  return { items, total: Number(countRows[0]?.total ?? 0), page, pageSize: ADMIN_ORDER_PAGE_SIZE };
+}
