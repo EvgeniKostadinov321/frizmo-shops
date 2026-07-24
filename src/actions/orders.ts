@@ -5,6 +5,7 @@ import { and, eq, inArray, sql as rawSql } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
+  courierDeliveryOptions,
   coupons,
   db,
   orderItems,
@@ -16,10 +17,14 @@ import {
   referrals,
   shippingMethods,
   shippingZones,
+  shopCourierAccounts,
   shopPaymentAccounts,
   shops,
 } from "@/db";
 import { clientIp } from "@/actions/cart";
+import { getCourier } from "@/lib/couriers";
+import { resolveCourierShippingCents } from "@/lib/courier-pricing";
+import { aggregateOrderWeight } from "@/lib/courier-weight";
 import { matchZone } from "@/lib/match-zone";
 import { markConvertedByEmail } from "@/db/queries/abandoned-cart";
 import { getPricingProducts } from "@/db/queries/cart";
@@ -168,6 +173,101 @@ async function insertOrderWithNumber(
   return { orderId: order!.id, publicToken: order!.publicToken, orderNumber };
 }
 
+/** Резервно тегло при липсващо/изтрито (както при товарителницата). */
+const COURIER_FALLBACK_WEIGHT_GRAMS = 500;
+
+/** Форма на shipping метод, която downstream логиката ползва (DB ред или синтетичен куриер). */
+type ResolvedShipping = {
+  id: string;
+  name: string;
+  type: string;
+  priceCents: number;
+  freeOverCents: number | null;
+  courierProvider: "econt" | "speedy" | null;
+  deliveryTarget: string;
+};
+
+/**
+ * Резолвва куриерски синтетичен метод („courier:{provider}:{target}") в shipping обект
+ * с цена, изчислена СЪРВЪРНО (безплатна>live>резервна). Връща:
+ *   - обект → куриерски метод, готов за поръчката (freeOverCents=null, цената е финална);
+ *   - null → id-то НЕ е куриерско (обикновен метод — викащият прави DB lookup);
+ *   - "unavailable" → куриерско id, но опцията вече не е активна/налична.
+ */
+async function resolveCourierShipping(
+  shippingMethodId: string,
+  shopId: string,
+  lines: { productId: string; qty: number }[],
+  officeId: string | null,
+  city: string,
+  isCod: boolean,
+): Promise<ResolvedShipping | null | "unavailable"> {
+  if (!shippingMethodId.startsWith("courier:")) return null;
+  const [, provider, target] = shippingMethodId.split(":");
+  if ((provider !== "econt" && provider !== "speedy") || (target !== "office" && target !== "address")) {
+    return "unavailable";
+  }
+
+  const option = await db.query.courierDeliveryOptions.findFirst({
+    where: and(
+      eq(courierDeliveryOptions.shopId, shopId),
+      eq(courierDeliveryOptions.provider, provider),
+      eq(courierDeliveryOptions.deliveryTarget, target),
+      eq(courierDeliveryOptions.active, true),
+    ),
+  });
+  if (!option) return "unavailable";
+
+  const account = await db.query.shopCourierAccounts.findFirst({
+    where: and(eq(shopCourierAccounts.shopId, shopId), eq(shopCourierAccounts.provider, provider)),
+  });
+
+  /* Тегло от продуктите (сървърно). */
+  const productIds = [...new Set(lines.map((l) => l.productId))];
+  const rows = productIds.length
+    ? await db
+        .select({ id: products.id, weightGrams: products.weightGrams })
+        .from(products)
+        .where(inArray(products.id, productIds))
+    : [];
+  const weights = new Map(rows.map((r) => [r.id, r.weightGrams]));
+  const weightGrams = aggregateOrderWeight(
+    lines.map((l) => ({ productId: l.productId, quantity: l.qty })),
+    weights,
+    COURIER_FALLBACK_WEIGHT_GRAMS,
+  );
+  const subtotalCents = 0; // subtotal се знае едва след priceCart; безплатната се решава там,
+  // затова тук изключваме прага (freeOverCents подаваме отделно към priceCart чрез обекта).
+
+  const res = await resolveCourierShippingCents({
+    subtotalCents,
+    freeOverCents: null, // прагът се прилага в priceCart през върнатия freeOverCents по-долу
+    fallbackPriceCents: option.fallbackPriceCents,
+    live: async () => {
+      if (!account) return null;
+      /* COD надбавката зависи от сумата, която тук още не знаем (кръгова зависимост
+         с priceCart). Оценката без нея е достатъчна; разликата е дребна и в полза
+         на клиента. isCod остава за бъдещо прецизиране. */
+      void isCod;
+      return getCourier(provider).calculatePrice(
+        { officeId: target === "office" ? officeId : null, city, weightGrams, codCents: null },
+        account.credentials as Record<string, string>,
+      );
+    },
+  });
+
+  return {
+    id: shippingMethodId,
+    name: option.displayName || `Доставка с ${provider}`,
+    type: "courier",
+    priceCents: res.cents,
+    /* Прагът за безплатна остава — priceCart ще занули цената над него (единна логика). */
+    freeOverCents: option.freeOverCents,
+    courierProvider: provider,
+    deliveryTarget: target,
+  };
+}
+
 export async function createOrder(
   shopSlug: string,
   rawInput: unknown,
@@ -207,29 +307,45 @@ export async function createOrder(
     return fail("Твърде много поръчки за кратко време. Опитай по-късно.");
   }
 
-  const [shipping, payment] = await Promise.all([
-    db.query.shippingMethods.findFirst({
+  const payment = await db.query.paymentMethods.findFirst({
+    where: and(
+      eq(paymentMethods.id, input.paymentMethodId),
+      eq(paymentMethods.shopId, shop.id),
+      eq(paymentMethods.active, true),
+    ),
+  });
+  if (!payment) return fail("Избери валиден метод за плащане.");
+
+  /* Куриерски метод (синтетичен id „courier:{provider}:{target}") → резолвваме от
+     courier_delivery_options + изчисляваме цената СЪРВЪРНО (не вярваме на клиента).
+     Иначе обикновен метод от shipping_methods. Синтетичният shipping има формата на
+     DB ред, за да работи downstream логиката непроменена. */
+  const courierResolved = await resolveCourierShipping(
+    input.shippingMethodId,
+    shop.id,
+    input.lines,
+    input.courierOfficeId,
+    input.city,
+    payment.type === "cod",
+  );
+  if (courierResolved === "unavailable") {
+    return fail("Избраният метод на доставка вече не е наличен.");
+  }
+  const shipping =
+    courierResolved ??
+    (await db.query.shippingMethods.findFirst({
       where: and(
         eq(shippingMethods.id, input.shippingMethodId),
         eq(shippingMethods.shopId, shop.id),
         eq(shippingMethods.active, true),
       ),
-    }),
-    db.query.paymentMethods.findFirst({
-      where: and(
-        eq(paymentMethods.id, input.paymentMethodId),
-        eq(paymentMethods.shopId, shop.id),
-        eq(paymentMethods.active, true),
-      ),
-    }),
-  ]);
+    }));
   if (!shipping) return fail("Избери валиден метод за доставка.");
-  if (!payment) return fail("Избери валиден метод за плащане.");
 
-  /* Д3.1: зони по град. Ако методът има зони → мачваме по града на клиента (matchZone);
-     мач → цена от зоната; непознат град → fallback зона или базовата цена на метода. */
+  /* Д3.1: зони по град за собствена доставка (local). Мач по града → цена от зоната;
+     непознат град → fallback зона или базовата цена. Куриерите нямат зони (live цена). */
   const methodZones =
-    shipping.type === "courier"
+    shipping.type === "local"
       ? await db.query.shippingZones.findMany({
           where: and(
             eq(shippingZones.shippingMethodId, shipping.id),

@@ -1,13 +1,14 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { courierDeliveryOptions, courierOffices, db, shopCourierAccounts } from "@/db";
+import { courierDeliveryOptions, courierOffices, db, products, shopCourierAccounts } from "@/db";
 import { requireShop } from "@/lib/auth";
 import { getCourier, type CourierId } from "@/lib/couriers";
 import { searchCachedOffices } from "@/db/queries/couriers";
 import { clientIp } from "@/actions/cart";
 import { resolveCourierShippingCents } from "@/lib/courier-pricing";
+import { aggregateOrderWeight } from "@/lib/courier-weight";
 import { toCents } from "@/lib/money";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
@@ -270,6 +271,9 @@ export async function saveCourierDeliveryOption(
  * Приоритет: безплатна над праг → live от куриера → резервна. Rate-limited по shopId.
  * Никога не хвърля към клиента — при проблем връща резервната/0 (checkout не бива да гърми).
  */
+/** Резервно тегло при липсващо/изтрито (както при товарителницата). */
+const COURIER_FALLBACK_WEIGHT_GRAMS = 500;
+
 const courierPriceSchema = z.object({
   shopId: z.string().uuid(),
   provider: z.enum(["econt", "speedy"]),
@@ -277,8 +281,9 @@ const courierPriceSchema = z.object({
   officeId: z.string().nullable(),
   city: z.string().max(120).default(""),
   subtotalCents: z.number().int().min(0),
-  weightGrams: z.number().int().min(1),
   codCents: z.number().int().nullable(),
+  /* Количката — теглото се смята СЪРВЪРНО от продуктите (не се вярва на клиента). */
+  lines: z.array(z.object({ productId: z.string().uuid(), qty: z.number().int().min(1) })).max(200),
 });
 
 export async function getCourierPrice(
@@ -309,6 +314,21 @@ export async function getCourierPrice(
     ),
   });
 
+  /* Тегло от продуктите в количката (сървърно, с fallback). */
+  const productIds = [...new Set(p.lines.map((l) => l.productId))];
+  const rows = productIds.length
+    ? await db
+        .select({ id: products.id, weightGrams: products.weightGrams })
+        .from(products)
+        .where(inArray(products.id, productIds))
+    : [];
+  const weights = new Map(rows.map((r) => [r.id, r.weightGrams]));
+  const weightGrams = aggregateOrderWeight(
+    p.lines.map((l) => ({ productId: l.productId, quantity: l.qty })),
+    weights,
+    COURIER_FALLBACK_WEIGHT_GRAMS,
+  );
+
   const res = await resolveCourierShippingCents({
     subtotalCents: p.subtotalCents,
     freeOverCents: option.freeOverCents,
@@ -316,12 +336,7 @@ export async function getCourierPrice(
     live: async () => {
       if (!account) return null;
       return getCourier(p.provider).calculatePrice(
-        {
-          officeId: p.officeId,
-          city: p.city,
-          weightGrams: p.weightGrams,
-          codCents: p.codCents,
-        },
+        { officeId: p.officeId, city: p.city, weightGrams, codCents: p.codCents },
         account.credentials as Record<string, string>,
       );
     },

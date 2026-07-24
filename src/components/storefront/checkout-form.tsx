@@ -5,6 +5,7 @@ import { cloneElement, useEffect, useMemo, useRef, useState, useSyncExternalStor
 import { saveAbandonedCart } from "@/actions/abandoned-cart";
 import { priceCartAction } from "@/actions/cart";
 import { validateCoupon } from "@/actions/coupons";
+import { getCourierPrice } from "@/actions/couriers";
 import { createOrder } from "@/actions/orders";
 import type { BuyerAddress, PaymentMethod, ShippingMethod, ShippingZone } from "@/db";
 import {
@@ -200,6 +201,12 @@ export function CheckoutForm({
     officeId: string;
     officeName: string;
   } | null>(null);
+  /* Live цена от куриера (Еконт/Спиди) за избрания метод + дестинация. null = още
+     не е изчислена (показваме резервната цена на метода дотогава). */
+  const [courierPrice, setCourierPrice] = useState<{ cents: number; free: boolean } | null>(
+    null,
+  );
+  const [courierPriceLoading, setCourierPriceLoading] = useState(false);
 
   /* Еднократно зареждане на запомнените полета (queueMicrotask — setState
      синхронно в effect чупи react-compiler lint-а). */
@@ -218,6 +225,9 @@ export function CheckoutForm({
      Управлява баджа, лейбъла на бутона и redirect overlay-а (P5-02). */
   const selectedPayment = paymentMethods.find((m) => m.id === form.paymentMethodId);
   const isOnlineSelected = selectedPayment?.type === "online_card";
+  /* Куриерски метод (Еконт/Спиди) → цената идва live от куриера. */
+  const isCourier = shipping?.type === "courier" && shipping?.courierProvider != null;
+  const isCod = selectedPayment?.type === "cod";
   /* Д3.1: зони на избрания метод. Цената се мачва АВТОМАТИЧНО по града (без picker) —
      клиентски matchZone за instant preview; сървърът е финалният източник. */
   const methodZones = useMemo(
@@ -262,6 +272,55 @@ export function CheckoutForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remindMe, form.customerEmail, storedKey, slug]);
 
+  /* Live цена от куриера — при избран куриерски метод + известна дестинация (офис
+     или град). Реалната цена зависи от офиса/града, затова се преизчислява при промяна.
+     Резултатът презаписва резервната цена на метода. Gracefully: при грешка сървърът
+     връща резервната/0 → показваме нея. */
+  useEffect(() => {
+    /* Нужна е дестинация: офис (office метод) или град (address метод). */
+    const hasDestination = isOffice ? courierOffice != null : form.city.trim().length > 1;
+    if (!isCourier || !shipping || !cart || !hasDestination) {
+      /* setState синхронно в effect чупи react-compiler lint → queueMicrotask. */
+      queueMicrotask(() => {
+        setCourierPrice(null);
+        setCourierPriceLoading(false);
+      });
+      return;
+    }
+    let cancelled = false;
+    queueMicrotask(() => setCourierPriceLoading(true));
+    getCourierPrice({
+      shopId,
+      provider: shipping.courierProvider,
+      deliveryTarget: shipping.deliveryTarget,
+      officeId: isOffice ? (courierOffice?.officeId ?? null) : null,
+      city: form.city.trim(),
+      subtotalCents: cart.subtotalCents,
+      codCents: isCod ? cart.subtotalCents : null,
+      lines: stored.map((l) => ({ productId: l.productId, qty: l.qty })),
+    })
+      .then((r) => {
+        if (!cancelled) setCourierPrice(r);
+      })
+      .finally(() => {
+        if (!cancelled) setCourierPriceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isCourier,
+    isOffice,
+    isCod,
+    form.shippingMethodId,
+    courierOffice?.officeId,
+    form.city,
+    cart?.subtotalCents,
+    storedKey,
+    shopId,
+  ]);
+
   /* Отстъпката идва от cart.discountCents, но само ако приложеният код още
      съвпада с cart-а (при смяна на количката cart се презарежда без купон). */
   const discountCents = appliedCode && cart?.appliedCouponCode === appliedCode
@@ -270,13 +329,19 @@ export function CheckoutForm({
 
   const totals = useMemo(() => {
     if (!cart || !shipping) return null;
-    /* Безплатна доставка по ОРИГИНАЛНИЯ subtotal (купонът не я отнема). */
-    const free =
-      shipping.freeOverCents !== null && cart.subtotalCents >= shipping.freeOverCents;
-    /* Д3.1: instant preview на зоната по града (сървърът е финалният източник). */
-    const zone = methodZones.length > 0 ? matchZone(form.city, methodZones) : null;
-    const basePrice = zone ? zone.priceCents : shipping.priceCents;
-    const shippingCents = free ? 0 : basePrice;
+    let free: boolean;
+    let shippingCents: number;
+    if (isCourier) {
+      /* Куриер: live цената от сървъра (безплатна>live>резервна). Докато не е
+         изчислена → резервната цена на метода като placeholder. */
+      free = courierPrice?.free ?? false;
+      shippingCents = courierPrice ? courierPrice.cents : shipping.priceCents;
+    } else {
+      /* Собствена доставка: безплатна над праг; зона по града (instant preview). */
+      free = shipping.freeOverCents !== null && cart.subtotalCents >= shipping.freeOverCents;
+      const zone = methodZones.length > 0 ? matchZone(form.city, methodZones) : null;
+      shippingCents = free ? 0 : zone ? zone.priceCents : shipping.priceCents;
+    }
     const giftCents = giftWrapEnabled && giftWrap ? giftWrapFeeCents : 0;
     return {
       free,
@@ -284,7 +349,18 @@ export function CheckoutForm({
       giftCents,
       totalCents: cart.subtotalCents - discountCents + shippingCents + giftCents,
     };
-  }, [cart, shipping, methodZones, form.city, discountCents, giftWrap, giftWrapEnabled, giftWrapFeeCents]);
+  }, [
+    cart,
+    shipping,
+    isCourier,
+    courierPrice,
+    methodZones,
+    form.city,
+    discountCents,
+    giftWrap,
+    giftWrapEnabled,
+    giftWrapFeeCents,
+  ]);
 
   if (stored.length === 0) {
     return (
@@ -408,8 +484,17 @@ export function CheckoutForm({
           <p className="text-sm text-(--sf-muted)">Не затваряй прозореца.</p>
         </div>
       )}
-      <form ref={formRef} onSubmit={submit} noValidate className="grid gap-8 md:grid-cols-[1fr_320px]">
-      <div className="flex flex-col gap-4">
+      <form ref={formRef} onSubmit={submit} noValidate className="grid gap-8 lg:grid-cols-[1fr_360px]">
+      {/* Лявата част = вертикални секции с подзаглавия (Данни за връзка → Доставка →
+          Плащане). Полетата ВЪТРЕ в секцията се редят в 2 колони на десктоп (име|телефон,
+          адрес|град), което дава симетрия без крива подредба между независими колони.
+          Мобилно всичко пада в 1 колона. Резюмето вдясно е sticky. */}
+      <div className="flex flex-col gap-8">
+        {/* ── Секция: Данни за връзка ── */}
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-(--sf-muted)">
+            Данни за връзка
+          </h2>
         {/* S3: логнат купувач с адресна книга → бърз избор на запазен адрес.
             „Нов адрес" изчиства нищо (просто спира autofill). */}
         {savedAddresses.length > 0 && (
@@ -457,16 +542,17 @@ export function CheckoutForm({
             </div>
           </label>
         )}
-        <Field label="Име и фамилия" required error={fieldErrors.customerName}>
-          <input
-            className={inputClass}
-            name="name"
-            value={form.customerName}
-            onChange={(e) => set("customerName", e.target.value)}
-            autoComplete="name"
-          />
-        </Field>
+        {/* Име + телефон рамо до рамо (2 колони от sm нагоре); имейлът на цял ред отдолу. */}
         <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Име и фамилия" required error={fieldErrors.customerName}>
+            <input
+              className={inputClass}
+              name="name"
+              value={form.customerName}
+              onChange={(e) => set("customerName", e.target.value)}
+              autoComplete="name"
+            />
+          </Field>
           <Field label="Телефон" required error={fieldErrors.customerPhone}>
             <input
               className={inputClass}
@@ -478,22 +564,24 @@ export function CheckoutForm({
               autoComplete="tel"
             />
           </Field>
-          <Field label="Имейл (за потвърждение)" error={fieldErrors.customerEmail}>
-            <input
-              className={inputClass}
-              type="email"
-              name="email"
-              value={form.customerEmail}
-              onChange={(e) => set("customerEmail", e.target.value)}
-              autoComplete="email"
-            />
-          </Field>
         </div>
+        <Field label="Имейл (за потвърждение)" error={fieldErrors.customerEmail}>
+          <input
+            className={inputClass}
+            type="email"
+            name="email"
+            value={form.customerEmail}
+            onChange={(e) => set("customerEmail", e.target.value)}
+            autoComplete="email"
+          />
+        </Field>
 
         <SfCheckbox checked={remindMe} onChange={setRemindMe}>
           Напомни ми с имейл, ако не завърша поръчката
         </SfCheckbox>
-
+        </section>
+        {/* ── Секция: Доставка (заглавието идва от Field label-а по-долу) ── */}
+        <section className="flex flex-col gap-4">
         <Field label="Доставка" required error={fieldErrors.shippingMethodId}>
           <div className="flex flex-col gap-2">
             {shippingMethods.map((m) => (
@@ -528,7 +616,9 @@ export function CheckoutForm({
                 <span className="shrink-0 text-sm font-medium text-(--sf-text)">
                   {m.freeOverCents !== null && cart && cart.subtotalCents >= m.freeOverCents
                     ? "Безплатна"
-                    : formatPrice(m.priceCents)}
+                    : m.type === "courier"
+                      ? "по тарифа"
+                      : formatPrice(m.priceCents)}
                 </span>
               </label>
             ))}
@@ -545,7 +635,8 @@ export function CheckoutForm({
         )}
 
         {!isPickup && !isOffice && (
-          <>
+          /* Адрес (по-широк) + град рамо до рамо на десктоп. */
+          <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
             <Field label="Адрес за доставка" required error={fieldErrors.address}>
               <SfAddressAutocomplete
                 value={form.address}
@@ -565,9 +656,12 @@ export function CheckoutForm({
                 autoComplete="address-level2"
               />
             </Field>
-          </>
+          </div>
         )}
+        </section>
 
+        {/* ── Секция: Плащане (заглавието идва от Field label-а по-долу) ── */}
+        <section className="flex flex-col gap-4">
         <Field label="Плащане" required error={fieldErrors.paymentMethodId}>
           <div className="flex flex-col gap-2">
             {paymentMethods.map((m) => (
@@ -657,9 +751,11 @@ export function CheckoutForm({
             />
           </label>
         </div>
+        </section>
       </div>
 
-      <aside className="flex h-fit flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4">
+      {/* Резюме на поръчката — sticky на десктоп, за да е винаги видимо при дълга форма. */}
+      <aside className="flex h-fit flex-col gap-3 rounded-(--sf-radius) border border-(--sf-border) bg-(--sf-surface) p-4 lg:sticky lg:top-6">
         <h2 className="font-bold text-(--sf-text)">Твоята поръчка</h2>
         {cart?.lines.map((line) => (
           <div key={`${line.productId}-${line.variantKey ?? ""}`} className="flex justify-between gap-2 text-sm">
@@ -733,7 +829,17 @@ export function CheckoutForm({
         {totals && (
           <div className="flex justify-between text-sm text-(--sf-muted)">
             <span>Доставка</span>
-            <span>{totals.free ? "Безплатна" : formatPrice(totals.shippingCents)}</span>
+            <span>
+              {courierPriceLoading
+                ? "Изчисляваме…"
+                : isCourier && !courierPrice
+                  ? isOffice
+                    ? "Избери офис"
+                    : "Въведи град"
+                  : totals.free
+                    ? "Безплатна"
+                    : formatPrice(totals.shippingCents)}
+            </span>
           </div>
         )}
         {totals && totals.giftCents > 0 && (
