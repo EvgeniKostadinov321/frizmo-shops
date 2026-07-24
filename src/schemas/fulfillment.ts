@@ -10,8 +10,9 @@ const priceString = z
 
 const optionalPriceString = z.union([priceString, z.literal("")]);
 
+/* Само собствена доставка. Куриерите (Еконт/Спиди) се настройват в таб „Куриери"
+   с live цена — те не са тип тук (виж courierDeliveryOptions). */
 export const SHIPPING_TYPES = [
-  { value: "courier", label: "Куриер до адрес/офис" },
   { value: "pickup", label: "Взимане от място" },
   { value: "local", label: "Доставка от производителя" },
 ] as const;
@@ -24,20 +25,29 @@ export const PAYMENT_TYPES = [
 ] as const;
 
 export const shippingMethodSchema = z.object({
-  type: z.enum(["courier", "pickup", "local"]),
+  type: z.enum(["pickup", "local"]),
   name: z.string().trim().min(2, "Въведи име").max(60),
   price: priceString,
   freeOver: optionalPriceString.default(""),
   /** Опционално време за доставка (само инфо на клиента). null = не се показва. */
   deliveryHours: z.union([workingHoursSchema, z.null()]).default(null),
-  /** Куриер за товарителница (null/"" = ръчен метод, обратна съвместимост). */
-  courierProvider: z
-    .union([z.enum(["econt", "speedy"]), z.literal("")])
-    .default("")
-    .transform((v) => (v === "" ? null : v)),
-  /** До адрес или до офис на куриера. */
-  deliveryTarget: z.enum(["address", "office"]).default("address"),
 });
+
+/** Настройка на куриерска доставка (таб „Куриери"). Цените са низове от формата
+    („5,00") → центове през toCents, както другаде. */
+export const courierDeliveryOptionSchema = z.object({
+  provider: z.enum(["econt", "speedy"]),
+  deliveryTarget: z.enum(["address", "office"]),
+  active: z
+    .preprocess((v) => v === true || v === "on" || v === "true", z.boolean())
+    .default(false),
+  displayName: z.string().trim().min(2, "Въведи име").max(60),
+  /** Резервна цена като низ ("5,00"); валидна е и „0". */
+  fallbackPrice: priceString,
+  /** Праг за безплатна доставка; празно = без праг. */
+  freeOver: optionalPriceString.default(""),
+});
+export type CourierDeliveryOptionInput = z.infer<typeof courierDeliveryOptionSchema>;
 
 export const paymentMethodSchema = z
   .object({

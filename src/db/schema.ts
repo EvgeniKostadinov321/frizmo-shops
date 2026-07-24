@@ -350,6 +350,39 @@ export const shopCourierAccounts = pgTable(
 
 export type ShopCourierAccount = typeof shopCourierAccounts.$inferSelect;
 
+/**
+ * Настройка на куриерската доставка (per shop + куриер + до-офис/до-адрес). Един
+ * куриер може да предлага И офис, И адрес с различни резервни цени. Цената при
+ * поръчка идва live от куриера; тук е само резервната (ако live извикването гръмне)
+ * + прагът за безплатна доставка, който собственикът определя.
+ */
+export const courierDeliveryOptions = pgTable(
+  "courier_delivery_options",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    shopId: uuid("shop_id")
+      .notNull()
+      .references(() => shops.id, { onDelete: "cascade" }),
+    provider: courierProviderEnum("provider").notNull(),
+    deliveryTarget: deliveryTargetEnum("delivery_target").notNull(),
+    /** Предлага ли се този вариант на доставка изобщо. */
+    active: boolean("active").notNull().default(true),
+    /** Как се казва методът в checkout (напр. „До офис на Спиди"). */
+    displayName: text("display_name").notNull().default(""),
+    /** Резервна цена (eur cents) — ползва се само ако live извикването не върне цена. */
+    fallbackPriceCents: integer("fallback_price_cents").notNull().default(0),
+    /** Праг за безплатна доставка (eur cents); null = без праг. */
+    freeOverCents: integer("free_over_cents"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("courier_delivery_option_idx").on(t.shopId, t.provider, t.deliveryTarget),
+  ],
+).enableRLS();
+
+export type CourierDeliveryOption = typeof courierDeliveryOptions.$inferSelect;
+
 /** Кеш на куриерските офиси/автомати (nomenclature). Опреснява се lazy по град. */
 export const courierOffices = pgTable(
   "courier_offices",

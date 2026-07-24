@@ -58,16 +58,15 @@ export async function saveShippingMethod(
   if (!parsed.success) return zodFail(parsed.error);
 
   const { shop } = await requireShop();
-  /* Куриер/офис имат смисъл само за courier метод; иначе ги нулираме. */
-  const isCourier = parsed.data.type === "courier";
+  /* Само собствена доставка (pickup/local); куриерите живеят в courierDeliveryOptions. */
   const values = {
     type: parsed.data.type,
     name: sanitizeText(parsed.data.name, 60),
     priceCents: toCents(parsed.data.price)!,
     freeOverCents: parsed.data.freeOver ? toCents(parsed.data.freeOver) : null,
     deliveryHours: parsed.data.deliveryHours,
-    courierProvider: isCourier ? parsed.data.courierProvider : null,
-    deliveryTarget: isCourier ? parsed.data.deliveryTarget : "address",
+    courierProvider: null,
+    deliveryTarget: "address" as const,
     updatedAt: new Date(),
   };
 
@@ -194,7 +193,8 @@ export async function saveShippingZone(input: unknown): Promise<ActionResult> {
     where: eq(shippingMethods.id, parsed.data.shippingMethodId),
   });
   if (!method || method.shopId !== shop.id) return fail("Методът не съществува.");
-  if (method.type !== "courier") return fail("Зони се добавят само към куриерски метод.");
+  /* Цени по градове (зони) важат за собствена доставка от производителя. */
+  if (method.type !== "local") return fail("Зони се добавят само към доставка от производителя.");
 
   const [orderRow] = await db
     .select({ maxOrder: max(shippingZones.sortOrder) })
