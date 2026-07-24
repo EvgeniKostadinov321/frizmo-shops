@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import { db, profiles, shops, subscriptions } from "@/db";
+import { db, feeEvents, feeInvoices, profiles, shops, subscriptions } from "@/db";
 import { shopCacheTag } from "@/db/queries/storefront";
 import { confirmNameMatches } from "@/lib/account-deletion";
 import { fail, ok, type ActionResult } from "@/lib/action-result";
@@ -51,34 +51,50 @@ export async function deleteAccount(rawInput: unknown): Promise<ActionResult<nul
   const logCtx = { action: "deleteAccount", shopId: shop.id, userId: user.id };
 
   try {
-    // 1) Best-effort отказ на Stripe абонамент ПРЕДИ триене (после губим id-то).
+    /* Вземи Stripe sub id ПРЕДИ триенето (после го няма) — но отмени го чак СЛЕД
+       успешния DB commit (H1: необратимите външни операции да не се случват преди
+       транзакцията, за да не се загубят при rollback). */
+    let stripeSubId: string | null = null;
     if (isStripeConfigured()) {
       const sub = await db.query.subscriptions.findFirst({
         where: eq(subscriptions.shopId, shop.id),
         columns: { stripeSubscriptionId: true },
       });
-      if (sub?.stripeSubscriptionId) {
-        try {
-          await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
-        } catch (e) {
-          console.error(JSON.stringify({ ...logCtx, step: "stripeCancel", error: String(e) }));
-        }
-      }
+      stripeSubId = sub?.stripeSubscriptionId ?? null;
     }
 
-    // 2) Best-effort триене на Storage файловете.
+    // 1) DB триене в ЕДНА транзакция ПЪРВО (H1: при провал → rollback, нищо необратимо
+    //    още не се е случило; данните остават възстановими).
+    await db.transaction(async (tx) => {
+      /* Архивирай данъчните записи ПРЕДИ триене на магазина: shopId→null, за да НЕ ги
+         хване cascade-ът. НАП изисква 10г запазване (ЗСч/ЗДДС). fee_invoices пази данните
+         в billing snapshot колоните; fee_events е самодостатъчен (amount/base/occurred).
+         За fee_events махаме и orderId (поръчките се трият с магазина). Виж plan gdpr-package. */
+      await tx.update(feeInvoices).set({ shopId: null }).where(eq(feeInvoices.shopId, shop.id));
+      await tx.update(feeEvents).set({ shopId: null, orderId: null }).where(eq(feeEvents.shopId, shop.id));
+      // Триене на магазина → каскадно зависимите таблици (fee_* вече откачени).
+      await tx.delete(shops).where(eq(shops.id, shop.id));
+      // Триене на профила → каскадно push_subscriptions.
+      await tx.delete(profiles).where(eq(profiles.id, user.id));
+    });
+
+    /* 2) СЛЕД успешния commit — необратимите външни операции (best-effort, не блокират). */
     const admin = createSupabaseAdmin();
+    // 2a) Отмени Stripe абонамента.
+    if (stripeSubId) {
+      try {
+        await stripe.subscriptions.cancel(stripeSubId);
+      } catch (e) {
+        console.error(JSON.stringify({ ...logCtx, step: "stripeCancel", error: String(e) }));
+      }
+    }
+    // 2b) Изтрий Storage файловете.
     try {
       await deleteShopMedia(admin, shop.id);
     } catch (e) {
       console.error(JSON.stringify({ ...logCtx, step: "storage", error: String(e) }));
     }
-
-    // 3) Триене на магазина → каскадно всичките зависими таблици.
-    await db.delete(shops).where(eq(shops.id, shop.id));
-    // 4) Триене на профила → каскадно push_subscriptions.
-    await db.delete(profiles).where(eq(profiles.id, user.id));
-    // 5) Триене на auth записа (best-effort — данните вече ги няма).
+    // 2c) Изтрий auth записа.
     const { error: authErr } = await admin.auth.admin.deleteUser(user.id);
     if (authErr) {
       console.error(JSON.stringify({ ...logCtx, step: "authDelete", error: authErr.message }));

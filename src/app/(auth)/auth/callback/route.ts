@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = safeNextPath(searchParams.get("next"));
+  /* GDPR: consent=1 идва от OAuth през регистрационната форма (виж signInWithProvider).
+     Записва приемане на условията за новия профил. */
+  const acceptedTerms = searchParams.get("consent") === "1";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/auth/login?error=oauth`);
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   /* Google дава името в user_metadata (full_name или name). */
   const meta = data.user.user_metadata as { full_name?: string; name?: string };
-  await ensureProfile(data.user.id, meta.full_name ?? meta.name);
+  await ensureProfile(data.user.id, meta.full_name ?? meta.name, undefined, acceptedTerms);
 
   return NextResponse.redirect(`${origin}${next}`);
 }

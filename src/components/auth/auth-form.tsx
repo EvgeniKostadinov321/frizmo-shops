@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Button, Icon, Input, Logo } from "@/components/ui";
+import { Button, Checkbox, Icon, Input, Logo } from "@/components/ui";
 import { signInWithProvider, type AuthFormState } from "@/actions/auth";
 
 interface AuthFormProps {
@@ -159,7 +159,13 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               (multicolor, не се вписва в монохромния Icon set). Купувач → връща се в
               профила (или подадения next); продавач → dashboard (default в action-а). */}
           {oauthError && <p className="text-sm text-danger-600">{oauthError}</p>}
-          <form action={signInWithProvider.bind(null, isBuyer ? (next ?? "/account") : (next ?? "/dashboard"))}>
+          <form
+            action={signInWithProvider.bind(
+              null,
+              isBuyer ? (next ?? "/account") : (next ?? "/dashboard"),
+              isRegister,
+            )}
+          >
             <Button type="submit" variant="secondary" size="lg" className="w-full gap-3">
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
                 <path
@@ -182,6 +188,19 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               Продължи с Google
             </Button>
           </form>
+          {isRegister && (
+            <p className="-mt-1 text-center text-xs text-ink-500">
+              С продължаване приемаш{" "}
+              <Link href="/terms" target="_blank" className="text-brand-600 hover:underline">
+                Условията
+              </Link>{" "}
+              и{" "}
+              <Link href="/privacy" target="_blank" className="text-brand-600 hover:underline">
+                Поверителността
+              </Link>
+              .
+            </p>
+          )}
 
           {/* „или" divider */}
           <div className="flex items-center gap-3">
@@ -221,6 +240,29 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               onFocus={() => setPeeking(true)}
               onBlur={() => setPeeking(false)}
             />
+            {isRegister && (
+              <div className="flex flex-col gap-2">
+                <Checkbox name="acceptTerms" label="Приемам Условията и Политиката за поверителност" />
+                <p className="pl-8 -mt-1 text-xs text-ink-500">
+                  Виж{" "}
+                  <Link href="/terms" target="_blank" className="text-brand-600 hover:underline">
+                    Условията за ползване
+                  </Link>{" "}
+                  и{" "}
+                  <Link href="/privacy" target="_blank" className="text-brand-600 hover:underline">
+                    Политиката за поверителност
+                  </Link>
+                  .
+                </p>
+                {state.fieldErrors?.acceptTerms && (
+                  <p className="text-sm text-danger-600">{state.fieldErrors.acceptTerms}</p>
+                )}
+                <Checkbox
+                  name="acceptMarketing"
+                  label="Искам да получавам новини и оферти по имейл (по избор)"
+                />
+              </div>
+            )}
             {state.error && <p className="text-sm text-danger-600">{state.error}</p>}
             <Button type="submit" size="lg" loading={pending} className="mt-2">
               {isRegister ? "Регистрирай се" : "Влез"}

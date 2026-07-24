@@ -40,6 +40,11 @@ export const profiles = pgTable("profiles", {
   preferredRole: text("preferred_role"),
   /* S3: true след клик-свързване на минали гост-поръчки по телефон. */
   phoneVerified: boolean("phone_verified").notNull().default(false),
+  /* GDPR consent: кога и коя версия на условията са приети (доказуемост). Nullable —
+     стари профили преди consent-а; попълва се при регистрация. marketingConsent = опц. съгласие. */
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+  termsVersion: text("terms_version"),
+  marketingConsent: boolean("marketing_consent").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS();
@@ -665,12 +670,11 @@ export const feeEvents = pgTable(
   "fee_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    shopId: uuid("shop_id")
-      .notNull()
-      .references(() => shops.id, { onDelete: "cascade" }),
-    orderId: uuid("order_id")
-      .notNull()
-      .references(() => orders.id, { onDelete: "cascade" }),
+    /* GDPR: nullable + set null (НЕ cascade) — ledger-ът подкрепя данъчните фактури
+       (fee_invoices) и трябва да оцелее при триене на магазин/поръчка за 10г данъчна
+       отчетност. baseCents/amountCents/occurredAt са snapshot-нати → редът е самодостатъчен. */
+    shopId: uuid("shop_id").references(() => shops.id, { onDelete: "set null" }),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
     type: feeEventTypeEnum("type").notNull(),
     /* Винаги положително; знакът идва от type (charge=+, credit=−). */
     amountCents: integer("amount_cents").notNull(),
@@ -693,9 +697,10 @@ export const feeInvoices = pgTable(
   "fee_invoices",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    shopId: uuid("shop_id")
-      .notNull()
-      .references(() => shops.id, { onDelete: "cascade" }),
+    /* GDPR: nullable + set null (НЕ cascade) — при триене на магазин фактурата се
+       ЗАПАЗВА (НАП запис, 10г), само връзката се къса. Идентификацията оцелява в
+       billing snapshot колоните долу (billing_company_name/eik). Виж plan gdpr-package. */
+    shopId: uuid("shop_id").references(() => shops.id, { onDelete: "set null" }),
     /* Начало/край на фактурирания месец (UTC). */
     periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
     periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),

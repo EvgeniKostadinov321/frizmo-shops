@@ -11,6 +11,7 @@ const PRODUCT_LINKS = [
 const LEGAL_LINKS = [
   { href: "/terms", label: "Условия за ползване" },
   { href: "/privacy", label: "Поверителност" },
+  { href: "/cookies", label: "Бисквитки" },
 ];
 
 export function SiteFooter() {

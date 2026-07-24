@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { db, profiles, shops } from "@/db";
 import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { TERMS_VERSION } from "@/schemas/auth";
 
 /** Връща auth потребителя или пренасочва към login. За Server Components/Actions. */
 export async function requireUser() {
@@ -19,13 +20,22 @@ export async function requireUser() {
  * OAuth първо влизане). При OAuth подаваме името от провайдъра → записва се при
  * insert; повторно влизане не презаписва (onConflictDoNothing).
  */
-export async function ensureProfile(userId: string, fullName?: string, phone?: string) {
+export async function ensureProfile(
+  userId: string,
+  fullName?: string,
+  phone?: string,
+  /* GDPR: при OAuth регистрация с приети условия → записва consent само за НОВИЯ профил
+     (onConflictDoNothing пропуска съществуващите → връщащ се потребител не се пипа). */
+  acceptedTerms = false,
+) {
   await db
     .insert(profiles)
     .values({
       id: userId,
       fullName: fullName ? sanitizeText(fullName, 100) : "",
       phone: phone ? sanitizeText(phone, 30) : null,
+      termsAcceptedAt: acceptedTerms ? new Date() : null,
+      termsVersion: acceptedTerms ? TERMS_VERSION : null,
     })
     .onConflictDoNothing();
 }

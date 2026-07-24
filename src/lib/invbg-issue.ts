@@ -69,6 +69,9 @@ export async function issueInvBgForFeeInvoice(
   // Нищо за фактуриране (кредитен/нулев период).
   if (invoice.amountDueCents <= 0) return { status: "skipped", reason: "non-positive" };
 
+  // Архивирана фактура (магазинът е изтрит, shopId=null) — не се преиздава.
+  if (!invoice.shopId) return { status: "skipped", reason: "no-shop" };
+
   const details = await getMerchantBillingDetails(invoice.shopId);
   // "skipped" статус (различен от "failed") — retry cron-ът НЕ го пробва пак автоматично;
   // наваксва се, когато търговецът попълни данните (или през admin ръчно преиздаване).

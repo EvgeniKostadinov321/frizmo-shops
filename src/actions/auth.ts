@@ -9,7 +9,7 @@ import { resolvePostAuthPath } from "@/lib/auth-redirect";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { loginSchema, registerSchema } from "@/schemas/auth";
+import { loginSchema, registerSchema, TERMS_VERSION } from "@/schemas/auth";
 
 export type AuthFormState = {
   error?: string;
@@ -34,6 +34,9 @@ export async function signUp(
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role") ?? undefined,
+    /* Суровите checkbox стойности — схемата ги нормализира (M1). */
+    acceptTerms: formData.get("acceptTerms"),
+    acceptMarketing: formData.get("acceptMarketing"),
   });
   if (!parsed.success) return { fieldErrors: toFieldErrors(parsed.error) };
 
@@ -54,6 +57,10 @@ export async function signUp(
       id: data.user.id,
       fullName: sanitizeText(parsed.data.fullName, 100),
       preferredRole: role,
+      /* GDPR: запис на приетото съгласие (кога + коя версия) за доказуемост. */
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
+      marketingConsent: parsed.data.acceptMarketing,
     })
     .onConflictDoNothing();
 
@@ -123,17 +130,21 @@ export async function signOut(redirectTo = "/auth/login"): Promise<void> {
  * сочи нашия callback (виж app/(auth)/auth/callback/route.ts). base URL от заявката,
  * за да работи и на localhost, и на прод домейна.
  */
-export async function signInWithProvider(next?: string): Promise<void> {
+export async function signInWithProvider(next?: string, fromRegister = false): Promise<void> {
   const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "https";
   const base = `${proto}://${h.get("host")}`;
   const safeNext = safeNextPath(next);
 
+  /* GDPR: при OAuth от РЕГИСТРАЦИЯ носим флаг към callback-а — там записваме съгласието
+     за новия профил. Регистрационната форма показва текст „с продължаване приемаш…" до
+     бутона, така че кликването е информирано приемане. */
+  const consentParam = fromRegister ? "&consent=1" : "";
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${base}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+      redirectTo: `${base}/auth/callback?next=${encodeURIComponent(safeNext)}${consentParam}`,
     },
   });
 

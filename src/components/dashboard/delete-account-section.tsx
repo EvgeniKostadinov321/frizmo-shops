@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { deleteAccount } from "@/actions/account";
+import { exportMerchantData } from "@/actions/data-export";
 import { confirmNameMatches } from "@/lib/account-deletion";
+import { DataExportButton } from "@/components/account/data-export-button";
 import { Button, Card, Input, Modal } from "@/components/ui";
 
 interface DeleteAccountSectionProps {
@@ -44,6 +46,18 @@ export function DeleteAccountSection({ shopName }: DeleteAccountSectionProps) {
   }
 
   return (
+    <>
+      <Card className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-bold text-ink-900">Моите данни</h2>
+          <p className="text-sm text-ink-500">
+            Изтегли копие на данните си (профил, магазин, данни за фактуриране, фактури) в JSON.
+            Не включва личните данни на твоите клиенти.
+          </p>
+        </div>
+        <DataExportButton action={exportMerchantData} filename="frizmo-моите-данни.json" />
+      </Card>
+
     <Card className="flex flex-col gap-3 border-danger-200">
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-bold text-danger-700">Опасна зона</h2>
@@ -95,5 +109,6 @@ export function DeleteAccountSection({ shopName }: DeleteAccountSectionProps) {
         </div>
       </Modal>
     </Card>
+    </>
   );
 }

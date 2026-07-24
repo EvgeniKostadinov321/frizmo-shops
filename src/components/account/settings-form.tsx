@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { updateBuyerProfile } from "@/actions/buyer";
 import { signOut } from "@/actions/auth";
 import { DeleteAccount } from "@/components/account/delete-account";
+import { DataExportButton } from "@/components/account/data-export-button";
+import { exportBuyerData } from "@/actions/data-export";
 import { Button, Input } from "@/components/ui";
 
 /** Настройки на купувача (платформени): име/телефон + „Отвори магазин" + изход + изтриване. */
@@ -44,6 +46,15 @@ export function SettingsForm({ fullName, phone }: { fullName: string; phone: str
             Изход
           </button>
         </form>
+      </div>
+      <div className="flex flex-col gap-2 rounded-card border border-surface-200 bg-surface-0 p-4">
+        <div>
+          <p className="font-medium text-ink-900">Моите данни</p>
+          <p className="mt-1 text-sm text-ink-500">
+            Изтегли копие на личните си данни (профил, поръчки, адреси, любими) в JSON формат.
+          </p>
+        </div>
+        <DataExportButton action={exportBuyerData} filename="frizmo-моите-данни.json" />
       </div>
       <DeleteAccount />
     </div>
