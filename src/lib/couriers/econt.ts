@@ -99,6 +99,9 @@ export const econt: CourierProvider = {
         {
           mode: "calculate",
           label: {
+            /* shipmentType е ЗАДЪЛЖИТЕЛЕН в calculate mode (сверено на живо: без него
+               HTTP 517 „Некоректен тип пратка"). "PACK" = стандартна пратка. */
+            shipmentType: "PACK",
             senderClient: { name: "-", phones: ["0000000000"] },
             senderAddress: { city: { name: "София" }, street: "-" },
             receiverClient: { name: "-", phones: ["0000000000"] },
