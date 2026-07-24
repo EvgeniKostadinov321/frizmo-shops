@@ -1,19 +1,27 @@
 import type { CourierCreds, CourierProvider, Office } from "./types";
 import { CourierError } from "./types";
 
-/* Speedy REST API. Auth: userName/password в тялото на всяка заявка.
-   Base URL от SPEEDY_API_BASE (за demo/prod override), иначе production v1.
-   ⚠️ Точните полета (office структура, shipment payload) се сверяват на живо при
-   пристигане на ключовете (api.registration@speedy.bg) — виж бележките по-долу. */
+/* Speedy REST API (v1). Auth: userName/password + language в тялото на всяка заявка.
+   Контрактът е СВЕРЕН НА ЖИВО срещу тест акаунт (2026-07-25): office/site/services.
+   Base от SPEEDY_API_BASE (тест/prod override), иначе production v1.
+   Тест ключове (фиктивен обект): user 1996581. За PRODUCTION → подписан договор +
+   реален клиентски номер (client ID) от Спиди. */
 const SPEEDY_BASE = process.env.SPEEDY_API_BASE ?? "https://api.speedy.bg/v1";
 
+/** Speedy връща 200 с тяло `{ error: { code, message } }` при бизнес грешка —
+ *  затова проверяваме и HTTP статуса, и наличието на `error` в JSON-а. */
 async function speedyPost<T>(path: string, creds: CourierCreds, body: object): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${SPEEDY_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName: creds.username, password: creds.password, ...body }),
+      body: JSON.stringify({
+        userName: creds.username,
+        password: creds.password,
+        language: "BG",
+        ...body,
+      }),
     });
   } catch (err) {
     throw new CourierError("Куриерската услуга не отговори.", err);
@@ -21,16 +29,22 @@ async function speedyPost<T>(path: string, creds: CourierCreds, body: object): P
   if (!res.ok) {
     throw new CourierError("Куриерската услуга не отговори.", { status: res.status });
   }
-  return (await res.json()) as T;
+  const json = (await res.json()) as T & { error?: { code?: number; message?: string } };
+  if (json?.error) {
+    /* Детайлът отива в лог; навън — общо BG съобщение. */
+    throw new CourierError("Заявката към куриера не бе приета.", json.error);
+  }
+  return json;
 }
 
 export const speedy: CourierProvider = {
   id: "speedy",
 
   async searchOffices(city, creds) {
-    /* POST /location/office — офиси по име на населено място (siteName). */
+    /* POST /location/office — офиси по частично име на населено място (сверено на живо:
+       връща `offices[]`; всеки офис има address.siteName/fullAddressString + type). */
     const data = await speedyPost<{ offices?: SpeedyOffice[] }>("/location/office", creds, {
-      countryId: 100, // BG — сверявай с docs при живо тестване
+      countryId: 100, // BG (сверено на живо)
       name: city.trim(),
     });
     return (data.offices ?? []).map(
@@ -39,26 +53,33 @@ export const speedy: CourierProvider = {
         name: o.name,
         city: o.address?.siteName ?? "",
         address: o.address?.fullAddressString ?? "",
-        type: "office",
+        /* APS = автомат за пратки (Speedy „БоксНау"/APT); всичко друго = гише. */
+        type: o.type === "APS" ? "apt" : "office",
       }),
     );
   },
 
   async createWaybill(input, creds) {
-    /* POST /shipment — товарителница. Отговорът дава `id`; PDF етикетът се взима с
-       ОТДЕЛНА заявка към /print (format: pdf) — сверява се на живо при ключовете.
-       COD → additionalServices.cod; тегло kg. */
-    const data = await speedyPost<SpeedyShipmentResult>("/shipment", creds, {
+    /* POST /shipment — товарителница (контракт сверен с docs/живо API).
+       Отговорът дава `id`; PDF етикетът НЕ идва тук — взима се с отделна /print заявка. */
+    const shipment = await speedyPost<SpeedyShipmentResult>("/shipment", creds, {
+      sender: {
+        contactName: input.sender.name,
+        phone1: { number: input.sender.phone },
+      },
       recipient: {
         clientName: input.receiverName,
         phone1: { number: input.receiverPhone },
+        privatePerson: true,
+        /* Офис доставка → pickupOfficeId; адресна → address с населено място + улица. */
         pickupOfficeId: input.officeId ? Number(input.officeId) : undefined,
-        addressLocation: input.officeId
+        address: input.officeId
           ? undefined
           : { siteName: input.city, addressLine1: input.address },
       },
       service: {
-        serviceId: 505, // стандартна услуга — сверявай с docs
+        serviceId: SPEEDY_STANDARD_SERVICE,
+        autoAdjustPickupDate: true,
         additionalServices:
           input.codCents != null
             ? { cod: { amount: input.codCents / 100, processingType: "CASH" } }
@@ -66,13 +87,22 @@ export const speedy: CourierProvider = {
       },
       content: {
         parcelsCount: 1,
-        totalWeight: input.weightGrams / 1000,
+        totalWeight: input.weightGrams / 1000, // kg
         contents: input.contents,
-        package: "BOX",
+        package: "КУТИЯ",
+      },
+      /* При наложен платеж получателят обикновено плаща куриерската услуга. */
+      payment: {
+        courierServicePayer: input.codCents != null ? "RECIPIENT" : "SENDER",
       },
     });
-    const id = String(data.id ?? "");
-    return { waybillId: id, trackingNumber: id, labelPdf: data.pdfURL ?? "" };
+
+    const parcelId = String(shipment.id ?? "");
+    if (!parcelId) throw new CourierError("Куриерът не върна номер на пратка.", shipment);
+
+    /* PDF етикет — отделна /print заявка (връща base64 в `data` или URL). */
+    const labelPdf = await fetchLabel(parcelId, creds);
+    return { waybillId: parcelId, trackingNumber: parcelId, labelPdf };
   },
 
   trackingUrl(trackingNumber) {
@@ -80,12 +110,51 @@ export const speedy: CourierProvider = {
   },
 };
 
+/** Стандартна услуга „24 часа" (сверено на живо: 505 = СТАНДАРТ). */
+const SPEEDY_STANDARD_SERVICE = 505;
+
+/**
+ * POST /print — PDF етикет за вече създадена пратка. ⚠️ Сверено на живо: /print връща
+ * СУРОВ PDF binary (`Content-Type: application/pdf`, `%PDF-…`), НЕ JSON — затова НЕ
+ * минава през speedyPost (който прави res.json()). Четем байтовете и ги кодираме base64
+ * (`WaybillResult.labelPdf` = base64 или URL). Ако /print гръмне, товарителницата ВЕЧЕ е
+ * създадена — не хвърляме (номерът е ценен); връщаме празен етикет и логваме.
+ */
+async function fetchLabel(parcelId: string, creds: CourierCreds): Promise<string> {
+  try {
+    const res = await fetch(`${SPEEDY_BASE}/print`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: creds.username,
+        password: creds.password,
+        language: "BG",
+        paperSize: "A6",
+        parcels: [{ parcel: { id: parcelId } }],
+      }),
+    });
+    if (!res.ok) throw new Error(`print HTTP ${res.status}`);
+    const contentType = res.headers.get("content-type") ?? "";
+    /* Успех → application/pdf binary. Грешка → JSON с { error }. */
+    if (contentType.includes("application/pdf")) {
+      const buf = Buffer.from(await res.arrayBuffer());
+      return buf.toString("base64");
+    }
+    /* Не-PDF отговор = бизнес грешка от Speedy → логваме, връщаме празно. */
+    console.error(JSON.stringify({ evt: "speedy_print_not_pdf", parcelId, body: await res.text() }));
+    return "";
+  } catch (err) {
+    console.error(JSON.stringify({ evt: "speedy_print_failed", parcelId }), err);
+    return "";
+  }
+}
+
 interface SpeedyOffice {
   id: number;
   name: string;
+  type?: string; // "OFFICE" | "APS"
   address?: { siteName?: string; fullAddressString?: string };
 }
 interface SpeedyShipmentResult {
   id?: string | number;
-  pdfURL?: string;
 }
