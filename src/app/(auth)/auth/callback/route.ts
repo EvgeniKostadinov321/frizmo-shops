@@ -5,11 +5,12 @@ import { safeNextPath } from "@/lib/safe-redirect";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 /**
- * Auth callback — Supabase връща тук в два случая:
+ * Auth callback — Supabase връща тук в три случая:
  *  1. Google OAuth → `?code=...` (PKCE) → exchangeCodeForSession.
- *  2. Потвърждение на имейл при регистрация → или `?code=...` (PKCE, същото
- *     устройство), или `?token_hash=...&type=signup` (cross-device) → verifyOtp.
- * И двата водят до сесия + гарантиран profiles ред + redirect към валидиран `next`.
+ *  2. Потвърждение на имейл при регистрация → `?code=...` или `?token_hash=...&type=signup`.
+ *  3. Възстановяване на парола → `?code=...` или `?token_hash=...&type=recovery`,
+ *     `next=/auth/reset` → сесия → страницата за нова парола.
+ * Всички водят до сесия + гарантиран profiles ред + redirect към валидиран `next`.
  * При липса на параметри / грешка → login с общо съобщение.
  */
 export async function GET(request: NextRequest) {

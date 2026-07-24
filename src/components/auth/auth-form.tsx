@@ -310,6 +310,14 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               onFocus={() => setPeeking(true)}
               onBlur={() => setPeeking(false)}
             />
+            {!isRegister && (
+              <Link
+                href="/auth/forgot"
+                className="-mt-2 self-end text-sm font-medium text-brand-600 hover:underline"
+              >
+                Забравена парола?
+              </Link>
+            )}
             {isRegister && (
               <div className="flex flex-col gap-2">
                 <Checkbox name="acceptTerms" label="Приемам Условията и Политиката за поверителност" />

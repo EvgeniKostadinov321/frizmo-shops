@@ -27,5 +27,17 @@ export const loginSchema = z.object({
   role: z.enum(["buyer", "seller"]).optional(),
 });
 
+/** Заявка за възстановяване на парола — само имейл. */
+export const forgotPasswordSchema = z.object({
+  email: z.email("Невалиден имейл"),
+});
+
+/** Задаване на нова парола (след клик на recovery линка). */
+export const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Паролата трябва да е поне 8 знака").max(72),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

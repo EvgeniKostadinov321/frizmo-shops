@@ -10,7 +10,13 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { sanitizeText } from "@/lib/sanitize";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { loginSchema, registerSchema, TERMS_VERSION } from "@/schemas/auth";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  TERMS_VERSION,
+} from "@/schemas/auth";
 
 export type AuthFormState = {
   error?: string;
@@ -147,6 +153,75 @@ export async function signIn(
     preferredRole = (prof?.preferredRole as "buyer" | "seller" | null) ?? null;
   }
   redirect(resolvePostAuthPath(hasShop, preferredRole, next, parsed.data.role));
+}
+
+/**
+ * Забравена парола — изпраща имейл с линк за възстановяване (през Resend SMTP).
+ * Rate-limit по имейл (anti-spam). Отговорът е ЕДНАКЪВ при успех и непознат имейл
+ * (anti-enumeration — не издаваме дали акаунтът съществува). Линкът води към
+ * /auth/callback?type=recovery → сесия → /auth/reset (задаване на нова парола).
+ */
+export async function requestPasswordReset(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) return { fieldErrors: toFieldErrors(parsed.error) };
+  const email = parsed.data.email.toLowerCase();
+
+  /* Макс 3 заявки на 15 мин за същия имейл. */
+  if (!(await checkRateLimit(`reset-request:${email}`, 3, 900))) {
+    return { error: "Твърде много заявки. Изчакай няколко минути и опитай пак.", email };
+  }
+
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const base = `${proto}://${h.get("host")}`;
+  const supabase = await createSupabaseServer();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${base}/auth/callback?type=recovery&next=${encodeURIComponent("/auth/reset")}`,
+  });
+  if (error) console.error(JSON.stringify({ evt: "reset_request_failed", code: error.code }));
+
+  /* Неутрален успех независимо от резултата (anti-enumeration). */
+  return { email, resent: true };
+}
+
+/**
+ * Задава нова парола за текущата (recovery) сесия. Изисква активна сесия — recovery
+ * линкът вече е логнал потребителя през callback-а. При успех пренасочва навътре
+ * (recovery сесията е валидна → директен вход).
+ */
+export async function updatePassword(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = resetPasswordSchema.safeParse({ password: formData.get("password") });
+  if (!parsed.success) return { fieldErrors: toFieldErrors(parsed.error) };
+
+  const supabase = await createSupabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    return { error: "Линкът е изтекъл или невалиден. Поискай нов линк за възстановяване." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    return { error: "Паролата не бе сменена. Опитай пак или поискай нов линк." };
+  }
+
+  /* Успех → навътре по състоянието на акаунта (recovery сесията е активна). */
+  const uid = userData.user.id;
+  const shop = await db.query.shops.findFirst({
+    where: eq(shops.ownerId, uid),
+    columns: { id: true },
+  });
+  const prof = await db.query.profiles.findFirst({
+    where: eq(profiles.id, uid),
+    columns: { preferredRole: true },
+  });
+  const preferredRole = (prof?.preferredRole as "buyer" | "seller" | null) ?? null;
+  redirect(resolvePostAuthPath(Boolean(shop), preferredRole, undefined, undefined));
 }
 
 /**
