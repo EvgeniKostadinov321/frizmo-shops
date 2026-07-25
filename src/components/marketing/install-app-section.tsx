@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { m } from "motion/react";
 import { detectPlatform } from "@/lib/pwa-platform";
 import { Icon, type IconName } from "@/components/ui";
 import { Reveal } from "@/components/marketing/reveal";
@@ -71,20 +72,77 @@ export function InstallAppSection() {
             )}
           </div>
 
-          {/* Визуал: телефон-мокъп — само десктоп (на мобилно е излишен и дълъг) */}
+          {/* Визуал: телефонът показва разказа — начален екран с Frizmo сред
+              приложенията + пристигащо push известие (само десктоп) */}
           <div className="hidden justify-center md:flex">
-            <div className="relative aspect-9/16 w-56 overflow-hidden rounded-[2.5rem] border-8 border-ink-900 bg-surface-50 shadow-float">
-              <div className="flex h-full flex-col items-center justify-center gap-3 p-6">
+            <div
+              aria-hidden
+              className="relative aspect-9/16 w-60 overflow-hidden rounded-[2.5rem] border-8 border-ink-900 bg-surface-100 shadow-float"
+            >
+              {/* Статус лента */}
+              <div className="flex items-center justify-between px-5 pt-3 text-[10px] font-semibold text-ink-700">
+                <span>9:41</span>
+                <span className="flex items-center gap-1">
+                  <span className="h-1.5 w-3 rounded-sm bg-ink-700/60" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink-700/60" />
+                </span>
+              </div>
+
+              {/* Push известието — слайдва отгоре при достигане на секцията */}
+              <m.div
+                initial={{ opacity: 0, y: -18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.7, type: "spring", stiffness: 260, damping: 24 }}
+                className="mx-3 mt-2 flex items-start gap-2.5 rounded-2xl border border-surface-200 bg-surface-0 p-3 shadow-float"
+              >
                 <Image
                   src="/logo-mark.png"
-                  alt="Иконата на Frizmo Shops"
-                  width={72}
-                  height={72}
-                  className="rounded-[22%] shadow-card"
+                  alt=""
+                  width={28}
+                  height={28}
+                  className="size-7 shrink-0 rounded-lg"
                 />
-                <span className="font-display text-base font-extrabold tracking-tight text-ink-900">
-                  Frizmo <span className="text-ember-700">Shops</span>
+                <span className="min-w-0">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="text-[10px] font-bold text-ink-900">Frizmo Shops</span>
+                    <span className="shrink-0 text-[9px] text-ink-500">сега</span>
+                  </span>
+                  <span className="block text-[11px] leading-snug text-ink-700">
+                    Нова поръчка — 47,00 € от Мария К.
+                  </span>
                 </span>
+              </m.div>
+
+              {/* Начален екран: ghost приложения + Frizmo с бадж */}
+              <div className="mt-5 grid grid-cols-4 gap-x-3 gap-y-4 px-5">
+                {Array.from({ length: 7 }, (_, i) => (
+                  <span key={i} className="aspect-square rounded-xl bg-surface-200/80" />
+                ))}
+                <span className="relative">
+                  <Image
+                    src="/logo-mark.png"
+                    alt=""
+                    width={44}
+                    height={44}
+                    className="aspect-square w-full rounded-xl shadow-card"
+                  />
+                  <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-danger-600 text-[9px] font-bold text-white">
+                    1
+                  </span>
+                </span>
+              </div>
+              <p className="mt-1.5 grid grid-cols-4 gap-x-3 px-5">
+                <span className="col-start-4 text-center text-[8px] font-semibold text-ink-700">
+                  Frizmo
+                </span>
+              </p>
+
+              {/* Док */}
+              <div className="absolute inset-x-4 bottom-3 flex justify-around rounded-2xl bg-surface-200/60 p-2.5">
+                {Array.from({ length: 4 }, (_, i) => (
+                  <span key={i} className="size-9 rounded-xl bg-surface-0/80" />
+                ))}
               </div>
             </div>
           </div>
