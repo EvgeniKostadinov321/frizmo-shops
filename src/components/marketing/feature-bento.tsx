@@ -1,9 +1,6 @@
 import { Icon, type IconName } from "@/components/ui";
-import {
-  OrderNotificationMockup,
-  ThemeEditorMockup,
-  VisibilityMockup,
-} from "./feature-mockups";
+import { OrderNotificationMockup, VisibilityMockup } from "./feature-mockups";
+import { ThemeRecolorDemo } from "./theme-recolor-demo";
 
 /** Заглавие + текст на клетка — споделен блок. */
 function CellHeader({ icon, title, text }: { icon: IconName; title: string; text: string }) {
@@ -29,17 +26,17 @@ const cellBase =
 export function FeatureBento() {
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      {/* Флагман — персонализация, широка карта с мокъп вдясно */}
+      {/* Флагман — персонализация: ЖИВА демонстрация, посетителят преоцветява сам */}
       <div className={`${cellBase} lg:col-span-2 lg:flex-row lg:items-center lg:gap-10`}>
         <div className="lg:max-w-sm">
           <CellHeader
             icon="palette"
             title="Магазин, който изглежда като теб"
-            text="Теми, твоите цветове, твоето лого, подреждаеми секции — „за нас“, отзиви, галерия, промо банери. Личи си, че е твое, без ред код."
+            text="Теми, твоите цветове, твоето лого, подреждаеми секции — „за нас“, отзиви, галерия, промо банери. Личи си, че е твое, без ред код. Пробвай сам с палитрите."
           />
         </div>
         <div className="flex flex-1 justify-center lg:justify-end">
-          <ThemeEditorMockup />
+          <ThemeRecolorDemo />
         </div>
       </div>
 

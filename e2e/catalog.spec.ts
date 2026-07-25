@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Каталог, landing и блог", () => {
-  test("landing рендерира с CTA, демота и цени", async ({ page }) => {
+  test("landing рендерира с CTA, витрина и цени", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: /Продавай повече/ })).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Създай магазина си безплатно" }).first(),
     ).toBeVisible();
-    /* Името се появява и в hero телефона, и в демо картата — first() */
-    await expect(page.getByText("Ателие Глина").first()).toBeVisible();
+    /* Hero витрината е статичен showcase (не чете базата — решение 2026-07-25) */
+    await expect(page.getByText("Ателие Ръчичка").first()).toBeVisible();
+    /* „На живо" показва реални публикувани магазини (локално: демо сийдовете) */
+    await expect(page.getByRole("heading", { name: "Виж как изглежда на живо" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Прости, честни цени" })).toBeVisible();
 
     /* Cookie банерът се затваря и не се връща */

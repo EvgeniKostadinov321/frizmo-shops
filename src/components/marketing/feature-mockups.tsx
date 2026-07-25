@@ -6,41 +6,6 @@ import { Icon } from "@/components/ui";
  * Мокъпите са frame-less: сами запълват bento клетката си.
  */
 
-/** Панел „тема редактор": цветови swatch-ове + подреждаеми секции. */
-export function ThemeEditorMockup() {
-  return (
-    <div aria-hidden className="w-full max-w-sm rounded-card border border-surface-200 bg-surface-0 p-4 shadow-float">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-ink-900">Дизайн на магазина</span>
-        <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-medium text-brand-700">
-          Live preview
-        </span>
-      </div>
-      <div className="mt-3.5 flex gap-2.5">
-        <span className="size-7 rounded-full bg-brand-600 ring-2 ring-brand-600 ring-offset-2 ring-offset-surface-0" />
-        <span className="size-7 rounded-full bg-ember-500" />
-        <span className="size-7 rounded-full bg-danger-600/70" />
-        <span className="size-7 rounded-full bg-ink-700" />
-      </div>
-      <div className="mt-3.5 flex flex-col gap-1.5">
-        {["Hero банер", "Продукти", "За нас", "Отзиви"].map((label) => (
-          <span
-            key={label}
-            className="flex items-center gap-2 rounded-control border border-surface-200 bg-surface-50 px-3 py-2 text-xs text-ink-700"
-          >
-            <span className="flex flex-col gap-0.5 text-ink-500">
-              <span className="h-0.5 w-3 rounded-full bg-current" />
-              <span className="h-0.5 w-3 rounded-full bg-current" />
-              <span className="h-0.5 w-3 rounded-full bg-current" />
-            </span>
-            {label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** Push известие „Нова поръчка" + ред от таблото. */
 export function OrderNotificationMockup() {
   return (

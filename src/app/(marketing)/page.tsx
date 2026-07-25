@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
-import { and, asc, eq, inArray } from "drizzle-orm";
 import Image from "next/image";
 import Link from "next/link";
 import { BeforeAfter } from "@/components/marketing/before-after";
+import { CategoryMarquee } from "@/components/marketing/category-marquee";
 import { DeletedAccountToast } from "@/components/marketing/deleted-account-toast";
 import { DoneForYou } from "@/components/marketing/done-for-you";
 import { FeatureBento } from "@/components/marketing/feature-bento";
+import { FeeCalculator } from "@/components/marketing/fee-calculator";
 import { HeroStorefrontDemo } from "@/components/marketing/hero-storefront-demo";
 import { InstallAppButton } from "@/components/marketing/install-app-button";
 import { InstallAppSection } from "@/components/marketing/install-app-section";
-import { PricingCardSpotlight } from "@/components/marketing/pricing-card-spotlight";
 import { Reveal } from "@/components/marketing/reveal";
 import { RevealList } from "@/components/marketing/reveal-list";
+import { ScribbleUnderline } from "@/components/marketing/scribble-underline";
+import { ShevitsaDivider } from "@/components/marketing/shevitsa-divider";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { StepCard, type StepVisual } from "@/components/marketing/step-card";
 import { Accordion, Icon } from "@/components/ui";
-import { db, products, shops } from "@/db";
-import { DEMO_SHOP_SLUGS } from "@/lib/demo-shops";
+import { searchShops } from "@/db/queries/catalog";
 import { jsonLdHtml } from "@/lib/json-ld";
-import { publicImageUrl } from "@/lib/storage";
 import { PRICING_PLANS, PRICING_TRUST, FEE_NOTE } from "@/lib/plans-content";
 
 export const metadata: Metadata = {
@@ -63,46 +63,27 @@ const FAQ = [
 ];
 
 /** Letterspaced editorial kicker с hairline продължение. */
-function Kicker({ children }: { children: React.ReactNode }) {
+function Kicker({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
   return (
-    <p className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
+    <p
+      className={`flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] ${
+        dark ? "text-brand-surface-muted" : "text-ink-500"
+      }`}
+    >
       <span className="shrink-0">{children}</span>
-      <span aria-hidden className="h-px flex-1 bg-surface-200" />
+      <span aria-hidden className={`h-px flex-1 ${dark ? "bg-brand-surface-ink/15" : "bg-surface-200"}`} />
     </p>
   );
 }
 
 export default async function LandingPage() {
-  const demoShops = await db.query.shops.findMany({
-    where: inArray(shops.slug, [...DEMO_SHOP_SLUGS]),
-  });
-  /* Водещата ниша е home crafts — Ателие Глина (наследник на Ателие Ръчичка,
-     решение 2026-07-03; демотата са тематичните от 2026-07-05) */
-  const heroShop =
-    demoShops.find((s) => s.slug === "atelie-glina") ?? demoShops[0] ?? null;
-  const heroProducts = heroShop
-    ? await db.query.products.findMany({
-        where: and(eq(products.shopId, heroShop.id), eq(products.status, "active")),
-        orderBy: [asc(products.createdAt)],
-        limit: 6,
-      })
-    : [];
-  /* Cover снимка за всяка демо карта — първата продуктова снимка на магазина.
-     Един заявка за всички демо продукти, после мапваме първата снимка per магазин. */
-  const demoShopIds = demoShops.map((s) => s.id);
-  const demoProducts = demoShopIds.length
-    ? await db.query.products.findMany({
-        where: and(inArray(products.shopId, demoShopIds), eq(products.status, "active")),
-        orderBy: [asc(products.createdAt)],
-      })
-    : [];
-  const coverByShopId = new Map<string, string>();
-  for (const product of demoProducts) {
-    const path = product.images[0];
-    if (path && !coverByShopId.has(product.shopId)) {
-      coverByShopId.set(product.shopId, publicImageUrl(path));
-    }
-  }
+  /* „На живо" показва РЕАЛНИ публикувани магазини (решение 2026-07-25 — без
+     демо seed на прод). Празна база → секцията просто липсва; самонапълва се
+     с идването на първите търговци. searchShops крие тестовите магазини;
+     витрината иска и cover снимка — магазин без продуктова фотография не е
+     представителен (крие и e2e остатъци в dev базата). */
+  const { items: liveShops } = await searchShops({});
+  const showcaseShops = liveShops.filter((shop) => shop.coverImage).slice(0, 3);
 
   return (
     <>
@@ -142,7 +123,7 @@ export default async function LandingPage() {
       {/* Hero — full-bleed фон, заема (почти) целия екран на desktop за да диша.
           min-h компенсира плаващия хедър (~4.75rem), затова центрираме под него. */}
       <section
-        className="relative flex items-center overflow-hidden lg:min-h-[calc(100svh-4.75rem)]"
+        className="relative flex items-center overflow-hidden lg:min-h-[calc(100svh-8rem)]"
         style={{ backgroundImage: "var(--gradient-hero-glow)" }}
       >
         <div
@@ -150,9 +131,10 @@ export default async function LandingPage() {
           className="pointer-events-none absolute inset-0 opacity-60 mix-blend-overlay"
           style={{ backgroundImage: "var(--texture-noise)" }}
         />
-        <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-12 md:pt-16 lg:py-12">
-          <div className="grid items-center gap-x-16 gap-y-14 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="flex flex-col items-start gap-6">
+        <div className="relative mx-auto w-full max-w-7xl px-4 pb-16 pt-12 md:pt-16 lg:py-12">
+          {/* Мобилен ред: текст → витрина → чеклист; desktop: текст+чеклист вляво, витрина вдясно */}
+          <div className="grid items-center gap-x-16 gap-y-12 lg:grid-cols-[1.05fr_0.95fr] lg:grid-rows-[auto_auto]">
+            <div className="flex flex-col items-start gap-6 lg:row-start-1">
               <span className="inline-flex items-center gap-2 rounded-full border border-surface-200 bg-surface-0 px-3.5 py-1.5 text-xs font-semibold text-ink-700 shadow-card">
                 <span className="size-1.5 rounded-full bg-brand-600" aria-hidden />
                 Направено за българските търговци
@@ -163,10 +145,7 @@ export default async function LandingPage() {
                 Без{" "}
                 <span className="relative whitespace-nowrap text-brand-600">
                   хаос
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-0 bottom-1 -z-10 h-3 rounded-sm bg-brand-100"
-                  />
+                  <ScribbleUnderline />
                 </span>
                 .
               </h1>
@@ -186,7 +165,14 @@ export default async function LandingPage() {
                 </Link>
                 <InstallAppButton />
               </div>
-              <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-3 text-sm text-ink-500">
+            </div>
+
+            <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+              <HeroStorefrontDemo />
+            </div>
+
+            <div className="pt-2 lg:col-start-1 lg:row-start-2 lg:pt-0">
+              <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-500">
                 {["Безплатен старт", "Без месечна такса", "Готов за 15 минути", "Плащаш при продажба"].map(
                   (item) => (
                     <li key={item} className="flex items-center gap-2">
@@ -196,36 +182,44 @@ export default async function LandingPage() {
                   ),
                 )}
               </ul>
+              {/* Шевицата — националният подпис; само тук и на финалния CTA */}
+              <ShevitsaDivider id="shevitsa-hero" className="mt-6 max-w-56 text-brand-600/40" />
             </div>
-
-            <HeroStorefrontDemo shop={heroShop} products={heroProducts} />
           </div>
         </div>
       </section>
 
-      {/* „Ние ще го направим за теб" — безплатна услуга по настройка (акцентна лента) */}
-      <DoneForYou />
+      {/* „Улицата на пазара" — какво се продава с Frizmo Shops */}
+      <CategoryMarquee />
 
-      {/* Болката — „Преди / След" контраст (различен ритъм от картовите секции) */}
-      <section className="bg-surface-100/60">
-        <div className="mx-auto w-full max-w-7xl px-4 py-24">
+      {/* Болката — ТЪМНИЯТ момент: чат хаосът се разиграва, магазинът „изгрява" */}
+      <section
+        className="relative overflow-hidden bg-brand-surface"
+        style={{ backgroundImage: "var(--gradient-cta)" }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay"
+          style={{ backgroundImage: "var(--texture-noise)" }}
+        />
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-24">
           <div className="max-w-2xl">
-            <Kicker>Познато ли ти е</Kicker>
-            <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-balance text-ink-900 sm:text-5xl">
+            <Kicker dark>Познато ли ти е</Kicker>
+            <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-balance text-brand-surface-ink sm:text-5xl">
               Продаваш през Facebook и Viber?
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-ink-700">
+            <p className="mt-4 text-lg leading-relaxed text-brand-surface-muted">
               Всеки ден едни и същи въпроси в чата, изгубени поръчки и продукти, които
               никой не намира. Има по-добър начин.
             </p>
           </div>
-          <Reveal className="mt-14">
+          <div className="mt-14">
             <BeforeAfter />
-          </Reveal>
+          </div>
         </div>
       </section>
 
-      {/* Как работи — стъпки с мини-визуализации и свързваща линия за прогрес */}
+      {/* Как работи — стъпки с мини-визуализации и свързваща пунктирана линия */}
       <section className="mx-auto w-full max-w-7xl px-4 py-24">
         <div className="max-w-2xl">
           <Kicker>Как работи</Kicker>
@@ -237,21 +231,28 @@ export default async function LandingPage() {
             твоя адрес във frizmoshops.bg.
           </p>
         </div>
-        <RevealList className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
-          {STEPS.map((step) => (
-            <StepCard
-              key={step.number}
-              number={step.number}
-              title={step.title}
-              text={step.text}
-              visual={step.visual}
-            />
-          ))}
-        </RevealList>
+        <div className="relative mt-14">
+          {/* Свързваща линия зад номерата — вижда се само в процепите между картите */}
+          <div
+            aria-hidden
+            className="absolute inset-x-10 top-[2.35rem] hidden border-t-2 border-dashed border-surface-300 lg:block"
+          />
+          <RevealList className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
+            {STEPS.map((step) => (
+              <StepCard
+                key={step.number}
+                number={step.number}
+                title={step.title}
+                text={step.text}
+                visual={step.visual}
+              />
+            ))}
+          </RevealList>
+        </div>
       </section>
 
-      {/* Витрина: живи демо магазини */}
-      {demoShops.length > 0 && (
+      {/* Витрина: реални магазини, направени с Frizmo Shops */}
+      {showcaseShops.length > 0 && (
         <section className="bg-surface-100/60">
           <div className="mx-auto w-full max-w-7xl px-4 py-24">
             <Kicker>На живо</Kicker>
@@ -259,11 +260,11 @@ export default async function LandingPage() {
               Виж как изглежда на живо
             </h2>
             <p className="mt-3 text-lg text-ink-500">
-              Три демо магазина, направени с Frizmo Shops — кликни и разгледай.
+              Истински магазини, направени с Frizmo Shops — кликни и разгледай.
             </p>
             <RevealList className="mt-12 grid gap-6 md:grid-cols-3">
-              {demoShops.map((shop) => (
-                <ShopCard key={shop.id} shop={shop} coverImage={coverByShopId.get(shop.id)} />
+              {showcaseShops.map((shop) => (
+                <ShopCard key={shop.id} shop={shop} coverImage={shop.coverImage} />
               ))}
             </RevealList>
             <p className="mt-10">
@@ -279,10 +280,7 @@ export default async function LandingPage() {
         </section>
       )}
 
-      {/* Инсталирай като приложение (PWA) */}
-      <InstallAppSection />
-
-      {/* Функции — bento grid */}
+      {/* Функции — bento grid с живата преоцветяваща витрина */}
       <section className="mx-auto w-full max-w-7xl px-4 py-24">
         <div className="max-w-2xl">
           <Kicker>Какво получаваш</Kicker>
@@ -299,20 +297,24 @@ export default async function LandingPage() {
         </Reveal>
       </section>
 
-      {/* Цени */}
+      {/* Инсталирай като приложение (PWA) */}
+      <InstallAppSection />
+
+      {/* Цени — картата + „касовата бележка" (интерактивният калкулатор) */}
       <section id="pricing" className="bg-surface-100/60">
         <div className="mx-auto w-full max-w-6xl px-4 py-24">
           <Kicker>Цени</Kicker>
           <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight text-ink-900 sm:text-5xl">
             Прости, честни цени
           </h2>
-          <p className="mt-3 text-lg text-ink-500">{FEE_NOTE}</p>
-          <RevealList className="mx-auto mt-12 grid max-w-md gap-6" itemClassName="h-full">
-            {PRICING_PLANS.map((plan) => {
-              const dark = plan.highlighted;
-              return (
-                <PricingCardSpotlight key={plan.id}>
+          <p className="mt-3 max-w-3xl text-lg text-ink-500">{FEE_NOTE}</p>
+          <div className="mx-auto mt-12 grid max-w-4xl items-center gap-10 lg:grid-cols-2">
+            <RevealList className="grid min-w-0 gap-6" itemClassName="h-full min-w-0">
+              {PRICING_PLANS.map((plan) => {
+                const dark = plan.highlighted;
+                return (
                   <div
+                    key={plan.id}
                     className={`flex h-full flex-col gap-6 rounded-card p-8 ${
                       dark
                         ? "bg-linear-to-br from-brand-surface to-brand-surface-deep text-brand-surface-ink [box-shadow:var(--shadow-brand-tint),var(--shadow-float)]"
@@ -328,7 +330,7 @@ export default async function LandingPage() {
                       </p>
                     </div>
                     <div>
-                      <p className={`font-display text-6xl font-extrabold ${dark ? "" : "text-ink-900"}`}>
+                      <p className={`font-display text-5xl font-extrabold sm:text-6xl ${dark ? "" : "text-ink-900"}`}>
                         {plan.priceLabel}
                       </p>
                       <p
@@ -363,11 +365,14 @@ export default async function LandingPage() {
                       Започни безплатно
                     </Link>
                   </div>
-                </PricingCardSpotlight>
-              );
-            })}
-          </RevealList>
-          <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-ink-500">
+                );
+              })}
+            </RevealList>
+            <Reveal>
+              <FeeCalculator />
+            </Reveal>
+          </div>
+          <ul className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-ink-500">
             {PRICING_TRUST.map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <Icon name="check" size={15} className="shrink-0 text-brand-600" />
@@ -377,6 +382,9 @@ export default async function LandingPage() {
           </ul>
         </div>
       </section>
+
+      {/* „Ние ще го направим за теб" — преди FAQ: улавя колебаещите се */}
+      <DoneForYou />
 
       {/* FAQ — split: заглавие + контакт карта вляво, акордеон вдясно */}
       <section className="mx-auto w-full max-w-7xl px-4 py-24">
@@ -417,10 +425,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Финален CTA — снимка от демо магазин + тъмен scrim за четимост (спец §15) */}
+      {/* Финален CTA — работилницата на златния час (Magnific, 2026-07-25) + тъмен scrim */}
       <section className="relative overflow-hidden bg-ink-900">
         <Image
-          src="/cta-workshop.webp"
+          src="/landing/cta-workshop.webp"
           alt=""
           fill
           sizes="100vw"
@@ -433,10 +441,11 @@ export default async function LandingPage() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to top, rgb(16 18 16 / 0.82), rgb(16 18 16 / 0.68) 50%, rgb(16 18 16 / 0.72))",
+              "linear-gradient(to top, rgb(16 18 16 / 0.82), rgb(16 18 16 / 0.66) 50%, rgb(16 18 16 / 0.72))",
           }}
         />
         <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-7 px-4 py-28 text-center">
+          <ShevitsaDivider id="shevitsa-cta" className="max-w-48 text-white/35" />
           <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-surface-200">
             Frizmo Shops
           </p>

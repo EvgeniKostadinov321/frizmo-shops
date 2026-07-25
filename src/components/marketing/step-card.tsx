@@ -63,19 +63,19 @@ function ThemeVisual() {
   );
 }
 
-/** Стъпка 4 — toggle „на живо" + споделен линк. */
+/** Стъпка 4 — toggle „на живо": hover на картата го „включва" (разказ без думи). */
 function PublishVisual() {
   return (
     <div aria-hidden className="flex w-full flex-col gap-2">
       <div className="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-0 px-3 py-2.5">
         <span className="text-[11px] font-semibold text-ink-900">Магазинът е на живо</span>
-        <span className="flex h-4 w-7 items-center rounded-full bg-brand-600 px-0.5">
-          <span className="ml-auto size-3 rounded-full bg-white" />
+        <span className="flex h-4 w-7 items-center rounded-full bg-surface-300 px-0.5 transition-colors duration-300 group-hover:bg-brand-600">
+          <span className="size-3 rounded-full bg-white transition-transform duration-300 group-hover:translate-x-3" />
         </span>
       </div>
       <div className="flex items-center gap-1.5 rounded-lg bg-surface-100 px-3 py-2 text-[10px] text-ink-700">
         <Icon name="store" size={11} className="shrink-0 text-brand-600" />
-        <span className="truncate">frizmo.shop/s/atelie-rachichka</span>
+        <span className="truncate">frizmoshops.bg/s/atelie-rachichka</span>
       </div>
     </div>
   );
