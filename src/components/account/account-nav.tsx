@@ -44,6 +44,14 @@ export function AccountNav({ hasShop = false }: { hasShop?: boolean }) {
             </Link>
           );
         })}
+        {/* Реципрочното на „Пазарувам" в dashboard хедъра: винаги има път към
+            продавашкия контекст (без магазин dashboard-ът води към onboarding). */}
+        <Link
+          href="/dashboard"
+          className="whitespace-nowrap px-4 py-2.5 text-sm font-medium text-brand-600 hover:text-brand-700"
+        >
+          {hasShop ? "Моят магазин" : "Продавам"}
+        </Link>
         {/* Изход — най-вдясно в мобилната лента, отделен визуално */}
         <form action={signOut.bind(null, "/")} className="ml-auto shrink-0">
           <button
@@ -76,17 +84,16 @@ export function AccountNav({ hasShop = false }: { hasShop?: boolean }) {
             </Link>
           );
         })}
-        {/* Граничен случай: купувач, който е и продавач → връзка към таблото на
-            магазина (контекстна навигация, не stateful switcher). */}
-        {hasShop && (
-          <Link
-            href="/dashboard"
-            className="mt-1 flex items-center gap-2.5 rounded-control border-t border-surface-200 px-3 pt-3 pb-2 text-sm font-medium text-ink-500 transition-colors hover:bg-surface-50 hover:text-ink-900"
-          >
-            <Icon name="store" size={18} className="shrink-0" />
-            Табло на магазина
-          </Link>
-        )}
+        {/* Реципрочното на „Пазарувам" в dashboard хедъра — ВИНАГИ има път към
+            продавашкия контекст: с магазин → таблото; без магазин dashboard-ът
+            сам води към onboarding (покана да станеш продавач). */}
+        <Link
+          href="/dashboard"
+          className="mt-1 flex items-center gap-2.5 rounded-control border-t border-surface-200 px-3 pt-3 pb-2 text-sm font-medium text-brand-600 transition-colors hover:bg-surface-50 hover:text-brand-700"
+        >
+          <Icon name="store" size={18} className="shrink-0" />
+          {hasShop ? "Моят магазин" : "Продавам"}
+        </Link>
         {/* Изход — отделен най-долу, по идиома на dashboard-а */}
         <form action={signOut.bind(null, "/")} className="mt-1 border-t border-surface-200 pt-1">
           <button
