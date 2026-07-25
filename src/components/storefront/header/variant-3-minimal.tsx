@@ -6,6 +6,7 @@ import {
   Brand,
   buildNav,
   CartButton,
+  CatalogButton,
   FavoritesButton,
   HeaderSearch,
   type HeaderVariantProps,
@@ -45,7 +46,10 @@ export function HeaderVariant3({
         }`}
       >
         <div className="mx-auto flex h-19 max-w-6xl items-center justify-between gap-4 px-4">
-          <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
+          <div className="flex min-w-0 items-center gap-1.5">
+            <CatalogButton />
+            <Brand shop={shop} base={base} logoOnly={settings.logoOnly} />
+          </div>
           <div className="flex items-center gap-1">
             <HeaderSearch base={base} />
             <AccountButton loggedIn={viewerLoggedIn} />

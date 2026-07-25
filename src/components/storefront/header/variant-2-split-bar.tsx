@@ -6,6 +6,7 @@ import {
   Brand,
   buildNav,
   CartButton,
+  CatalogButton,
   FavoritesButton,
   HeaderSearch,
   type HeaderVariantProps,
@@ -53,6 +54,7 @@ export function HeaderVariant2({
       <div className="mx-auto flex h-19 max-w-6xl items-center gap-4 px-4">
         {/* Ляво крило (десктоп) / бургер (мобилно) */}
         <div className="flex flex-1 items-center">
+          <CatalogButton />
           <nav
             aria-label="Навигация — ляво"
             className="hidden items-center gap-1 md:flex"

@@ -356,6 +356,24 @@ export function MenuButton({ onOpen, expanded }: { onOpen: () => void; expanded:
   );
 }
 
+/**
+ * Път назад към каталога с магазини — стрелка + магазинче, вляво от бранда.
+ * Нарочно приглушен (opacity), за да е вторичен спрямо марката на търговеца.
+ */
+export function CatalogButton() {
+  return (
+    <Link
+      href="/shops"
+      aria-label="Обратно към каталога с магазини"
+      title="Всички магазини"
+      className="flex h-11 shrink-0 items-center gap-0.5 rounded-(--sf-radius) px-1.5 text-current opacity-60 transition-opacity hover:opacity-100"
+    >
+      <Icon name="chevron-down" size={14} className="rotate-90" />
+      <Icon name="store" size={19} />
+    </Link>
+  );
+}
+
 /** S3-глобален: профил икона в хедъра → глобалният /account (не per-магазин). */
 export function AccountButton({ loggedIn }: { base?: string; loggedIn: boolean }) {
   const href = loggedIn ? "/account" : "/auth/login?role=buyer&next=/account";
