@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BeforeAfter } from "@/components/marketing/before-after";
 import { CategoryMarquee } from "@/components/marketing/category-marquee";
+import { ChaosWord } from "@/components/marketing/chaos-word";
 import { DeletedAccountToast } from "@/components/marketing/deleted-account-toast";
 import { DoneForYou } from "@/components/marketing/done-for-you";
 import { FeatureBento } from "@/components/marketing/feature-bento";
@@ -12,7 +13,6 @@ import { InstallAppButton } from "@/components/marketing/install-app-button";
 import { InstallAppSection } from "@/components/marketing/install-app-section";
 import { Reveal } from "@/components/marketing/reveal";
 import { RevealList } from "@/components/marketing/reveal-list";
-import { ScribbleUnderline } from "@/components/marketing/scribble-underline";
 import { ShevitsaDivider } from "@/components/marketing/shevitsa-divider";
 import { ShopCard } from "@/components/marketing/shop-card";
 import { StepCard, type StepVisual } from "@/components/marketing/step-card";
@@ -120,10 +120,12 @@ export default async function LandingPage() {
         }}
       />
 
-      {/* Hero — full-bleed фон, заема (почти) целия екран на desktop за да диша.
-          min-h компенсира плаващия хедър (~4.75rem), затова центрираме под него. */}
+      {/* Hero + marquee запълват ТОЧНО първия екран на desktop: общ flex контейнер
+          с височина 100svh − хедъра (pt-3 + h-14 = 4.25rem); hero е flex-1, а
+          marquee-то ляга на долния ръб — без процеп към тъмната секция. */}
+      <div className="flex flex-col lg:min-h-[calc(100svh-4.25rem)]">
       <section
-        className="relative flex items-center overflow-hidden lg:min-h-[calc(100svh-8rem)]"
+        className="relative flex items-center overflow-hidden lg:flex-1"
         style={{ backgroundImage: "var(--gradient-hero-glow)" }}
       >
         <div
@@ -143,9 +145,8 @@ export default async function LandingPage() {
                 Продавай повече.
                 <br />
                 Без{" "}
-                <span className="relative whitespace-nowrap text-brand-600">
-                  хаос
-                  <ScribbleUnderline />
+                <span className="text-brand-600">
+                  <ChaosWord />
                 </span>
                 .
               </h1>
@@ -191,6 +192,7 @@ export default async function LandingPage() {
 
       {/* „Улицата на пазара" — какво се продава с Frizmo Shops */}
       <CategoryMarquee />
+      </div>
 
       {/* Болката — ТЪМНИЯТ момент: чат хаосът се разиграва, магазинът „изгрява" */}
       <section
