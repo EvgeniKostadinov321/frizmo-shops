@@ -1,5 +1,8 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
+import { db, profiles, shops } from "@/db";
+import { resolvePostAuthPath } from "@/lib/auth-redirect";
 import { ensureProfile } from "@/lib/auth";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -22,6 +25,9 @@ export async function GET(request: NextRequest) {
   /* GDPR: consent=1 идва от OAuth през регистрационната форма (виж signInWithProvider).
      Записва приемане на условията за новия профил. */
   const acceptedTerms = searchParams.get("consent") === "1";
+  /* Роля от toggle-а при Google вход/регистрация → записва preferredRole за новия профил. */
+  const roleParam = searchParams.get("role");
+  const role = roleParam === "seller" || roleParam === "buyer" ? roleParam : null;
 
   const supabase = await createSupabaseServer();
 
@@ -49,8 +55,20 @@ export async function GET(request: NextRequest) {
   }
 
   /* Google дава името в user_metadata (full_name или name); при имейл потвърждение
-     профилът вече е създаден при signUp, но ensureProfile е идемпотентен. */
-  await ensureProfile(userId, userMeta.full_name ?? userMeta.name, undefined, acceptedTerms);
+     профилът вече е създаден при signUp, но ensureProfile е идемпотентен. Ролята се
+     записва само за нов профил (onConflictDoNothing пази връщащия се потребител). */
+  await ensureProfile(userId, userMeta.full_name ?? userMeta.name, undefined, acceptedTerms, role);
 
-  return NextResponse.redirect(`${origin}${next}`);
+  /* Дестинация по РОЛЯ (както при паролния вход) — иначе Google слепва към `next`,
+     който зависи от кой toggle е бил активен, и продавач-акаунт попада в /account.
+     Явната роля (toggle) печели; иначе пада на състоянието на акаунта (магазин /
+     preferredRole). */
+  const [shop, prof] = await Promise.all([
+    db.query.shops.findFirst({ where: eq(shops.ownerId, userId), columns: { id: true } }),
+    db.query.profiles.findFirst({ where: eq(profiles.id, userId), columns: { preferredRole: true } }),
+  ]);
+  const preferredRole = (prof?.preferredRole as "buyer" | "seller" | null) ?? null;
+  const dest = resolvePostAuthPath(Boolean(shop), preferredRole, next, role ?? undefined);
+
+  return NextResponse.redirect(`${origin}${dest}`);
 }

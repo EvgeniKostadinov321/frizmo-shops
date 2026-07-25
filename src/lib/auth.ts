@@ -27,6 +27,9 @@ export async function ensureProfile(
   /* GDPR: при OAuth регистрация с приети условия → записва consent само за НОВИЯ профил
      (onConflictDoNothing пропуска съществуващите → връщащ се потребител не се пипа). */
   acceptedTerms = false,
+  /* Роля от toggle-а при Google вход/регистрация (продавач/купувач). Записва се само за
+     НОВИЯ профил (onConflictDoNothing). null = без явна роля (пада на default по-късно). */
+  role: "buyer" | "seller" | null = null,
 ) {
   await db
     .insert(profiles)
@@ -34,6 +37,7 @@ export async function ensureProfile(
       id: userId,
       fullName: fullName ? sanitizeText(fullName, 100) : "",
       phone: phone ? sanitizeText(phone, 30) : null,
+      preferredRole: role,
       termsAcceptedAt: acceptedTerms ? new Date() : null,
       termsVersion: acceptedTerms ? TERMS_VERSION : null,
     })

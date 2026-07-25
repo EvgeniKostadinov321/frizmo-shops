@@ -280,7 +280,11 @@ export async function resendConfirmation(
   return { needsConfirmation: true, email, resent: true };
 }
 
-export async function signInWithProvider(next?: string, fromRegister = false): Promise<void> {
+export async function signInWithProvider(
+  next?: string,
+  fromRegister = false,
+  role?: "buyer" | "seller",
+): Promise<void> {
   const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "https";
   const base = `${proto}://${h.get("host")}`;
@@ -290,11 +294,15 @@ export async function signInWithProvider(next?: string, fromRegister = false): P
      за новия профил. Регистрационната форма показва текст „с продължаване приемаш…" до
      бутона, така че кликването е информирано приемане. */
   const consentParam = fromRegister ? "&consent=1" : "";
+  /* Ролята от toggle-а („продавач"/„купувач") пътува към callback-а → записва
+     preferredRole за новия профил (иначе Google вход създава профил без роля → влиза
+     като купувач по default). Валидира се пак в callback-а. */
+  const roleParam = role === "seller" || role === "buyer" ? `&role=${role}` : "";
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${base}/auth/callback?next=${encodeURIComponent(safeNext)}${consentParam}`,
+      redirectTo: `${base}/auth/callback?next=${encodeURIComponent(safeNext)}${consentParam}${roleParam}`,
     },
   });
 

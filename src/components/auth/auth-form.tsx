@@ -234,6 +234,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               null,
               isBuyer ? (next ?? "/account") : (next ?? "/dashboard"),
               isRegister,
+              activeRole,
             )}
           >
             <Button type="submit" variant="secondary" size="lg" className="w-full gap-3">
