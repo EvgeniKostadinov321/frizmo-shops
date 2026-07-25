@@ -148,19 +148,17 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[image:var(--gradient-hero-glow)]"
         />
-        <div className="relative flex w-full max-w-md flex-col gap-7">
-          {/* Назад към landing — винаги наличен изход (напр. след logout, за да не
-              се налага ръчно чистене на URL-а). */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-ink-500 transition-colors hover:text-ink-900"
-          >
-            <Icon name="chevron-down" size={16} className="rotate-90" />
-            Назад към сайта
-          </Link>
-
-          {/* Лого — центрирано на мобилно, ляво на desktop */}
-          <div className="flex justify-center lg:justify-start">
+        <div className="relative flex w-full max-w-md flex-col gap-7 lg:gap-4">
+          {/* Назад + лого на ЕДИН ред — пести височина, за да се събере
+              регистрацията без скрол на desktop. */}
+          <div className="flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 transition-colors hover:text-ink-900"
+            >
+              <Icon name="chevron-down" size={16} className="rotate-90" />
+              Назад към сайта
+            </Link>
             <Logo href="/" />
           </div>
 
@@ -191,16 +189,17 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
             </div>
           </div>
 
-          {/* Desktop заглавен блок (ляво-подравнен; пчелата е в панела вдясно) */}
-          <div className="hidden flex-col gap-2 lg:flex">
+          {/* Desktop заглавен блок (ляво-подравнен; пчелата е в панела вдясно) —
+              компактен, за да се събере формата без скрол */}
+          <div className="hidden flex-col gap-1.5 lg:flex">
             <p className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-500">
               <span className="shrink-0">{kicker}</span>
               <span aria-hidden className="h-px flex-1 bg-surface-200" />
             </p>
-            <h1 className="text-balance font-display text-4xl font-extrabold tracking-tight text-ink-900">
+            <h1 className="text-balance font-display text-3xl font-extrabold tracking-tight text-ink-900">
               {title}
             </h1>
-            <p className="text-pretty text-ink-500">{subtitle}</p>
+            <p className="text-pretty text-sm text-ink-500">{subtitle}</p>
           </div>
 
           {/* Toggle роля — „Пазарувам" / „Продавам". Линкове (не state) → сменят ?role
@@ -208,7 +207,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
           <div className="flex rounded-control border border-surface-200 bg-surface-0 p-1 text-sm font-medium">
             <Link
               href={roleHref("buyer")}
-              className={`flex-1 rounded-[calc(var(--radius-control)-2px)] py-2 text-center transition-colors ${
+              className={`flex-1 rounded-[calc(var(--radius-control)-2px)] py-2 text-center transition-colors lg:py-1.5 ${
                 isBuyer ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-900"
               }`}
             >
@@ -216,7 +215,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
             </Link>
             <Link
               href={roleHref("seller")}
-              className={`flex-1 rounded-[calc(var(--radius-control)-2px)] py-2 text-center transition-colors ${
+              className={`flex-1 rounded-[calc(var(--radius-control)-2px)] py-2 text-center transition-colors lg:py-1.5 ${
                 !isBuyer ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-900"
               }`}
             >
@@ -237,7 +236,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               activeRole,
             )}
           >
-            <Button type="submit" variant="secondary" size="lg" className="w-full gap-3">
+            <Button type="submit" variant="secondary" size="lg" className="w-full gap-3 lg:h-11">
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
                 <path
                   fill="#4285F4"
@@ -282,7 +281,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
             <span aria-hidden className="h-px flex-1 bg-surface-200" />
           </div>
 
-          <form action={formAction} className="flex flex-col gap-4" noValidate>
+          <form action={formAction} className="flex flex-col gap-4 lg:gap-3" noValidate>
             {/* Роля + next пътуват със submit-а: signUp пише preferredRole, signIn/signUp
                 пренасочват по роля. */}
             <input type="hidden" name="role" value={activeRole} />
@@ -320,9 +319,9 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               </Link>
             )}
             {isRegister && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 lg:gap-1.5">
                 <Checkbox name="acceptTerms" label="Приемам Условията и Политиката за поверителност" />
-                <p className="pl-8 -mt-1 text-xs text-ink-500">
+                <p className="pl-8 -mt-1 text-xs leading-snug text-ink-500">
                   Виж{" "}
                   <Link href="/terms" target="_blank" className="text-brand-600 hover:underline">
                     Условията за ползване
@@ -343,7 +342,7 @@ export function AuthForm({ mode, action, oauthError, role, next }: AuthFormProps
               </div>
             )}
             {state.error && <p className="text-sm text-danger-600">{state.error}</p>}
-            <Button type="submit" size="lg" loading={pending} className="mt-2">
+            <Button type="submit" size="lg" loading={pending} className="mt-2 lg:mt-1 lg:h-11">
               {isRegister ? "Регистрирай се" : "Влез"}
             </Button>
           </form>
