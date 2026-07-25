@@ -17,9 +17,35 @@ import { AddressAutocomplete } from "./address-autocomplete";
 type Provider = "econt" | "speedy";
 type Target = "office" | "address";
 
-const PROVIDERS: { id: Provider; name: string; hint: string }[] = [
-  { id: "econt", name: "Еконт", hint: "Потребител и парола от e-Econt акаунта." },
-  { id: "speedy", name: "Спиди", hint: "Потребител и парола от Speedy API акаунта." },
+interface ProviderMeta {
+  id: Provider;
+  name: string;
+  hint: string;
+  /** Къде търговецът получава API ключове (изисква договор с куриера). */
+  keysHint: string;
+  keysUrl: string;
+  keysLabel: string;
+}
+
+const PROVIDERS: ProviderMeta[] = [
+  {
+    id: "econt",
+    name: "Еконт",
+    hint: "Потребител и парола от e-Econt акаунта.",
+    keysHint:
+      "За API достъп ти трябва договор с Еконт и активирана интеграция в e-Econt (Настройки → Интеграция).",
+    keysUrl: "https://www.econt.com/business",
+    keysLabel: "Еконт за бизнеса",
+  },
+  {
+    id: "speedy",
+    name: "Спиди",
+    hint: "Потребител и парола от Speedy API акаунта.",
+    keysHint:
+      "За API достъп ти трябва договор със Спиди. Ключовете се заявяват от лицето за контакт по договора ти.",
+    keysUrl: "https://www.speedy.bg/bg/business-clients",
+    keysLabel: "Спиди за бизнеса",
+  },
 ];
 
 const TARGET_LABEL: Record<Target, string> = {
@@ -46,7 +72,8 @@ export function CourierAccounts({ accounts, deliveryOptions }: Props) {
     <div className="flex flex-col gap-4">
       <p className="text-sm text-ink-500">
         Свържи куриерски акаунт, за да генерираш товарителници и да предлагаш доставка до
-        офис. Ключовете се пазят криптирано и не се показват след запис.
+        офис с автоматична цена. Нужен е договор с куриера и API ключове (виж по-долу).
+        Ключовете се пазят криптирано и не се показват след запис.
       </p>
 
       {PROVIDERS.map((p) => {
@@ -71,6 +98,21 @@ export function CourierAccounts({ accounts, deliveryOptions }: Props) {
                 )}
               </div>
             </div>
+
+            {/* Насока откъде се вземат ключове — само за несвързан куриер (изисква договор). */}
+            {!account && (
+              <div className="rounded-card border border-surface-200 bg-surface-50 p-3 text-sm text-ink-500">
+                <p>{p.keysHint}</p>
+                <a
+                  href={p.keysUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1 font-medium text-brand-600 hover:underline"
+                >
+                  {p.keysLabel} ↗
+                </a>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={() => setEditing(p.id)}>
