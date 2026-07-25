@@ -81,26 +81,10 @@ export async function requireBuyer() {
 /** Платформен админ: имейлът е в PLATFORM_ADMIN_EMAILS; иначе 404 (без издаване). */
 export async function requireAdmin() {
   const user = await requireUser();
-  const raw = process.env.PLATFORM_ADMIN_EMAILS ?? "";
-  const admins = raw
+  const admins = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const userEmail = user.email?.toLowerCase() ?? "";
-  const allowed = Boolean(userEmail && admins.includes(userEmail));
-  /* ВРЕМЕНЕН ДИАГНОСТИЧЕН ЛОГ (маха се след като админът тръгне) — показва в Vercel
-     logs дали env-ът е зареден и защо не мачва. Не издава тайни (само имейли). */
-  console.log(
-    JSON.stringify({
-      evt: "requireAdmin",
-      userEmail,
-      envPresent: raw.length > 0,
-      envRawLength: raw.length,
-      adminCount: admins.length,
-      admins,
-      allowed,
-    }),
-  );
-  if (!allowed) notFound();
+  if (!user.email || !admins.includes(user.email.toLowerCase())) notFound();
   return user;
 }

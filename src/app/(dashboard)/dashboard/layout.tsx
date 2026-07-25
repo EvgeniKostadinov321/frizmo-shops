@@ -26,6 +26,14 @@ export default async function DashboardLayout({
       ])
     : [0, 0, false];
 
+  /* Платформен админ → показва връзка към /admin (иначе панелът е достъпен само
+     с ръчен URL). Същата проверка като requireAdmin (имейл в PLATFORM_ADMIN_EMAILS). */
+  const admins = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const isAdmin = Boolean(user.email && admins.includes(user.email.toLowerCase()));
+
   return (
     <div className="min-h-screen">
       <header className="flex h-16 items-center border-b border-surface-200 bg-surface-0 px-4 md:px-6">
@@ -53,6 +61,16 @@ export default async function DashboardLayout({
             <div className="hidden md:block">
               <ComplexityModeSwitcher mode={shop.complexityMode} />
             </div>
+          )}
+          {/* Платформен админ → бърза връзка към админ панела (само за админи). */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden items-center gap-1.5 rounded-control px-2.5 py-1.5 text-sm font-medium text-brand-600 transition-colors hover:bg-surface-100 md:flex"
+            >
+              <Icon name="shield-check" size={16} className="shrink-0" />
+              Админ
+            </Link>
           )}
           {/* Реципрочна връзка към купувачкия профил (продавачът пазарува от други
               магазини) — контекстна навигация, /account винаги е купувачки контекст. */}
