@@ -32,10 +32,16 @@ function BottomBar({ shop, centered = false }: { shop: Shop; centered?: boolean 
         <span>
           © {year} {shop.name}
         </span>
-        <span>
-          Създадено с{" "}
-          <Link href="/" className="underline transition-opacity hover:opacity-80">
-            Frizmo Shops
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
+          <span>
+            Създадено с{" "}
+            <Link href="/" className="underline transition-opacity hover:opacity-80">
+              Frizmo Shops
+            </Link>
+          </span>
+          {/* Пътят обратно към каталога — от всеки магазин, дискретно в лентата */}
+          <Link href="/shops" className="underline transition-opacity hover:opacity-80">
+            Още магазини →
           </Link>
         </span>
       </div>
