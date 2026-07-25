@@ -1,7 +1,5 @@
 import { Icon } from "@/components/ui";
 
-const PHONE_DISPLAY = "+359 87 716 7007";
-const PHONE_HREF = "tel:+359877167007";
 const EMAIL = "supportfrizmo@gmail.com";
 const EMAIL_HREF =
   "mailto:supportfrizmo@gmail.com?subject=Искам сайт, настроен от вас";
@@ -9,7 +7,7 @@ const EMAIL_HREF =
 /**
  * „Ние ще го направим за теб" — акцентна brand лента, която предлага
  * безплатна услуга по настройка на магазина за клиенти без време/умения.
- * Контакт: телефон и имейл (без социални мрежи).
+ * Контакт: имейл (без телефон и социални мрежи).
  */
 export function DoneForYou() {
   return (
@@ -30,40 +28,37 @@ export function DoneForYou() {
             Нямаш време? Ние настройваме магазина ти — безплатно.
           </h2>
           <p className="max-w-lg text-lg leading-relaxed text-brand-surface-muted">
-            Ако не ти се занимава с продукти, снимки и дизайн — само ни звънни. Екипът ни
+            Ако не ти се занимава с продукти, снимки и дизайн — само ни пиши. Екипът ни
             качва продуктите, подрежда витрината и публикува магазина вместо теб. Без
             допълнителна такса.
           </p>
         </div>
 
-        {/* Контакт бутони — телефон и имейл */}
+        {/* Контакт — имейлът е единственият канал */}
         <div className="flex flex-col gap-3">
           <a
-            href={PHONE_HREF}
-            className="group flex items-center gap-4 rounded-card bg-brand-surface-ink p-4 text-brand-surface shadow-float transition-transform hover:-translate-y-0.5"
+            href={EMAIL_HREF}
+            className="group flex items-center gap-4 rounded-card bg-brand-surface-ink p-5 text-brand-surface shadow-float transition-transform hover:-translate-y-0.5"
           >
             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white">
-              <Icon name="phone" size={22} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-xs font-medium text-brand-surface/70">Обади се</span>
-              <span className="block truncate font-display text-xl font-extrabold">
-                {PHONE_DISPLAY}
-              </span>
-            </span>
-          </a>
-          <a
-            href={EMAIL_HREF}
-            className="group flex items-center gap-4 rounded-card border border-brand-surface-ink/20 p-4 text-brand-surface-ink transition-colors hover:bg-brand-surface-ink/10"
-          >
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-surface-ink/15 text-brand-surface-ink">
               <Icon name="mail" size={22} />
             </span>
             <span className="min-w-0">
-              <span className="block text-xs font-medium text-brand-surface-muted">Или ни пиши</span>
-              <span className="block truncate text-base font-semibold sm:text-lg">{EMAIL}</span>
+              <span className="block text-xs font-medium text-brand-surface/70">Пиши ни на</span>
+              <span className="block truncate font-display text-lg font-extrabold sm:text-xl">
+                {EMAIL}
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className="ml-auto hidden shrink-0 text-brand-surface/70 transition-transform group-hover:translate-x-0.5 sm:block"
+            >
+              →
             </span>
           </a>
+          <p className="text-center text-sm text-brand-surface-muted">
+            Отговаряме до един работен ден.
+          </p>
         </div>
       </div>
     </section>

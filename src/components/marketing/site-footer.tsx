@@ -64,17 +64,6 @@ export function SiteFooter() {
           <ul className="flex flex-col gap-2.5 text-ink-700">
             <li>
               <a
-                href="tel:+359877167007"
-                className="flex items-center gap-2.5 transition-colors hover:text-brand-600"
-              >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                  <Icon name="phone" size={14} />
-                </span>
-                +359 87 716 7007
-              </a>
-            </li>
-            <li>
-              <a
                 href="mailto:supportfrizmo@gmail.com"
                 className="flex items-center gap-2.5 transition-colors hover:text-brand-600"
               >

@@ -400,15 +400,6 @@ export default async function LandingPage() {
             <div className="mt-6 flex flex-col gap-3 rounded-card border border-surface-200 bg-surface-0 p-5 shadow-card">
               <p className="font-bold text-ink-900">Питай ни директно</p>
               <a
-                href="tel:+359877167007"
-                className="flex items-center gap-3 text-sm font-medium text-ink-700 transition-colors hover:text-brand-600"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                  <Icon name="phone" size={16} />
-                </span>
-                +359 87 716 7007
-              </a>
-              <a
                 href="mailto:supportfrizmo@gmail.com"
                 className="flex items-center gap-3 text-sm font-medium text-ink-700 transition-colors hover:text-brand-600"
               >
