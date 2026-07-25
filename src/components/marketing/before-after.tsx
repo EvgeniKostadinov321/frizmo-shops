@@ -4,13 +4,14 @@ import Image from "next/image";
 import { m } from "motion/react";
 import { Icon } from "@/components/ui";
 import { fadeUp, staggerContainer } from "@/lib/motion";
+import { formatPrice } from "@/lib/money";
 
 /*
  * „Преди / След" v3 — ТЪМНИЯТ момент на страницата.
  * Ляво: 3 ЗАСТЪПЕНИ чат прозореца (различни приложения, непрочетени баджове,
- * висящи въпроси) — хаосът е осезаем. Дясно: таблото на Frizmo с реална
- * продуктова снимка — поръчката идва готова, наличността се следи сама.
- * Прозорците се появяват един по един при скрол (stagger).
+ * висящи въпроси) + „още 9 чата" — хаосът е осезаем, без да крие съдържание.
+ * Дясно: таблото на Frizmo — статистика за деня + две поръчки с реални
+ * снимки + „всичко попълнено, наличността се следи сама".
  */
 
 /** Мини чат прозорец: заглавна лента на приложение + бадж непрочетени + съобщения. */
@@ -25,7 +26,7 @@ function ChatWindow({
   unread: number;
   /** Лека ротация в градуси — „нахвърляни" прозорци. */
   rotate: string;
-  /** Хоризонтално отместване + застъпване на предишния прозорец. */
+  /** Хоризонтално отместване + леко застъпване на предишния прозорец. */
   offset?: string;
   children: React.ReactNode;
 }) {
@@ -60,6 +61,54 @@ function CustomerLine({ initial, text, time }: { initial: string; text: string; 
   );
 }
 
+/** Ред поръчка в мини таблото: снимка + продукт + цена + статус/действие. */
+function OrderRow({
+  image,
+  meta,
+  name,
+  price,
+  metaBadge,
+  metaBadgeTone,
+  action,
+}: {
+  image: string;
+  meta: string;
+  name: string;
+  price: number;
+  metaBadge: string;
+  metaBadgeTone: "new" | "done";
+  action: React.ReactNode;
+}) {
+  return (
+    <m.div variants={fadeUp} className="rounded-xl border border-surface-200 bg-surface-50 p-3">
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className="truncate font-medium text-ink-500">{meta}</span>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 font-semibold ${
+            metaBadgeTone === "new" ? "bg-brand-100 text-brand-700" : "bg-surface-100 text-ink-500"
+          }`}
+        >
+          {metaBadge}
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center gap-3">
+        <Image
+          src={image}
+          alt=""
+          width={44}
+          height={44}
+          className="size-11 shrink-0 rounded-lg object-cover"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold text-ink-900">{name}</p>
+          <p className="text-[13px] font-bold text-ink-900">{formatPrice(price)}</p>
+        </div>
+        {action}
+      </div>
+    </m.div>
+  );
+}
+
 export function BeforeAfter() {
   return (
     <div className="grid items-stretch gap-4 md:grid-cols-[1fr_auto_1fr]">
@@ -72,7 +121,8 @@ export function BeforeAfter() {
           <span className="text-sm font-medium text-brand-surface-muted">Продаваш през чатове</span>
         </div>
 
-        {/* Трите „нахвърляни" прозореца — появяват се един по един */}
+        {/* Трите „нахвърляни" прозореца — появяват се един по един; застъпват се
+            леко, без да крият съобщения и баджове */}
         <m.div
           aria-hidden
           initial="hidden"
@@ -88,7 +138,7 @@ export function BeforeAfter() {
             </span>
           </ChatWindow>
 
-          <ChatWindow app="Viber" unread={12} rotate="rotate-1" offset="-mt-4 ml-6 sm:ml-10">
+          <ChatWindow app="Viber" unread={12} rotate="rotate-1" offset="-mt-1.5 ml-6 sm:ml-12">
             <CustomerLine initial="М" text="А доставка до Варна? И отстъпка за 2 бр?" time="10:42" />
             <span className="ml-8 flex w-fit items-center gap-1.5 rounded-xl rounded-br-sm bg-brand-surface-ink/15 px-2.5 py-1.5 text-[12px] text-brand-surface-ink">
               Момент…
@@ -105,9 +155,18 @@ export function BeforeAfter() {
             </span>
           </ChatWindow>
 
-          <ChatWindow app="Instagram" unread={7} rotate="-rotate-1" offset="-mt-4 ml-2 sm:ml-4">
+          <ChatWindow app="Instagram" unread={7} rotate="-rotate-1" offset="-mt-1.5 ml-2 sm:ml-5">
             <CustomerLine initial="И" text="Колко струва кошницата? Свободна ли е?" time="сега" />
           </ChatWindow>
+
+          {/* Опашката, която не се вижда — мащабът на проблема */}
+          <m.span
+            variants={fadeUp}
+            className="mt-3 ml-6 inline-flex items-center gap-1.5 rounded-full border border-brand-surface-ink/15 px-3 py-1 text-[11px] font-semibold text-brand-surface-muted sm:ml-14"
+          >
+            <Icon name="chevron-down" size={12} />
+            … и още 9 чата чакат
+          </m.span>
         </m.div>
 
         <ul className="mt-auto flex flex-col gap-2.5 text-sm text-brand-surface-muted">
@@ -131,12 +190,12 @@ export function BeforeAfter() {
         </span>
       </div>
 
-      {/* СЛЕД — таблото на Frizmo: поръчката идва готова */}
+      {/* СЛЕД — таблото на Frizmo: статистика + поръчките идват готови */}
       <m.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-80px" }}
-        variants={staggerContainer(0.35, 1.3)}
+        variants={staggerContainer(0.3, 1.3)}
         className="flex flex-col gap-4 rounded-card bg-surface-0 p-6 shadow-float sm:p-8"
       >
         <m.div variants={fadeUp} className="flex items-center gap-2">
@@ -146,37 +205,55 @@ export function BeforeAfter() {
           <span className="text-sm font-medium text-ink-500">Поръчките идват готови</span>
         </m.div>
 
-        {/* Мини табло: ред поръчка с реална снимка + потвърждение */}
         <div aria-hidden className="flex flex-col gap-2 py-2">
-          <m.div
-            variants={fadeUp}
-            className="rounded-xl border border-surface-200 bg-surface-50 p-3"
-          >
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="font-medium text-ink-500">Поръчка #0043 · Мария П. · Пловдив</span>
-              <span className="rounded-full bg-brand-100 px-2 py-0.5 font-semibold text-brand-700">
-                Нова
-              </span>
+          {/* Денят с един поглед */}
+          <m.div variants={fadeUp} className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-surface-200 bg-surface-50 px-3 py-2.5">
+              <p className="flex items-center gap-1.5 text-[10px] font-medium text-ink-500">
+                <Icon name="trending-up" size={12} className="text-brand-600" />
+                Продажби днес
+              </p>
+              <p className="mt-0.5 font-display text-lg font-extrabold text-ink-900">
+                {formatPrice(23400)}
+              </p>
             </div>
-            <div className="mt-2.5 flex items-center gap-3">
-              <Image
-                src="/landing/hero-basket.webp"
-                alt=""
-                width={44}
-                height={44}
-                className="size-11 shrink-0 rounded-lg object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-ink-900">
-                  Плетена кошница от ракита
-                </p>
-                <p className="text-[13px] font-bold text-ink-900">45,00 €</p>
-              </div>
+            <div className="rounded-xl border border-surface-200 bg-surface-50 px-3 py-2.5">
+              <p className="flex items-center gap-1.5 text-[10px] font-medium text-ink-500">
+                <Icon name="bell" size={12} className="text-brand-600" />
+                Нови поръчки
+              </p>
+              <p className="mt-0.5 font-display text-lg font-extrabold text-ink-900">3</p>
+            </div>
+          </m.div>
+
+          <OrderRow
+            image="/landing/hero-basket.webp"
+            meta="Поръчка #0043 · Мария П. · Пловдив"
+            name="Плетена кошница от ракита"
+            price={4500}
+            metaBadge="Нова"
+            metaBadgeTone="new"
+            action={
               <span className="rounded-full bg-brand-600 px-3 py-1.5 text-[11px] font-bold text-white">
                 Потвърди
               </span>
-            </div>
-          </m.div>
+            }
+          />
+          <OrderRow
+            image="/landing/hero-mug.webp"
+            meta="Поръчка #0042 · Иван Д. · Варна"
+            name="Керамична чаша „Есен“"
+            price={3400}
+            metaBadge="Изпратена"
+            metaBadgeTone="done"
+            action={
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-brand-600">
+                <Icon name="check" size={13} />
+                Готова
+              </span>
+            }
+          />
+
           <m.div
             variants={fadeUp}
             className="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-[12px] text-brand-700"
