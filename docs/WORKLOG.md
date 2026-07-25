@@ -90,6 +90,20 @@ Stripe live активиране (кодът готов), Еконт/Спиди 
 
 ## Дневник (най-новото най-отгоре)
 
+- **2026-07-25 ВЕЧЕР — забравена парола (на прод) + супер-админ (чака push).** Продължение на маратона:
+  - **Забравена парола** (`7aa7fa3` dev+main, НА ПРОД, тествана на живо — имейл пристигна): стандартен
+    Supabase reset през Resend SMTP. `/auth/forgot` (имейл→requestPasswordReset, rate-limit 3/15мин,
+    anti-enumeration) → callback `type=recovery` → `/auth/reset` (нова парола→updatePassword→авто-вход).
+    Линк „Забравена парола?" на login. 8 нови теста. Vercel Promote потвърден (frizmoshops.bg/auth/forgot).
+  - **Супер-админ команден център** ([[super-admin-feature]], `7bc3d79`..`e0ffb77`, ЛОКАЛНО, ЧАКА PUSH):
+    `/admin` разширен от 1 страница в **5-табов** (Общ преглед/Магазини/Монетизация/Потребители/Поръчки).
+    Read-only наблюдение зад requireAdmin; потребители от Supabase admin API; монетизация от fee таблиците;
+    платформени поръчки. Валидацията (без Playwright, задълбочена) хвана: hydration бъг (THead не иска TRow
+    вътре), липсваща пагинация на 3 таба (добавена), подвеждащ брояч. 582 теста. Прод активиране =
+    supportfrizmo в PLATFORM_ADMIN_EMAILS + Redeploy. Спец/план `2026-07-25-super-admin.*`.
+  - Документиран Vercel Promote гоч в AGENTS.md (git push≠авто-Production; изисква Promote).
+  - **УТРЕ: пълно тестване на проекта** (кодът е 100% готов) — виж [[next-session-plan]].
+
 - **2026-07-25 (`9559bfe` dev+main) — ПРЕДСТАРТОВ МАРАТОН: auth фиксове + inv.bg + GDPR + Sentry +
   КУРИЕРИ v2 (live цена).** Дълга сесия, много части, всичко на прод:
   - **Auth production setup (ТЕСТВАН НА ЖИВО):** имейл потвърждение UX фикс (`signUp`→„Провери имейла",
