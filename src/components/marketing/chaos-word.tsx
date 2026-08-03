@@ -19,13 +19,13 @@ const LETTERS = [
 
 export function ChaosWord() {
   return (
+    /* Буквите СА текстът (без sr-only дублаж — той правеше „хаосхаос" при
+       текстово извличане: Google, копиране, четци). Всяка е inline-block, така
+       че думата се чете нормално като „хаос". */
     <span className="whitespace-nowrap">
-      {/* Екранните четци четат това; анимираните букви са aria-hidden */}
-      <span className="sr-only">хаос</span>
       {LETTERS.map((letter, i) => (
         <m.span
           key={letter.ch}
-          aria-hidden
           initial={{ opacity: 0, x: letter.x, y: letter.y, rotate: letter.rotate }}
           animate={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
           transition={{

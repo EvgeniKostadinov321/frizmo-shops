@@ -66,7 +66,7 @@ export function FeeCalculator() {
         <div aria-hidden className="my-4 border-t border-dashed border-surface-300" />
 
         <div aria-live="polite" className="flex flex-col gap-3">
-          <ReceiptLine label="Твоя продажба" value={formatPrice(saleCents)} />
+          <ReceiptLine label="Твоята продажба" value={formatPrice(saleCents)} />
           <ReceiptLine label="Такса Frizmo (5%)" value={`−${formatPrice(fee)}`} accent />
           <div aria-hidden className="border-t border-dashed border-surface-300" />
           <ReceiptLine label="Получаваш" value={formatPrice(keep)} strong />

@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Frizmo Shops — Продавай повече. Без хаос, без комисиони.";
+export const alt = "Frizmo Shops — Продавай повече. Без хаос.";
 
 /**
  * Landing OG image (снимка при споделяне): топла работилница снимка +
@@ -93,10 +93,10 @@ export default async function LandingOgImage() {
             }}
           >
             <div>Продавай повече.</div>
-            <div>Без хаос, без комисиони.</div>
+            <div>Без хаос.</div>
           </div>
           <div style={{ marginTop: 28, fontSize: 26, color: "#cdb8a0", maxWidth: 640 }}>
-            Твоят онлайн магазин за минути — 30 дни безплатно.
+            Твоят онлайн магазин за минути — безплатен старт, без месечна такса.
           </div>
         </div>
       </div>

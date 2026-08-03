@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Icon, Logo } from "@/components/ui";
+import { OPERATOR } from "@/lib/platform-legal";
 
 const PRODUCT_LINKS = [
   { href: "/shops", label: "Каталог с магазини" },
@@ -77,11 +78,17 @@ export function SiteFooter() {
         </div>
       </div>
 
-      {/* Долна лента */}
+      {/* Долна лента — идентификация на оператора (ЗЕТ чл. 4 / ЗЗП: платформата
+          е длъжна да посочи фирма, ЕИК и адрес; данните идват от OPERATOR). */}
       <div className="border-t border-surface-200">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-ink-500 sm:flex-row">
-          <span>© {new Date().getFullYear()} Frizmo Shops. Всички права запазени.</span>
-          <span>Създадено с грижа за българските търговци.</span>
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-ink-500">
+          <p className="text-center sm:text-left">
+            {OPERATOR.name} · ЕИК {OPERATOR.eik} · {OPERATOR.address}
+          </p>
+          <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
+            <span>© {new Date().getFullYear()} Frizmo Shops. Всички права запазени.</span>
+            <span>Създадено с грижа за българските търговци.</span>
+          </div>
         </div>
       </div>
     </footer>
